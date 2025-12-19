@@ -35,7 +35,6 @@ export default function Sidebar() {
 
   const employeeMenu = [
     { to: '/joblist', label: 'Daftar Pekerjaan', icon: <ClipboardList size={20} /> },
-    { to: '/tracking', label: 'Pelacakan', icon: <Search size={20} /> },
   ];
 
   const menuItems = isAdmin ? adminMenu : employeeMenu;

@@ -7,7 +7,7 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-slate-100">
+    <div className="flex h-screen bg-slate-100 overflow-hidden">
       {/* Desktop Sidebar */}
       <div className={`hidden lg:block ${sidebarOpen ? 'block' : 'hidden'}`}>
         <Sidebar />
@@ -29,9 +29,9 @@ export default function Layout() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 min-w-0">
         <Topbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="p-6 overflow-auto">
+        <main className="flex-1 p-4 md:p-6 overflow-auto">
           <Outlet />
         </main>
       </div>

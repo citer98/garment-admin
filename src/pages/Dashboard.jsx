@@ -56,36 +56,36 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 md:space-y-6 mt-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Dashboard Produksi</h2>
-          <p className="text-gray-600">Ringkasan aktivitas produksi terkini</p>
+          <h2 className="text-lg md:text-xl font-bold text-gray-800">Dashboard Produksi</h2>
+          <p className="text-xs md:text-sm text-gray-600 mt-0.5">Ringkasan aktivitas produksi terkini</p>
         </div>
-        <Button variant="primary">
+        <Button variant="primary" size="sm" className="mt-2 md:mt-0">
           + Buat Pesanan Baru
         </Button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {stats.map((stat, index) => (
           <a 
             key={index} 
             href={stat.link}
-            className="block bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+            className="block bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">{stat.title}</p>
-                <div className="flex items-end mt-2">
-                  <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
-                  <span className={`ml-2 text-sm font-medium ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
+                <p className="text-xs font-medium text-gray-500">{stat.title}</p>
+                <div className="flex items-end mt-1">
+                  <p className="text-lg font-bold text-gray-800">{stat.value}</p>
+                  <span className={`ml-1 text-xs font-medium ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
                     {stat.change}
                   </span>
                 </div>
               </div>
-              <div className={`text-2xl p-3 rounded-lg ${getColorClass(stat.color)}`}>
+              <div className={`text-xl p-2 rounded-lg ${getColorClass(stat.color)}`}>
                 {stat.icon}
               </div>
             </div>
@@ -94,25 +94,25 @@ export default function Dashboard() {
       </div>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent Orders */}
-        <Card>
-          <CardHeader>
+        <Card className="p-3">
+          <CardHeader className="pb-2">
             <h3 className="font-semibold text-gray-800">Pesanan Terbaru</h3>
           </CardHeader>
           <CardBody>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {recentOrders.map((order) => (
-                <div key={order.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
+                <div key={order.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-800">{order.id}</p>
-                    <p className="text-sm text-gray-600">{order.customer}</p>
+                    <p className="font-medium text-sm text-gray-800">{order.id}</p>
+                    <p className="text-xs text-gray-600">{order.customer}</p>
                   </div>
                   <div className="text-right">
-                    <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                       {order.items} item
                     </span>
-                    <p className="text-sm text-gray-600 mt-1">Deadline: {order.deadline}</p>
+                    <p className="text-xs text-gray-600 mt-1">Deadline: {order.deadline}</p>
                   </div>
                 </div>
               ))}
@@ -121,30 +121,30 @@ export default function Dashboard() {
         </Card>
 
         {/* Production Status */}
-        <Card>
-          <CardHeader>
+        <Card className="p-3">
+          <CardHeader className="pb-2">
             <h3 className="font-semibold text-gray-800">Status Produksi</h3>
           </CardHeader>
           <CardBody>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {['Cutting', 'Sewing', 'Finishing', 'Packing'].map((stage) => (
                 <div key={stage} className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-                      <span className="text-lg">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-2">
+                      <span className="text-base">
                         {stage === 'Cutting' ? '✂️' : 
                          stage === 'Sewing' ? '🧵' : 
                          stage === 'Finishing' ? '✨' : '📦'}
                       </span>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-800">{stage}</p>
-                      <p className="text-sm text-gray-600">Departemen</p>
+                      <p className="font-medium text-sm text-gray-800">{stage}</p>
+                      <p className="text-xs text-gray-600">Departemen</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-gray-800">{Math.floor(Math.random() * 50) + 10}</p>
-                    <p className="text-sm text-gray-600">item</p>
+                    <p className="text-xs text-gray-600">item</p>
                   </div>
                 </div>
               ))}

@@ -50,6 +50,12 @@ export default function EditOrder() {
     { value: 'cancelled', label: 'Dibatalkan' },
   ];
 
+  // Format currency helper
+  const formatCurrency = (value) => {
+    const num = Number(value) || 0;
+    return num.toLocaleString('id-ID');
+  };
+
   useEffect(() => {
     // Load order data
     setTimeout(() => {
@@ -60,8 +66,8 @@ export default function EditOrder() {
       if (foundOrder) {
         setFormData({
           customerName: foundOrder.customerName || '',
-          customerPhone: foundOrder.customerPhone || '0812-3456-7890',
-          customerAddress: foundOrder.customerAddress || 'Jl. Sudirman No. 123, Jakarta',
+          customerPhone: foundOrder.customerPhone || '',
+          customerAddress: foundOrder.customerAddress || '',
           customerEmail: foundOrder.customerEmail || '',
           orderDate: foundOrder.orderDate || new Date().toISOString().split('T')[0],
           dueDate: foundOrder.dueDate || '',
@@ -69,10 +75,23 @@ export default function EditOrder() {
           notes: foundOrder.notes || '',
           items: foundOrder.itemsDetail?.map(item => ({
             product: products.find(p => p.name === item.product)?.id?.toString() || '',
-            qty: item.qty,
-            price: item.price,
-            productName: item.product
+            qty: item.qty || 1,
+            price: item.price || 0,
+            productName: item.product || ''
           })) || [{ product: '', qty: 1, price: 0, productName: '' }]
+        });
+      } else {
+        // Jika order tidak ditemukan
+        setFormData({
+          customerName: '',
+          customerPhone: '',
+          customerAddress: '',
+          customerEmail: '',
+          orderDate: new Date().toISOString().split('T')[0],
+          dueDate: '',
+          status: 'draft',
+          notes: '',
+          items: [{ product: '', qty: 1, price: 0, productName: '' }]
         });
       }
       
@@ -97,14 +116,24 @@ export default function EditOrder() {
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...formData.items];
+    
+    // Pastikan item di index tersebut ada
+    if (!newItems[index]) {
+      newItems[index] = { product: '', qty: 1, price: 0, productName: '' };
+    }
+    
     newItems[index][field] = value;
     
     if (field === 'product' && value) {
       const selectedProduct = products.find(p => p.id === parseInt(value));
       if (selectedProduct) {
-        newItems[index].price = selectedProduct.price;
-        newItems[index].productName = selectedProduct.name;
+        newItems[index].price = selectedProduct.price || 0;
+        newItems[index].productName = selectedProduct.name || '';
       }
+    } else if (field === 'product' && !value) {
+      // Reset jika produk dihapus
+      newItems[index].price = 0;
+      newItems[index].productName = '';
     }
     
     setFormData(prev => ({
@@ -113,56 +142,65 @@ export default function EditOrder() {
     }));
   };
 
-  const handleRemoveItem = (index) => {
-    if (formData.items.length > 1) {
-      const newItems = formData.items.filter((_, i) => i !== index);
-      setFormData(prev => ({
-        ...prev,
-        items: newItems
-      }));
-    }
-  };
-
   const calculateTotal = () => {
-    return formData.items.reduce((total, item) => total + (item.qty * item.price), 0);
+    return formData.items.reduce((total, item) => {
+      const itemQty = item.qty || 0;
+      const itemPrice = item.price || 0;
+      return total + (itemQty * itemPrice);
+    }, 0);
   };
 
-  const calculateSubtotal = (qty, price) => qty * price;
+  const calculateSubtotal = (qty, price) => {
+    const quantity = qty || 0;
+    const itemPrice = price || 0;
+    return quantity * itemPrice;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validasi
-    if (!formData.customerName.trim()) {
+    if (!formData.customerName || formData.customerName.trim() === '') {
       alert('Nama pelanggan harus diisi!');
       return;
     }
 
-    if (formData.items.some(item => !item.product || item.qty < 1)) {
-      alert('Periksa kembali item pesanan!');
+    // Validasi items
+    const invalidItems = formData.items.filter(item => {
+      return !item.product || !item.product.trim() || 
+             !item.qty || item.qty < 1 ||
+             !item.price || item.price <= 0;
+    });
+
+    if (invalidItems.length > 0) {
+      alert('Periksa kembali item pesanan! Pastikan semua item sudah dipilih dengan kuantitas dan harga yang valid.');
       return;
     }
 
     setIsSubmitting(true);
 
+    // Bersihkan data sebelum disimpan
+    const cleanedItems = formData.items.map(item => ({
+      product: item.product || '',
+      qty: item.qty || 1,
+      price: item.price || 0,
+      productName: item.productName || '',
+      subtotal: (item.qty || 0) * (item.price || 0)
+    }));
+
     const updatedOrder = {
       id: id,
-      customerName: formData.customerName,
-      customerPhone: formData.customerPhone,
-      customerAddress: formData.customerAddress,
-      customerEmail: formData.customerEmail,
+      customerName: formData.customerName.trim(),
+      customerPhone: formData.customerPhone.trim(),
+      customerAddress: formData.customerAddress.trim(),
+      customerEmail: formData.customerEmail.trim(),
       orderDate: formData.orderDate,
-      dueDate: formData.dueDate,
-      items: formData.items.length,
+      dueDate: formData.dueDate || '',
+      items: cleanedItems.length,
       totalAmount: calculateTotal(),
-      status: formData.status,
-      notes: formData.notes,
-      itemsDetail: formData.items.map(item => ({
-        product: item.productName,
-        qty: item.qty,
-        price: item.price,
-        subtotal: item.qty * item.price
-      }))
+      status: formData.status || 'draft',
+      notes: formData.notes.trim(),
+      itemsDetail: cleanedItems
     };
 
     // Simulasi API call
@@ -367,14 +405,14 @@ export default function EditOrder() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Kuantitas:</span>
                   <span className="font-medium">
-                    {formData.items.reduce((total, item) => total + item.qty, 0)} pcs
+                    {formData.items.reduce((total, item) => total + (item.qty || 0), 0)} pcs
                   </span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total Harga:</span>
                     <span className="text-lg font-bold text-blue-600">
-                      Rp {calculateTotal().toLocaleString('id-ID')}
+                      Rp {formatCurrency(calculateTotal())}
                     </span>
                   </div>
                 </div>
@@ -432,7 +470,7 @@ export default function EditOrder() {
                           <option value="">-- Pilih Produk --</option>
                           {products.map(product => (
                             <option key={product.id} value={product.id}>
-                              {product.name} • Rp {product.price.toLocaleString('id-ID')}
+                              {product.name} • Rp {formatCurrency(product.price)}
                             </option>
                           ))}
                         </select>
@@ -447,8 +485,8 @@ export default function EditOrder() {
                           <button 
                             type="button"
                             className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50"
-                            onClick={() => handleItemChange(index, 'qty', Math.max(1, item.qty - 1))}
-                            disabled={item.qty <= 1}
+                            onClick={() => handleItemChange(index, 'qty', Math.max(1, (item.qty || 1) - 1))}
+                            disabled={(item.qty || 1) <= 1}
                           >
                             −
                           </button>
@@ -456,13 +494,13 @@ export default function EditOrder() {
                             type="number" 
                             min="1"
                             className="w-full p-2 text-center border-x border-gray-300 focus:outline-none"
-                            value={item.qty}
+                            value={item.qty || 1}
                             onChange={(e) => handleItemChange(index, 'qty', parseInt(e.target.value) || 1)}
                           />
                           <button 
                             type="button"
                             className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700"
-                            onClick={() => handleItemChange(index, 'qty', item.qty + 1)}
+                            onClick={() => handleItemChange(index, 'qty', (item.qty || 1) + 1)}
                           >
                             +
                           </button>
@@ -473,7 +511,7 @@ export default function EditOrder() {
                       <div className="col-span-2">
                         <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                           <p className="font-medium text-gray-800">
-                            Rp {item.price.toLocaleString('id-ID')}
+                            Rp {formatCurrency(item.price)}
                           </p>
                         </div>
                       </div>
@@ -482,7 +520,7 @@ export default function EditOrder() {
                       <div className="col-span-2">
                         <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
                           <p className="font-bold text-blue-700">
-                            Rp {calculateSubtotal(item.qty, item.price).toLocaleString('id-ID')}
+                            Rp {formatCurrency(calculateSubtotal(item.qty, item.price))}
                           </p>
                         </div>
                       </div>
@@ -508,12 +546,12 @@ export default function EditOrder() {
               <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
                 <div className="flex justify-between items-center">
                   <div className="text-gray-600">
-                    Total {formData.items.length} item • {formData.items.reduce((total, item) => total + item.qty, 0)} pcs
+                    Total {formData.items.length} item • {formData.items.reduce((total, item) => total + (item.qty || 0), 0)} pcs
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-600">Total Pembayaran</p>
                     <p className="text-2xl font-bold text-blue-600">
-                      Rp {calculateTotal().toLocaleString('id-ID')}
+                      Rp {formatCurrency(calculateTotal())}
                     </p>
                   </div>
                 </div>

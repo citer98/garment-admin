@@ -600,3 +600,15 @@ input[type="number"]::-webkit-outer-spin-button {
     break-inside: avoid;
   }
 }
+
+.department-badge {
+  @apply px-2 py-1 rounded text-xs font-semibold;
+}
+
+.progress-bar {
+  @apply w-full bg-gray-200 rounded-full h-2.5;
+}
+
+.progress-fill {
+  @apply h-2.5 rounded-full transition-all duration-300;
+}

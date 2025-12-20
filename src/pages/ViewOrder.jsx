@@ -20,6 +20,37 @@ export default function ViewOrder() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Helper function untuk format currency
+  const formatCurrency = (value) => {
+    const num = Number(value) || 0;
+    return num.toLocaleString('id-ID');
+  };
+
+  // Helper function untuk format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Tanggal tidak tersedia';
+    try {
+      return new Date(dateString).toLocaleDateString('id-ID');
+    } catch (error) {
+      return 'Tanggal tidak valid';
+    }
+  };
+
+  // Helper function untuk format long date
+  const formatLongDate = (dateString) => {
+    if (!dateString) return 'Tanggal tidak tersedia';
+    try {
+      return new Date(dateString).toLocaleDateString('id-ID', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Tanggal tidak valid';
+    }
+  };
+
   // Status options
   const statusOptions = {
     draft: { label: 'Draft', color: 'bg-gray-100 text-gray-800', icon: <FileText size={16} /> },
@@ -44,9 +75,30 @@ export default function ViewOrder() {
     setTimeout(() => {
       // Cari order dari localStorage
       const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-      const foundOrder = savedOrders.find(o => o.id === id) || 
+      const foundOrder = savedOrders.find(o => o.id === id);
+      
+      if (foundOrder) {
+        setOrder({
+          id: foundOrder.id || id,
+          customerName: foundOrder.customerName || 'Pelanggan Tidak Dikenal',
+          customerAddress: foundOrder.customerAddress || 'Jl. Sudirman No. 123, Jakarta',
+          customerPhone: foundOrder.customerPhone || '0812-3456-7890',
+          customerEmail: foundOrder.customerEmail || '',
+          orderDate: foundOrder.orderDate || new Date().toISOString().split('T')[0],
+          dueDate: foundOrder.dueDate || '',
+          items: foundOrder.items || 0,
+          totalAmount: foundOrder.totalAmount || 0,
+          status: foundOrder.status || 'draft',
+          notes: foundOrder.notes || '',
+          itemsDetail: Array.isArray(foundOrder.itemsDetail) ? foundOrder.itemsDetail : [
+            { product: 'Kemeja Pria Slimfit', qty: 2, price: 150000, subtotal: 300000 },
+            { product: 'Celana Jeans Denim', qty: 1, price: 250000, subtotal: 250000 },
+            { product: 'Jaket Hoodie', qty: 1, price: 300000, subtotal: 300000 }
+          ]
+        });
+      } else {
         // Fallback ke data mock jika tidak ditemukan
-        {
+        setOrder({
           id: id,
           customerName: 'Toko Baju Maju Jaya',
           customerAddress: 'Jl. Sudirman No. 123, Jakarta',
@@ -63,9 +115,9 @@ export default function ViewOrder() {
             { product: 'Celana Jeans Denim', qty: 1, price: 250000, subtotal: 250000 },
             { product: 'Jaket Hoodie', qty: 1, price: 300000, subtotal: 300000 }
           ]
-        };
+        });
+      }
       
-      setOrder(foundOrder);
       setLoading(false);
     }, 500);
   }, [id]);
@@ -115,6 +167,9 @@ export default function ViewOrder() {
   }
 
   const status = statusOptions[order.status] || statusOptions.draft;
+
+  // Calculate total quantity
+  const totalQty = order.itemsDetail?.reduce((total, item) => total + (item.qty || 0), 0) || 0;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -184,11 +239,11 @@ export default function ViewOrder() {
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Telepon</p>
-                <p className="font-medium text-gray-900">{order.customerPhone || '0812-3456-7890'}</p>
+                <p className="font-medium text-gray-900">{order.customerPhone}</p>
               </div>
               <div className="md:col-span-2">
                 <p className="text-sm text-gray-600 mb-1">Alamat</p>
-                <p className="font-medium text-gray-900">{order.customerAddress || 'Jl. Sudirman No. 123, Jakarta'}</p>
+                <p className="font-medium text-gray-900">{order.customerAddress}</p>
               </div>
               {order.customerEmail && (
                 <div>
@@ -215,30 +270,36 @@ export default function ViewOrder() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">PRODUK</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">QTY</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">HARGA SATUAN</th>
-                    <th className="px6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">SUBTOTAL</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">SUBTOTAL</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {order.itemsDetail?.map((item, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="font-medium text-gray-900">{item.product}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {item.qty} pcs
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-gray-900">
-                        Rp {item.price.toLocaleString('id-ID')}
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-gray-900">
-                        Rp {(item.qty * item.price).toLocaleString('id-ID')}
-                      </td>
-                    </tr>
-                  ))}
+                  {order.itemsDetail?.map((item, index) => {
+                    const itemQty = item.qty || 0;
+                    const itemPrice = item.price || 0;
+                    const subtotal = itemQty * itemPrice;
+                    
+                    return (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div>
+                            <p className="font-medium text-gray-900">{item.product}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {itemQty} pcs
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-gray-900">
+                          Rp {formatCurrency(itemPrice)}
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-gray-900">
+                          Rp {formatCurrency(subtotal)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -247,12 +308,12 @@ export default function ViewOrder() {
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
               <div className="flex justify-between items-center">
                 <div className="text-gray-600">
-                  Total {order.items} item • {order.itemsDetail?.reduce((total, item) => total + item.qty, 0)} pcs
+                  Total {order.items} item • {totalQty} pcs
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Total Pembayaran</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    Rp {order.totalAmount.toLocaleString('id-ID')}
+                    Rp {formatCurrency(order.totalAmount)}
                   </p>
                 </div>
               </div>
@@ -332,12 +393,7 @@ export default function ViewOrder() {
                 <div>
                   <p className="text-sm text-gray-600">Tanggal Pesanan</p>
                   <p className="font-medium text-gray-900">
-                    {new Date(order.orderDate).toLocaleDateString('id-ID', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                    {formatLongDate(order.orderDate)}
                   </p>
                 </div>
               </div>
@@ -348,7 +404,7 @@ export default function ViewOrder() {
                   <div>
                     <p className="text-sm text-gray-600">Tanggal Jatuh Tempo</p>
                     <p className="font-medium text-gray-900">
-                      {new Date(order.dueDate).toLocaleDateString('id-ID')}
+                      {formatDate(order.dueDate)}
                     </p>
                   </div>
                 </div>
@@ -378,7 +434,7 @@ export default function ViewOrder() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal:</span>
-                <span className="font-medium">Rp {order.totalAmount.toLocaleString('id-ID')}</span>
+                <span className="font-medium">Rp {formatCurrency(order.totalAmount)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Diskon:</span>
@@ -386,13 +442,13 @@ export default function ViewOrder() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Pajak (10%):</span>
-                <span className="font-medium">Rp {(order.totalAmount * 0.1).toLocaleString('id-ID')}</span>
+                <span className="font-medium">Rp {formatCurrency(order.totalAmount * 0.1)}</span>
               </div>
               <div className="border-t pt-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600 font-semibold">Total:</span>
                   <span className="text-xl font-bold text-blue-600">
-                    Rp {(order.totalAmount * 1.1).toLocaleString('id-ID')}
+                    Rp {formatCurrency(order.totalAmount * 1.1)}
                   </span>
                 </div>
               </div>

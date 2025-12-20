@@ -11,6 +11,12 @@ export default function CreateOrder() {
   const [orderDate, setOrderDate] = useState(today);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Helper function untuk format currency
+  const formatCurrency = (value) => {
+    const num = Number(value) || 0;
+    return num.toLocaleString('id-ID');
+  };
+
   // Data produk
   const products = [
     { id: 1, name: 'Kemeja Pria Slimfit', price: 150000, category: 'Kemeja' },
@@ -38,31 +44,42 @@ export default function CreateOrder() {
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
+    
+    // Pastikan item di index tersebut ada
+    if (!newItems[index]) {
+      newItems[index] = { product: '', qty: 1, price: 0, productName: '' };
+    }
+    
     newItems[index][field] = value;
     
     if (field === 'product' && value) {
       const selectedProduct = products.find(p => p.id === parseInt(value));
       if (selectedProduct) {
-        newItems[index].price = selectedProduct.price;
-        newItems[index].productName = selectedProduct.name;
+        newItems[index].price = selectedProduct.price || 0;
+        newItems[index].productName = selectedProduct.name || '';
       }
+    } else if (field === 'product' && !value) {
+      // Reset jika produk dihapus
+      newItems[index].price = 0;
+      newItems[index].productName = '';
     }
     
     setItems(newItems);
   };
 
-  const handleRemoveItem = (index) => {
-    if (items.length > 1) {
-      const newItems = items.filter((_, i) => i !== index);
-      setItems(newItems);
-    }
-  };
-
   const calculateTotal = () => {
-    return items.reduce((total, item) => total + (item.qty * item.price), 0);
+    return items.reduce((total, item) => {
+      const itemQty = item.qty || 0;
+      const itemPrice = item.price || 0;
+      return total + (itemQty * itemPrice);
+    }, 0);
   };
 
-  const calculateSubtotal = (qty, price) => qty * price;
+  const calculateSubtotal = (qty, price) => {
+    const quantity = qty || 0;
+    const itemPrice = price || 0;
+    return quantity * itemPrice;
+  };
 
   const handleSubmit = async () => {
     // Validasi
@@ -71,8 +88,14 @@ export default function CreateOrder() {
       return;
     }
 
-    if (items.some(item => !item.product || item.qty < 1)) {
-      alert('Periksa kembali item pesanan!');
+    const invalidItems = items.filter(item => {
+      return !item.product || !item.product.trim() || 
+             !item.qty || item.qty < 1 ||
+             !item.price || item.price <= 0;
+    });
+
+    if (invalidItems.length > 0) {
+      alert('Periksa kembali item pesanan! Pastikan semua item sudah dipilih dengan kuantitas dan harga yang valid.');
       return;
     }
 
@@ -80,20 +103,34 @@ export default function CreateOrder() {
 
     const selectedCustomerData = customers.find(c => c.id === parseInt(selectedCustomer));
     
+    // Bersihkan dan validasi data items
+    const cleanedItems = items.map(item => ({
+      product: item.product || '',
+      qty: item.qty || 1,
+      price: item.price || 0,
+      productName: item.productName || '',
+      subtotal: (item.qty || 0) * (item.price || 0)
+    }));
+
+    // Buat order data dengan struktur yang konsisten dengan Orders.jsx
     const orderData = {
       id: `ORD-${String(Date.now()).slice(-6)}`,
-      customer_id: selectedCustomer,
-      customerName: selectedCustomerData.name,
-      order_date: orderDate,
-      items: items.map(item => ({
-        product_id: item.product,
-        product_name: item.productName,
-        qty: item.qty,
-        price: item.price,
-        subtotal: item.qty * item.price
-      })),
-      total_amount: calculateTotal(),
-      status: 'draft'
+      customerName: selectedCustomerData?.name || 'Pelanggan Tidak Dikenal',
+      customerPhone: selectedCustomerData?.phone || '',
+      customerAddress: selectedCustomerData?.address || '',
+      customerEmail: '',
+      orderDate: orderDate,
+      dueDate: '',
+      items: cleanedItems.length, // Jumlah item (bukan array)
+      totalAmount: calculateTotal(),
+      status: 'draft',
+      notes: '',
+      itemsDetail: cleanedItems.map(item => ({
+        product: item.productName || '',
+        qty: item.qty || 1,
+        price: item.price || 0,
+        subtotal: (item.qty || 0) * (item.price || 0)
+      }))
     };
 
     // Simulasi API call
@@ -101,7 +138,7 @@ export default function CreateOrder() {
       console.log('Order submitted:', orderData);
       setIsSubmitting(false);
       
-      // Simpan ke localStorage untuk sementara (simulasi database)
+      // Simpan ke localStorage
       const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
       const updatedOrders = [orderData, ...existingOrders];
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
@@ -211,14 +248,14 @@ export default function CreateOrder() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Total Kuantitas:</span>
                 <span className="font-medium">
-                  {items.reduce((total, item) => total + item.qty, 0)} pcs
+                  {items.reduce((total, item) => total + (item.qty || 0), 0)} pcs
                 </span>
               </div>
               <div className="border-t pt-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Harga:</span>
                   <span className="text-lg font-bold text-blue-600">
-                    Rp {calculateTotal().toLocaleString('id-ID')}
+                    Rp {formatCurrency(calculateTotal())}
                   </span>
                 </div>
               </div>
@@ -275,7 +312,7 @@ export default function CreateOrder() {
                         <option value="">-- Pilih Produk --</option>
                         {products.map(product => (
                           <option key={product.id} value={product.id}>
-                            {product.name} • Rp {product.price.toLocaleString('id-ID')}
+                            {product.name} • Rp {formatCurrency(product.price)}
                           </option>
                         ))}
                       </select>
@@ -290,8 +327,8 @@ export default function CreateOrder() {
                         <button 
                           type="button"
                           className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50"
-                          onClick={() => handleItemChange(index, 'qty', Math.max(1, item.qty - 1))}
-                          disabled={item.qty <= 1}
+                          onClick={() => handleItemChange(index, 'qty', Math.max(1, (item.qty || 1) - 1))}
+                          disabled={(item.qty || 1) <= 1}
                         >
                           −
                         </button>
@@ -299,13 +336,13 @@ export default function CreateOrder() {
                           type="number" 
                           min="1"
                           className="w-full p-2 text-center border-x border-gray-300 focus:outline-none"
-                          value={item.qty}
+                          value={item.qty || 1}
                           onChange={(e) => handleItemChange(index, 'qty', parseInt(e.target.value) || 1)}
                         />
                         <button 
                           type="button"
                           className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700"
-                          onClick={() => handleItemChange(index, 'qty', item.qty + 1)}
+                          onClick={() => handleItemChange(index, 'qty', (item.qty || 1) + 1)}
                         >
                           +
                         </button>
@@ -316,7 +353,7 @@ export default function CreateOrder() {
                     <div className="col-span-2">
                       <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <p className="font-medium text-gray-800">
-                          Rp {item.price.toLocaleString('id-ID')}
+                          Rp {formatCurrency(item.price)}
                         </p>
                       </div>
                     </div>
@@ -325,7 +362,7 @@ export default function CreateOrder() {
                     <div className="col-span-2">
                       <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
                         <p className="font-bold text-blue-700">
-                          Rp {calculateSubtotal(item.qty, item.price).toLocaleString('id-ID')}
+                          Rp {formatCurrency(calculateSubtotal(item.qty, item.price))}
                         </p>
                       </div>
                     </div>
@@ -335,7 +372,10 @@ export default function CreateOrder() {
                       {items.length > 1 && (
                         <button 
                           type="button"
-                          onClick={() => handleRemoveItem(index)}
+                          onClick={() => {
+                            const newItems = items.filter((_, i) => i !== index);
+                            setItems(newItems);
+                          }}
                           className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
                         >
                           <Trash2 size={18} />
@@ -351,12 +391,12 @@ export default function CreateOrder() {
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
               <div className="flex justify-between items-center">
                 <div className="text-gray-600">
-                  Total {items.length} item • {items.reduce((total, item) => total + item.qty, 0)} pcs
+                  Total {items.length} item • {items.reduce((total, item) => total + (item.qty || 0), 0)} pcs
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Total Pembayaran</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    Rp {calculateTotal().toLocaleString('id-ID')}
+                    Rp {formatCurrency(calculateTotal())}
                   </p>
                 </div>
               </div>

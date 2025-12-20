@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Eye, Edit, Download, Filter, Search, Package, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { formatCurrency, formatDate, safeString, safeNumber } from '../utils/formatters';
 
 export default function Orders() {
   const navigate = useNavigate();
@@ -24,72 +25,97 @@ export default function Orders() {
   }, []);
 
   const loadOrders = () => {
-    // Coba ambil dari localStorage dulu
-    const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-    
-    // Jika tidak ada di localStorage, gunakan data mock
-    if (savedOrders.length === 0) {
-      const mockOrders = [
-        {
-          id: 'ORD-001',
-          customerName: 'Toko Baju Maju Jaya',
-          orderDate: '2024-01-15',
-          items: 3,
-          totalAmount: 850000,
-          status: 'completed',
-          itemsDetail: [
-            { product: 'Kemeja Pria Slimfit', qty: 2, price: 150000 },
-            { product: 'Celana Jeans Denim', qty: 1, price: 250000 }
-          ]
-        },
-        {
-          id: 'ORD-002',
-          customerName: 'Butik Modern',
-          orderDate: '2024-01-16',
-          items: 5,
-          totalAmount: 1200000,
-          status: 'production',
-          itemsDetail: [
-            { product: 'Blouse Wanita', qty: 3, price: 120000 },
-            { product: 'Kemeja Wanita Formal', qty: 2, price: 180000 }
-          ]
-        },
-        {
-          id: 'ORD-003',
-          customerName: 'Konveksi Sejahtera',
-          orderDate: '2024-01-17',
-          items: 2,
-          totalAmount: 600000,
-          status: 'processing',
-          itemsDetail: [
-            { product: 'Jaket Hoodie', qty: 2, price: 300000 }
-          ]
-        },
-        {
-          id: 'ORD-004',
-          customerName: 'Distro Urban',
-          orderDate: '2024-01-18',
-          items: 4,
-          totalAmount: 950000,
-          status: 'draft',
-          itemsDetail: [
-            { product: 'Celana Chino', qty: 2, price: 200000 },
-            { product: 'Kemeja Pria Slimfit', qty: 2, price: 150000 }
-          ]
-        },
-      ];
-      setOrders(mockOrders);
-      // Simpan data mock ke localStorage
-      localStorage.setItem('orders', JSON.stringify(mockOrders));
-    } else {
-      setOrders(savedOrders);
+    try {
+      // Coba ambil dari localStorage dulu
+      const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+      
+      // Validasi setiap order
+      const validatedOrders = savedOrders.map(order => {
+        return {
+          id: safeString(order.id),
+          customerName: safeString(order.customerName),
+          orderDate: safeString(order.orderDate),
+          items: safeNumber(order.items),
+          totalAmount: safeNumber(order.totalAmount),
+          status: safeString(order.status),
+          itemsDetail: Array.isArray(order.itemsDetail) ? order.itemsDetail : [],
+          customerPhone: safeString(order.customerPhone),
+          customerAddress: safeString(order.customerAddress),
+          customerEmail: safeString(order.customerEmail),
+          dueDate: safeString(order.dueDate),
+          notes: safeString(order.notes)
+        };
+      });
+      
+      // Jika tidak ada di localStorage, gunakan data mock
+      if (validatedOrders.length === 0) {
+        const mockOrders = [
+          {
+            id: 'ORD-001',
+            customerName: 'Toko Baju Maju Jaya',
+            orderDate: '2024-01-15',
+            items: 3,
+            totalAmount: 850000,
+            status: 'completed',
+            itemsDetail: [
+              { product: 'Kemeja Pria Slimfit', qty: 2, price: 150000 },
+              { product: 'Celana Jeans Denim', qty: 1, price: 250000 }
+            ]
+          },
+          {
+            id: 'ORD-002',
+            customerName: 'Butik Modern',
+            orderDate: '2024-01-16',
+            items: 5,
+            totalAmount: 1200000,
+            status: 'production',
+            itemsDetail: [
+              { product: 'Blouse Wanita', qty: 3, price: 120000 },
+              { product: 'Kemeja Wanita Formal', qty: 2, price: 180000 }
+            ]
+          },
+          {
+            id: 'ORD-003',
+            customerName: 'Konveksi Sejahtera',
+            orderDate: '2024-01-17',
+            items: 2,
+            totalAmount: 600000,
+            status: 'processing',
+            itemsDetail: [
+              { product: 'Jaket Hoodie', qty: 2, price: 300000 }
+            ]
+          },
+          {
+            id: 'ORD-004',
+            customerName: 'Distro Urban',
+            orderDate: '2024-01-18',
+            items: 4,
+            totalAmount: 950000,
+            status: 'draft',
+            itemsDetail: [
+              { product: 'Celana Chino', qty: 2, price: 200000 },
+              { product: 'Kemeja Pria Slimfit', qty: 2, price: 150000 }
+            ]
+          },
+        ];
+        setOrders(mockOrders);
+        localStorage.setItem('orders', JSON.stringify(mockOrders));
+      } else {
+        setOrders(validatedOrders);
+      }
+    } catch (error) {
+      console.error('Error loading orders:', error);
+      setOrders([]);
     }
   };
 
-  // Filter orders berdasarkan search dan status
+  // Filter orders
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         order.customerName.toLowerCase().includes(searchQuery.toLowerCase());
+    const orderId = safeString(order.id).toLowerCase();
+    const customerName = safeString(order.customerName).toLowerCase();
+    const query = searchQuery.toLowerCase();
+    
+    const matchesSearch = orderId.includes(query) || customerName.includes(query);
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -117,8 +143,13 @@ export default function Orders() {
 
   const handleDownloadInvoice = (orderId) => {
     alert(`Download invoice ${orderId}`);
-    // Implementasi download invoice di sini
   };
+
+  // Hitung statistik
+  const totalOrders = orders.length;
+  const inProcessOrders = orders.filter(o => ['processing', 'production'].includes(safeString(o.status))).length;
+  const completedOrders = orders.filter(o => safeString(o.status) === 'completed').length;
+  const totalOrderValue = orders.reduce((sum, order) => sum + safeNumber(order.totalAmount), 0);
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -181,24 +212,20 @@ export default function Orders() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <p className="text-sm text-gray-600 mb-1">Total Pesanan</p>
-          <p className="text-2xl font-bold text-gray-800">{orders.length}</p>
+          <p className="text-2xl font-bold text-gray-800">{totalOrders}</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <p className="text-sm text-gray-600 mb-1">Dalam Proses</p>
-          <p className="text-2xl font-bold text-blue-600">
-            {orders.filter(o => ['processing', 'production'].includes(o.status)).length}
-          </p>
+          <p className="text-2xl font-bold text-blue-600">{inProcessOrders}</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <p className="text-sm text-gray-600 mb-1">Selesai</p>
-          <p className="text-2xl font-bold text-green-600">
-            {orders.filter(o => o.status === 'completed').length}
-          </p>
+          <p className="text-2xl font-bold text-green-600">{completedOrders}</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <p className="text-sm text-gray-600 mb-1">Nilai Total Pesanan</p>
           <p className="text-2xl font-bold text-purple-600">
-            Rp {orders.reduce((sum, order) => sum + order.totalAmount, 0).toLocaleString('id-ID')}
+            Rp {formatCurrency(totalOrderValue)}
           </p>
         </div>
       </div>
@@ -233,7 +260,7 @@ export default function Orders() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600">
-                      {new Date(order.orderDate).toLocaleDateString('id-ID')}
+                      {formatDate(order.orderDate)}
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -241,11 +268,11 @@ export default function Orders() {
                       </span>
                     </td>
                     <td className="px-6 py-4 font-semibold text-gray-900">
-                      Rp {order.totalAmount.toLocaleString('id-ID')}
+                      Rp {formatCurrency(order.totalAmount)}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${status?.color || 'bg-gray-100 text-gray-800'}`}>
-                        {status?.label || order.status}
+                        {status?.label || order.status || 'Unknown'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -313,7 +340,7 @@ export default function Orders() {
         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
           <p className="text-sm text-gray-600">
             Menampilkan <span className="font-semibold">{filteredOrders.length}</span> dari{' '}
-            <span className="font-semibold">{orders.length}</span> pesanan
+            <span className="font-semibold">{totalOrders}</span> pesanan
           </p>
         </div>
       </div>

@@ -1,3 +1,4 @@
+/* D:\New folder\garment-admin\src\index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -20,6 +21,161 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+/* ==================== */
+/* TIMELINE ENHANCEMENT STYLES */
+/* ==================== */
+
+/* Timeline Animation Keyframes */
+@keyframes timeline-pulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes connector-grow {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: 100%;
+    opacity: 1;
+  }
+}
+
+@keyframes step-appear {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Timeline Component Classes */
+.timeline-connector {
+  @apply transition-all duration-300;
+  animation: connector-grow 0.5s ease-out;
+}
+
+.timeline-step-completed .timeline-connector {
+  @apply bg-green-500;
+}
+
+.timeline-step-active {
+  animation: timeline-pulse 2s infinite;
+}
+
+.timeline-step-appear {
+  animation: step-appear 0.3s ease-out;
+}
+
+/* Timeline Input Styles */
+.timeline-time-input {
+  @apply text-sm font-mono transition-all duration-200;
+}
+
+.timeline-time-input:focus {
+  @apply ring-2 ring-blue-500 border-blue-500;
+}
+
+.timeline-time-label {
+  @apply text-xs font-medium text-gray-700 flex items-center;
+}
+
+/* Timeline Status Badges */
+.timeline-status-badge {
+  @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold;
+}
+
+.timeline-status-current {
+  @apply bg-blue-100 text-blue-800 border border-blue-200;
+}
+
+.timeline-status-completed {
+  @apply bg-green-100 text-green-800 border border-green-200;
+}
+
+.timeline-status-pending {
+  @apply bg-gray-100 text-gray-800 border border-gray-200;
+}
+
+/* Timeline Responsive */
+@media (max-width: 768px) {
+  .timeline-step-container {
+    @apply flex-col;
+  }
+  
+  .timeline-connector-mobile {
+    left: 1.25rem !important;
+  }
+  
+  .timeline-time-inputs {
+    @apply grid-cols-1 !important;
+  }
+  
+  .timeline-step-content {
+    @apply ml-0 mt-3;
+  }
+}
+
+/* Print Styles for Timeline */
+@media print {
+  .timeline-no-print {
+    @apply !hidden;
+  }
+  
+  .timeline-print-only {
+    @apply !block;
+  }
+  
+  .timeline-step {
+    page-break-inside: avoid;
+  }
+  
+  .timeline-time-input {
+    @apply border-none bg-transparent p-0;
+  }
+}
+
+/* Timeline Progress Bar */
+.timeline-progress-bar {
+  @apply w-full bg-gray-200 rounded-full h-2;
+}
+
+.timeline-progress-fill {
+  @apply h-2 rounded-full transition-all duration-500;
+}
+
+.timeline-progress-fill-completed {
+  @apply bg-green-500;
+}
+
+.timeline-progress-fill-inprogress {
+  @apply bg-blue-500;
+}
+
+/* Timeline Hover Effects */
+.timeline-step-hover:hover {
+  @apply transform -translate-y-1 transition-transform duration-200;
+}
+
+.timeline-step-hover:hover .timeline-step-card {
+  @apply shadow-lg border-blue-200;
+}
+
+/* Timeline Duration Display */
+.timeline-duration-badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-gray-100 text-gray-700;
 }
 
 /* ==================== */

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Tab } from '@headlessui/react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
-  Calendar, 
   User, 
   Package, 
   CheckCircle, 
@@ -21,6 +21,7 @@ import {
   Eye,
   Upload,
   ZoomIn,
+  ZoomOut,
   RotateCw,
   ChevronLeft,
   ChevronRight,
@@ -34,7 +35,14 @@ import {
   Filter,
   CalendarDays,
   UserCircle,
-  FileEdit
+  FileEdit,
+  ShoppingBag,
+  TrendingUp,
+  BarChart,
+  CreditCard,
+  FileSpreadsheet,
+  History,
+  DollarSign
 } from 'lucide-react';
 
 export default function ViewOrder() {
@@ -47,6 +55,7 @@ export default function ViewOrder() {
   const [activeStep, setActiveStep] = useState(null);
   const [orderJobs, setOrderJobs] = useState([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
+  const [customerStats, setCustomerStats] = useState(null); // Tambahkan state ini
   
   // Photo Preview State
   const [showPhotoPreview, setShowPhotoPreview] = useState(false);
@@ -160,6 +169,81 @@ export default function ViewOrder() {
     completed: { label: 'Selesai', color: 'bg-green-100 text-green-800 border-green-300', icon: <CheckCircle size={16} /> },
     delivered: { label: 'Terkirim', color: 'bg-purple-100 text-purple-800 border-purple-300', icon: <Truck size={16} /> },
     cancelled: { label: 'Dibatalkan', color: 'bg-red-100 text-red-800 border-red-300', icon: <AlertCircle size={16} /> },
+  };
+
+  // ================== CUSTOMER STATS FUNCTIONS ==================
+  
+  // Tambahkan fungsi untuk mendapatkan riwayat pelanggan
+  const getCustomerHistory = (customerName) => {
+    const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+    return savedOrders
+      .filter(order => order.customerName === customerName)
+      .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
+  };
+
+  // Tambahkan fungsi untuk menghitung statistik pelanggan
+  const calculateCustomerStats = (customerName) => {
+    const orders = getCustomerHistory(customerName);
+    const totalOrders = orders.length;
+    const totalSpent = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    const avgOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
+    
+    // Hitung status order
+    const statusCounts = orders.reduce((acc, order) => {
+      acc[order.status] = (acc[order.status] || 0) + 1;
+      return acc;
+    }, {});
+    
+    // Order per bulan (6 bulan terakhir)
+    const monthlyOrders = {};
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
+      monthlyOrders[key] = 0;
+    }
+    
+    orders.forEach(order => {
+      const orderDate = new Date(order.orderDate);
+      const key = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
+      if (monthlyOrders[key] !== undefined) {
+        monthlyOrders[key]++;
+      }
+    });
+    
+    return {
+      totalOrders,
+      totalSpent,
+      avgOrderValue,
+      statusCounts,
+      monthlyOrders,
+      orders
+    };
+  };
+
+  const exportCustomerHistory = (orders) => {
+    const headers = ['ID', 'Tanggal', 'Jumlah Item', 'Total', 'Status', 'Catatan'];
+    const csvData = orders.map(order => [
+      order.id,
+      order.orderDate,
+      order.items,
+      order.totalAmount,
+      order.status,
+      order.notes || ''
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `customer-history-${order.customerName}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // ================== NOTES FUNCTIONS ==================
@@ -676,6 +760,10 @@ export default function ViewOrder() {
         
         setOrder(orderData);
         
+        // Hitung statistik pelanggan
+        const stats = calculateCustomerStats(orderData.customerName);
+        setCustomerStats(stats);
+        
         // Load jobs terkait order
         loadOrderJobs(orderData.id);
         
@@ -758,6 +846,11 @@ export default function ViewOrder() {
         };
         
         setOrder(mockOrder);
+        
+        // Hitung statistik pelanggan untuk mock data
+        const stats = calculateCustomerStats(mockOrder.customerName);
+        setCustomerStats(stats);
+        
         loadOrderJobs(mockOrder.id);
         loadOrderPhotos();
         initializeTimeline(mockOrder);
@@ -798,6 +891,47 @@ export default function ViewOrder() {
 
   const handleEdit = () => {
     navigate(`/orders/edit/${id}`);
+  };
+
+  // Hitung total durasi timeline
+  const calculateTotalDuration = () => {
+    const completedSteps = timelineData.filter(step => step.duration);
+    
+    if (completedSteps.length === 0) return '0 jam';
+    
+    // Hitung total menit dari semua durasi
+    let totalMinutes = 0;
+    
+    completedSteps.forEach(step => {
+      const duration = step.duration;
+      if (duration.includes('hari')) {
+        const parts = duration.split(' ');
+        const days = parseInt(parts[0]) || 0;
+        const hours = parseInt(parts[2]) || 0;
+        const minutes = parseInt(parts[4]) || 0;
+        totalMinutes += (days * 24 * 60) + (hours * 60) + minutes;
+      } else if (duration.includes('jam')) {
+        const parts = duration.split(' ');
+        const hours = parseInt(parts[0]) || 0;
+        const minutes = parseInt(parts[2]) || 0;
+        totalMinutes += (hours * 60) + minutes;
+      } else if (duration.includes('menit')) {
+        const minutes = parseInt(duration) || 0;
+        totalMinutes += minutes;
+      }
+    });
+    
+    const totalHours = Math.floor(totalMinutes / 60);
+    const totalDays = Math.floor(totalHours / 24);
+    const remainingHours = totalHours % 24;
+    const remainingMinutes = totalMinutes % 60;
+    
+    if (totalDays > 0) {
+      return `${totalDays} hari ${remainingHours} jam`;
+    } else if (totalHours > 0) {
+      return `${totalHours} jam ${remainingMinutes} menit`;
+    }
+    return `${totalMinutes} menit`;
   };
 
   // ================== NOTES MODAL COMPONENT ==================
@@ -1709,47 +1843,6 @@ export default function ViewOrder() {
     }, {})
   };
 
-  // Hitung total durasi timeline
-  const calculateTotalDuration = () => {
-    const completedSteps = timelineData.filter(step => step.duration);
-    
-    if (completedSteps.length === 0) return '0 jam';
-    
-    // Hitung total menit dari semua durasi
-    let totalMinutes = 0;
-    
-    completedSteps.forEach(step => {
-      const duration = step.duration;
-      if (duration.includes('hari')) {
-        const parts = duration.split(' ');
-        const days = parseInt(parts[0]) || 0;
-        const hours = parseInt(parts[2]) || 0;
-        const minutes = parseInt(parts[4]) || 0;
-        totalMinutes += (days * 24 * 60) + (hours * 60) + minutes;
-      } else if (duration.includes('jam')) {
-        const parts = duration.split(' ');
-        const hours = parseInt(parts[0]) || 0;
-        const minutes = parseInt(parts[2]) || 0;
-        totalMinutes += (hours * 60) + minutes;
-      } else if (duration.includes('menit')) {
-        const minutes = parseInt(duration) || 0;
-        totalMinutes += minutes;
-      }
-    });
-    
-    const totalHours = Math.floor(totalMinutes / 60);
-    const totalDays = Math.floor(totalHours / 24);
-    const remainingHours = totalHours % 24;
-    const remainingMinutes = totalMinutes % 60;
-    
-    if (totalDays > 0) {
-      return `${totalDays} hari ${remainingHours} jam`;
-    } else if (totalHours > 0) {
-      return `${totalHours} jam ${remainingMinutes} menit`;
-    }
-    return `${totalMinutes} menit`;
-  };
-
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -1800,442 +1893,410 @@ export default function ViewOrder() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Order Info */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Customer Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center mb-6">
-              <div className="p-2 bg-blue-100 text-blue-600 rounded-lg mr-3">
-                <User size={20} />
-              </div>
-              <h3 className="font-semibold text-gray-800">Informasi Pelanggan</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Nama Pelanggan</p>
-                <p className="font-medium text-gray-900">{order.customerName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Telepon</p>
-                <p className="font-medium text-gray-900">{order.customerPhone}</p>
-              </div>
-              <div className="md:col-span-2">
-                <p className="text-sm text-gray-600 mb-1">Alamat</p>
-                <p className="font-medium text-gray-900">{order.customerAddress}</p>
-              </div>
-              {order.customerEmail && (
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Email</p>
-                  <p className="font-medium text-gray-900">{order.customerEmail}</p>
+      {/* Customer Card dengan Tabs */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <Tab.Group>
+          <div className="border-b border-gray-200">
+            <Tab.List className="flex">
+              <Tab className={({ selected }) => 
+                `flex-1 px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  selected 
+                    ? 'border-blue-500 text-blue-600 bg-blue-50' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`
+              }>
+                <div className="flex items-center justify-center">
+                  <User size={16} className="mr-2" />
+                  Informasi
                 </div>
-              )}
-            </div>
+              </Tab>
+              <Tab className={({ selected }) => 
+                `flex-1 px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  selected 
+                    ? 'border-blue-500 text-blue-600 bg-blue-50' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`
+              }>
+                <div className="flex items-center justify-center">
+                  <History size={16} className="mr-2" />
+                  Riwayat ({customerStats?.totalOrders || 0})
+                </div>
+              </Tab>
+              <Tab className={({ selected }) => 
+                `flex-1 px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  selected 
+                    ? 'border-blue-500 text-blue-600 bg-blue-50' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`
+              }>
+                <div className="flex items-center justify-center">
+                  <BarChart size={16} className="mr-2" />
+                  Statistik
+                </div>
+              </Tab>
+            </Tab.List>
           </div>
-
-          {/* Order Items Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-100 text-green-600 rounded-lg mr-3">
-                  <Package size={20} />
+          
+          <Tab.Panels className="p-6">
+            {/* Tab 1: Informasi Pelanggan */}
+            <Tab.Panel>
+              <div className="flex items-center mb-6">
+                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg mr-3">
+                  <User size={20} />
+                </div>
+                <h3 className="font-semibold text-gray-800">Informasi Pelanggan</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Nama Pelanggan</p>
+                  <p className="font-medium text-gray-900">{order.customerName}</p>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-800">Item Pesanan</h3>
-                  <div className="flex items-center text-sm text-gray-600 mt-1">
-                    <MessageSquare size={14} className="mr-1" />
-                    <span>{notesStats.total} catatan • </span>
-                    {noteTypes.filter(t => t.value !== 'all' && notesStats.byType[t.value] > 0).map(type => (
-                      <span key={type.value} className="ml-2">
-                        <span className={`px-1.5 py-0.5 rounded text-xs ${type.color}`}>
-                          {type.label}: {notesStats.byType[type.value]}
-                        </span>
-                      </span>
-                    ))}
+                  <p className="text-sm text-gray-600 mb-1">Telepon</p>
+                  <p className="font-medium text-gray-900">{order.customerPhone}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-sm text-gray-600 mb-1">Alamat</p>
+                  <p className="font-medium text-gray-900">{order.customerAddress}</p>
+                </div>
+                {order.customerEmail && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Email</p>
+                    <p className="font-medium text-gray-900">{order.customerEmail}</p>
                   </div>
+                )}
+                {customerStats && (
+                  <div className="md:col-span-2 mt-4 pt-4 border-t">
+                    <p className="text-sm text-gray-600 mb-2">Ringkasan Pelanggan</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <p className="text-xs text-blue-600">Total Pesanan</p>
+                        <p className="text-lg font-bold text-blue-700">{customerStats.totalOrders}</p>
+                      </div>
+                      <div className="bg-green-50 p-3 rounded-lg">
+                        <p className="text-xs text-green-600">Total Belanja</p>
+                        <p className="text-lg font-bold text-green-700">
+                          Rp {formatCurrency(customerStats.totalSpent)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Tab.Panel>
+            
+            {/* Tab 2: Riwayat Transaksi */}
+            <Tab.Panel>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <div className="p-2 bg-purple-100 text-purple-600 rounded-lg mr-3">
+                    <History size={20} />
+                  </div>
+                  <h3 className="font-semibold text-gray-800">Riwayat Transaksi</h3>
+                </div>
+                <div className="text-sm text-gray-600">
+                  {customerStats?.totalOrders || 0} pesanan ditemukan
                 </div>
               </div>
-              <button 
-                onClick={handleEdit}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center text-sm"
-              >
-                <MessageSquare size={16} className="mr-2" />
-                Edit Catatan
-              </button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">PRODUK</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">QTY</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">HARGA SATUAN</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">SUBTOTAL</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">CATATAN</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {order.itemsDetail?.map((item, index) => {
-                    const itemQty = item.qty || 0;
-                    const itemPrice = item.price || 0;
-                    const subtotal = itemQty * itemPrice;
-                    const notes = item.notes || [];
-                    
-                    return (
-                      <tr key={index} className="hover:bg-gray-50 group">
-                        <td className="px-6 py-4">
-                          <div>
-                            <p className="font-medium text-gray-900">{item.product}</p>
-                            {item.notes?.length > 0 && (
-                              <div className="mt-1 flex flex-wrap gap-1">
-                                {noteTypes.filter(t => t.value !== 'all').map(type => {
-                                  const count = item.notes?.filter(note => note.type === type.value).length || 0;
-                                  return count > 0 ? (
-                                    <span key={type.value} className={`px-1.5 py-0.5 rounded text-xs ${type.color}`}>
-                                      {type.label}: {count}
-                                    </span>
-                                  ) : null;
-                                })}
+              
+              {customerStats && customerStats.orders.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="overflow-x-auto">
+                    <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">ID Pesanan</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Tanggal</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Jumlah</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {customerStats.orders.map((historyOrder) => (
+                          <tr key={historyOrder.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3">
+                              <div className="font-medium text-gray-900">{historyOrder.id}</div>
+                              <div className="text-xs text-gray-500">
+                                {historyOrder.items} item • {formatCurrency(historyOrder.totalAmount)}
                               </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                            {itemQty} pcs
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-gray-900">
-                          Rp {formatCurrency(itemPrice)}
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-gray-900">
-                          Rp {formatCurrency(subtotal)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="space-y-2">
-                            <button
-                              onClick={() => openNotesModal(index, item.product, notes, true)}
-                              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
-                                notes.length > 0 
-                                  ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border border-yellow-300' 
-                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-300'
-                              }`}
-                            >
-                              <div className="flex items-center">
-                                <MessageSquare size={16} className="mr-2" />
-                                <span className="font-medium">
-                                  {notes.length} catatan
-                                </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="text-sm text-gray-900">
+                                {formatDate(historyOrder.orderDate)}
                               </div>
-                              <div className="flex items-center">
-                                {notes.length > 0 ? (
-                                  <>
-                                    <span className="text-xs text-gray-500 mr-2">
-                                      Lihat detail
-                                    </span>
-                                    <Eye size={14} />
-                                  </>
-                                ) : (
-                                  <span className="text-xs text-gray-500">
-                                    Tambahkan
-                                  </span>
-                                )}
-                              </div>
-                            </button>
-                            
-                            {/* Notes Preview */}
-                            {notes.length > 0 && (
-                              <div className="text-xs">
-                                <div className="mb-1 text-gray-600 flex items-center">
-                                  <MessageSquare size={12} className="mr-1" />
-                                  <span className="font-medium">Preview:</span>
+                              {historyOrder.dueDate && (
+                                <div className="text-xs text-gray-500">
+                                  Jatuh tempo: {formatDate(historyOrder.dueDate)}
                                 </div>
-                                {notes.slice(0, 2).map((note, noteIndex) => (
-                                  <div 
-                                    key={noteIndex} 
-                                    className="mb-1 p-2 bg-white border border-gray-200 rounded"
-                                  >
-                                    <div className="flex justify-between items-start">
-                                      <span className={`px-1.5 py-0.5 rounded text-xs ${getNoteTypeColor(note.type)}`}>
-                                        {getNoteTypeLabel(note.type)}
-                                      </span>
-                                      <span className="text-gray-500 text-xs">
-                                        {formatDateTime(note.timestamp).split(' ')[0]}
-                                      </span>
-                                    </div>
-                                    <p className="text-gray-700 mt-1 truncate">
-                                      {note.text}
-                                    </p>
-                                  </div>
-                                ))}
-                                {notes.length > 2 && (
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="font-semibold text-gray-900">
+                                Rp {formatCurrency(historyOrder.totalAmount)}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                statusOptions[historyOrder.status]?.color || 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {statusOptions[historyOrder.status]?.label || historyOrder.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => navigate(`/orders/${historyOrder.id}`)}
+                                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                                >
+                                  Lihat
+                                </button>
+                                {historyOrder.id !== id && (
                                   <button
-                                    onClick={() => openNotesModal(index, item.product, notes, true)}
-                                    className="w-full text-center text-blue-600 hover:text-blue-800 text-xs py-1 border border-gray-200 rounded hover:bg-blue-50"
+                                    onClick={() => navigate(`/orders/edit/${historyOrder.id}`)}
+                                    className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors"
                                   >
-                                    + {notes.length - 2} catatan lainnya...
+                                    Edit
                                   </button>
                                 )}
                               </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Total Section */}
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <div className="flex justify-between items-center">
-                <div className="text-gray-600">
-                  Total {order.items} item • {totalQty} pcs • {notesStats.total} catatan
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Total Pembayaran</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    Rp {formatCurrency(order.totalAmount)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Notes Card */}
-          {order.notes && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-800 mb-4">Catatan Pesanan</h3>
-              <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-lg">
-                <p className="text-gray-800">{order.notes}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right Column: Order Details & Summary */}
-        <div className="space-y-6">
-          {/* Order Status Summary */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-800 mb-6">Status Pesanan</h3>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  {status.icon}
-                  <div className="ml-3">
-                    <p className="text-sm text-gray-600">Status Saat Ini</p>
-                    <p className="font-medium text-gray-900">{status.label}</p>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium border ${status.color}`}>
-                  {status.label}
-                </span>
-              </div>
-              
-              <div className="pt-4 border-t">
-                <p className="text-sm text-gray-600 mb-2">Estimasi Penyelesaian</p>
-                <div className="flex items-center">
-                  <Calendar size={16} className="text-gray-400 mr-2" />
-                  <span className="font-medium text-gray-900">
-                    {order.dueDate ? formatLongDate(order.dueDate) : 'Belum ditentukan'}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                <p className="text-sm font-medium text-blue-800 mb-1">Timeline Progress</p>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-blue-600">Selesai: {completedSteps} step</span>
-                  <span className="text-xs text-blue-600">Sisa: {totalSteps - completedSteps} step</span>
-                </div>
-                <div className="w-full bg-blue-100 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${progressPercentage}%` }}
-                  ></div>
-                </div>
-                <div className="text-center mt-2">
-                  <span className="text-xs font-semibold text-blue-700">{progressPercentage}% Complete</span>
-                </div>
-              </div>
-
-              {/* Notes Summary */}
-              <div className="pt-4 border-t">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-gray-600">Total Catatan Item</p>
-                  <span className="font-medium text-gray-900">{notesStats.total}</span>
-                </div>
-                <div className="space-y-1">
-                  {noteTypes.filter(t => t.value !== 'all' && notesStats.byType[t.value] > 0).map(type => (
-                    <div key={type.value} className="flex justify-between items-center text-xs">
-                      <span className={`px-2 py-0.5 rounded ${type.color}`}>
-                        {type.label}
-                      </span>
-                      <span className="font-medium">{notesStats.byType[type.value]}</span>
+                  
+                  {/* Summary */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div className="bg-white border border-gray-200 rounded-xl p-4">
+                      <div className="flex items-center">
+                        <ShoppingBag className="text-blue-600 mr-3" size={20} />
+                        <div>
+                          <p className="text-sm text-gray-600">Pesanan Aktif</p>
+                          <p className="text-xl font-bold text-gray-900">
+                            {Object.entries(customerStats.statusCounts || {}).reduce((sum, [status, count]) => {
+                              return ['processing', 'production'].includes(status) ? sum + count : sum;
+                            }, 0)}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Order Details Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-800 mb-6">Detail Pesanan</h3>
-            
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <Calendar size={18} className="text-gray-400 mr-3" />
-                <div>
-                  <p className="text-sm text-gray-600">Tanggal Pesanan</p>
-                  <p className="font-medium text-gray-900">
-                    {formatLongDate(order.orderDate)}
-                  </p>
-                </div>
-              </div>
-              
-              {order.dueDate && (
-                <div className="flex items-center">
-                  <Clock size={18} className="text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-600">Tanggal Jatuh Tempo</p>
-                    <p className="font-medium text-gray-900">
-                      {formatDate(order.dueDate)}
-                    </p>
+                    <div className="bg-white border border-gray-200 rounded-xl p-4">
+                      <div className="flex items-center">
+                        <CreditCard className="text-green-600 mr-3" size={20} />
+                        <div>
+                          <p className="text-sm text-gray-600">Nilai Rata-rata</p>
+                          <p className="text-xl font-bold text-gray-900">
+                            Rp {formatCurrency(customerStats.avgOrderValue)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-xl p-4">
+                      <div className="flex items-center">
+                        <TrendingUp className="text-purple-600 mr-3" size={20} />
+                        <div>
+                          <p className="text-sm text-gray-600">Tren 6 Bulan</p>
+                          <p className="text-xl font-bold text-gray-900">
+                            {Math.round(Object.values(customerStats.monthlyOrders).reduce((a, b) => a + b, 0) / 6)}/bulan
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="mx-auto w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <History className="text-gray-400" size={32} />
+                  </div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">Belum ada riwayat transaksi</h4>
+                  <p className="text-gray-600 mb-6">
+                    Pelanggan ini belum memiliki pesanan sebelumnya
+                  </p>
+                  <button
+                    onClick={handleEdit}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  >
+                    Buat Pesanan Baru
+                  </button>
                 </div>
               )}
-              
-              <div>
-                <p className="text-sm text-gray-600 mb-1">ID Pesanan</p>
-                <p className="font-medium text-gray-900 font-mono bg-gray-50 p-2 rounded border">{order.id}</p>
-              </div>
-              
-              <div>
-                <p className="text-sm text-gray-600 mb-2">Photo Progress</p>
-                <div className="space-y-2">
-                  <button
-                    onClick={() => setExpandedPhotoSection(!expandedPhotoSection)}
-                    className="w-full flex items-center justify-center p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    {expandedPhotoSection ? (
-                      <>
-                        <X size={14} className="mr-2" />
-                        Tutup Foto
-                      </>
-                    ) : (
-                      <>
-                        <Camera size={14} className="mr-2" />
-                        Lihat Foto Dokumentasi ({orderPhotos.length})
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={handleDownload}
-                    className="w-full flex items-center justify-center p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <Download size={14} className="mr-2" />
-                    Download Report
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Info Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-800 mb-6">Informasi Pembayaran</h3>
+            </Tab.Panel>
             
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal:</span>
-                <span className="font-medium">Rp {formatCurrency(order.totalAmount)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Diskon:</span>
-                <span className="font-medium text-green-600">Rp 0</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Pajak (10%):</span>
-                <span className="font-medium">Rp {formatCurrency(order.totalAmount * 0.1)}</span>
-              </div>
-              <div className="border-t pt-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 font-semibold">Total:</span>
-                  <span className="text-xl font-bold text-blue-600">
-                    Rp {formatCurrency(order.totalAmount * 1.1)}
-                  </span>
+            {/* Tab 3: Statistik Pelanggan */}
+            <Tab.Panel>
+              <div className="flex items-center mb-6">
+                <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg mr-3">
+                  <BarChart size={20} />
                 </div>
+                <h3 className="font-semibold text-gray-800">Statistik Pelanggan</h3>
               </div>
               
-              <div className="pt-4">
-                <p className="text-sm text-gray-600 mb-2">Status Pembayaran</p>
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                  <span className="font-medium text-green-700">Lunas</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-800 mb-6">Aksi Cepat</h3>
-            <div className="space-y-3">
-              <button
-                onClick={handleEdit}
-                className="w-full py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center"
-              >
-                <Edit size={16} className="mr-2" />
-                Edit Pesanan
-              </button>
-              <button
-                onClick={() => setExpandedPhotoSection(true)}
-                className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
-              >
-                <Camera size={16} className="mr-2" />
-                Lihat Foto ({orderPhotos.length})
-              </button>
-              <button
-                onClick={() => {
-                  // Find item with most notes
-                  const itemWithMostNotes = order.itemsDetail?.reduce((max, item, index) => {
-                    const noteCount = item.notes?.length || 0;
-                    return noteCount > (max.noteCount || 0) 
-                      ? { index, noteCount, product: item.product, notes: item.notes } 
-                      : max;
-                  }, { index: 0, noteCount: 0, product: '', notes: [] });
+              {customerStats ? (
+                <div className="space-y-6">
+                  {/* Statistik Utama */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                      <div className="text-blue-600 text-2xl font-bold mb-1">{customerStats.totalOrders}</div>
+                      <div className="text-sm text-blue-800">Total Pesanan</div>
+                      <div className="text-xs text-blue-600 mt-1">Semua waktu</div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+                      <div className="text-green-600 text-2xl font-bold mb-1">
+                        Rp {formatCurrency(customerStats.totalSpent)}
+                      </div>
+                      <div className="text-sm text-green-800">Total Belanja</div>
+                      <div className="text-xs text-green-600 mt-1">Nilai kumulatif</div>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                      <div className="text-purple-600 text-2xl font-bold mb-1">
+                        Rp {formatCurrency(customerStats.avgOrderValue)}
+                      </div>
+                      <div className="text-sm text-purple-800">Rata-rata Pesanan</div>
+                      <div className="text-xs text-purple-600 mt-1">Per transaksi</div>
+                    </div>
+                    <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
+                      <div className="text-yellow-600 text-2xl font-bold mb-1">
+                        {customerStats.orders.filter(o => ['processing', 'production'].includes(o.status)).length}
+                      </div>
+                      <div className="text-sm text-yellow-800">Dalam Proses</div>
+                      <div className="text-xs text-yellow-600 mt-1">Pesanan aktif</div>
+                    </div>
+                  </div>
                   
-                  if (itemWithMostNotes.noteCount > 0) {
-                    openNotesModal(
-                      itemWithMostNotes.index, 
-                      itemWithMostNotes.product, 
-                      itemWithMostNotes.notes, 
-                      true
-                    );
-                  } else {
-                    alert('Belum ada catatan untuk item manapun.');
-                  }
-                }}
-                className="w-full py-2.5 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 transition-colors flex items-center justify-center"
-              >
-                <MessageSquare size={16} className="mr-2" />
-                Lihat Catatan ({notesStats.total})
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="w-full py-2.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center"
-              >
-                <Printer size={16} className="mr-2" />
-                Print Semua Dokumen
-              </button>
-            </div>
-          </div>
-        </div>
+                  {/* Distribusi Status */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-5">
+                    <h4 className="font-medium text-gray-800 mb-4">Distribusi Status Pesanan</h4>
+                    <div className="space-y-3">
+                      {Object.entries(customerStats.statusCounts || {}).map(([status, count]) => (
+                        <div key={status} className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <span className={`w-3 h-3 rounded-full mr-2 ${
+                              status === 'completed' ? 'bg-green-500' :
+                              status === 'processing' ? 'bg-blue-500' :
+                              status === 'production' ? 'bg-yellow-500' :
+                              status === 'delivered' ? 'bg-purple-500' :
+                              'bg-gray-500'
+                            }`}></span>
+                            <span className="text-sm text-gray-700">
+                              {statusOptions[status]?.label || status}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium text-gray-900">{count}</span>
+                            <span className="text-xs text-gray-500">
+                              ({Math.round((count / customerStats.totalOrders) * 100)}%)
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Tren Bulanan */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-5">
+                    <h4 className="font-medium text-gray-800 mb-4">Tren Pesanan 6 Bulan Terakhir</h4>
+                    <div className="space-y-2">
+                      {Object.entries(customerStats.monthlyOrders || {}).map(([month, count]) => {
+                        const maxCount = Math.max(...Object.values(customerStats.monthlyOrders || {}));
+                        const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                        
+                        return (
+                          <div key={month} className="flex items-center">
+                            <div className="w-20 text-sm text-gray-600">
+                              {month.split('-')[1]}/{month.split('-')[0]}
+                            </div>
+                            <div className="flex-1 ml-4">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="w-12 text-right text-sm font-medium">{count}</div>
+                              </div>
+                              <div className="w-full bg-gray-100 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                                  style={{ width: `${percentage}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  {/* Produk Favorit */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-5">
+                    <h4 className="font-medium text-gray-800 mb-4">Produk yang Sering Dibeli</h4>
+                    <div className="space-y-3">
+                      {/* Hitung produk favorit dari riwayat */}
+                      {(() => {
+                        const productCounts = {};
+                        customerStats.orders.forEach(order => {
+                          order.itemsDetail?.forEach(item => {
+                            productCounts[item.product] = (productCounts[item.product] || 0) + (item.qty || 0);
+                          });
+                        });
+                        
+                        const sortedProducts = Object.entries(productCounts)
+                          .sort((a, b) => b[1] - a[1])
+                          .slice(0, 5);
+                        
+                        return sortedProducts.length > 0 ? (
+                          sortedProducts.map(([product, count]) => (
+                            <div key={product} className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <Package size={16} className="text-gray-400 mr-2" />
+                                <span className="text-sm text-gray-700">{product}</span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="font-medium text-gray-900 mr-2">{count} pcs</span>
+                                <span className="text-xs text-gray-500">
+                                  ({Math.round((count / Object.values(productCounts).reduce((a, b) => a + b, 0)) * 100)}%)
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-500 text-center py-4">Belum ada data produk</p>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      onClick={() => {
+                        // Export customer history to CSV
+                        exportCustomerHistory(customerStats.orders);
+                      }}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center"
+                    >
+                      <FileSpreadsheet size={16} className="mr-2" />
+                      Export CSV
+                    </button>
+                    <button
+                      onClick={() => navigate(`/orders/create?customer=${encodeURIComponent(order.customerName)}`)}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center"
+                    >
+                      <ShoppingBag size={16} className="mr-2" />
+                      Pesanan Baru
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="mx-auto w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <BarChart className="text-gray-400" size={32} />
+                  </div>
+                  <p className="text-gray-600">Memuat statistik pelanggan...</p>
+                </div>
+              )}
+            </Tab.Panel>
+          </Tab.Panels>
+        </Tab.Group>
       </div>
 
       {/* Photo Upload Section */}

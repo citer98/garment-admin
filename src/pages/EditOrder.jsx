@@ -50,27 +50,99 @@ export default function EditOrder() {
   const previewRef = React.useRef(null);
 
   // Form state
-  const [formData, setFormData] = useState({
-    customerName: '',
-    customerPhone: '',
-    customerAddress: '',
-    customerEmail: '',
-    orderDate: new Date().toISOString().split('T')[0],
-    dueDate: '',
-    status: 'draft',
-    notes: '',
-    items: [{ product: '', qty: 1, price: 0, productName: '' }]
-  });
+const [formData, setFormData] = useState({
+  customerName: '',
+  customerPhone: '',
+  customerAddress: '',
+  customerEmail: '',
+  orderDate: new Date().toISOString().split('T')[0],
+  dueDate: '',
+  status: 'draft',
+  notes: '',
+  items: [{ product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: '' }]
+});
 
   // Data produk
-  const products = [
-    { id: 1, name: 'Kemeja Pria Slimfit', price: 150000, category: 'Kemeja' },
-    { id: 2, name: 'Celana Jeans Denim', price: 250000, category: 'Celana' },
-    { id: 3, name: 'Jaket Hoodie', price: 300000, category: 'Jaket' },
-    { id: 4, name: 'Kemeja Wanita Formal', price: 180000, category: 'Kemeja' },
-    { id: 5, name: 'Blouse Wanita', price: 120000, category: 'Blouse' },
-    { id: 6, name: 'Celana Chino', price: 200000, category: 'Celana' },
-  ];
+const products = [
+  { 
+    id: 1, 
+    name: 'Kemeja Pria Slimfit', 
+    basePrice: 150000, 
+    category: 'Kemeja',
+    variations: [
+      { id: '1-s-m', size: 'S', color: 'Putih', price: 150000, stock: 50 },
+      { id: '1-m-m', size: 'M', color: 'Putih', price: 150000, stock: 30 },
+      { id: '1-l-m', size: 'L', color: 'Putih', price: 155000, stock: 20 },
+      { id: '1-s-b', size: 'S', color: 'Biru', price: 155000, stock: 25 },
+      { id: '1-m-b', size: 'M', color: 'Biru', price: 155000, stock: 15 },
+    ]
+  },
+  { 
+    id: 2, 
+    name: 'Celana Jeans Denim', 
+    basePrice: 250000, 
+    category: 'Celana',
+    variations: [
+      { id: '2-28-h', size: '28', color: 'Hitam', price: 250000, stock: 40 },
+      { id: '2-30-h', size: '30', color: 'Hitam', price: 250000, stock: 35 },
+      { id: '2-32-h', size: '32', color: 'Hitam', price: 250000, stock: 25 },
+      { id: '2-30-b', size: '30', color: 'Biru', price: 255000, stock: 30 },
+      { id: '2-32-b', size: '32', color: 'Biru', price: 255000, stock: 20 },
+    ]
+  },
+  { 
+    id: 3, 
+    name: 'Jaket Hoodie', 
+    basePrice: 300000, 
+    category: 'Jaket',
+    variations: [
+      { id: '3-m-h', size: 'M', color: 'Hitam', price: 300000, stock: 25 },
+      { id: '3-l-h', size: 'L', color: 'Hitam', price: 300000, stock: 20 },
+      { id: '3-xl-h', size: 'XL', color: 'Hitam', price: 310000, stock: 15 },
+      { id: '3-m-a', size: 'M', color: 'Abu', price: 305000, stock: 20 },
+      { id: '3-l-a', size: 'L', color: 'Abu', price: 305000, stock: 15 },
+    ]
+  },
+  { 
+    id: 4, 
+    name: 'Kemeja Wanita Formal', 
+    basePrice: 180000, 
+    category: 'Kemeja',
+    variations: [
+      { id: '4-s-p', size: 'S', color: 'Putih', price: 180000, stock: 40 },
+      { id: '4-m-p', size: 'M', color: 'Putih', price: 180000, stock: 30 },
+      { id: '4-l-p', size: 'L', color: 'Putih', price: 185000, stock: 20 },
+      { id: '4-s-m', size: 'S', color: 'Merah', price: 185000, stock: 25 },
+      { id: '4-m-m', size: 'M', color: 'Merah', price: 185000, stock: 20 },
+    ]
+  },
+  { 
+    id: 5, 
+    name: 'Blouse Wanita', 
+    basePrice: 120000, 
+    category: 'Blouse',
+    variations: [
+      { id: '5-s-h', size: 'S', color: 'Hitam', price: 120000, stock: 45 },
+      { id: '5-m-h', size: 'M', color: 'Hitam', price: 120000, stock: 35 },
+      { id: '5-l-h', size: 'L', color: 'Hitam', price: 125000, stock: 25 },
+      { id: '5-s-c', size: 'S', color: 'Cream', price: 125000, stock: 30 },
+      { id: '5-m-c', size: 'M', color: 'Cream', price: 125000, stock: 25 },
+    ]
+  },
+  { 
+    id: 6, 
+    name: 'Celana Chino', 
+    basePrice: 200000, 
+    category: 'Celana',
+    variations: [
+      { id: '6-30-c', size: '30', color: 'Coklat', price: 200000, stock: 35 },
+      { id: '6-32-c', size: '32', color: 'Coklat', price: 200000, stock: 30 },
+      { id: '6-34-c', size: '34', color: 'Coklat', price: 205000, stock: 20 },
+      { id: '6-30-k', size: '30', color: 'Khaki', price: 205000, stock: 25 },
+      { id: '6-32-k', size: '32', color: 'Khaki', price: 205000, stock: 20 },
+    ]
+  }
+];
 
   // Status options
   const statusOptions = [
@@ -295,33 +367,72 @@ export default function EditOrder() {
     }));
   };
 
-  const handleItemChange = (index, field, value) => {
-    const newItems = [...formData.items];
-    
-    // Pastikan item di index tersebut ada
-    if (!newItems[index]) {
-      newItems[index] = { product: '', qty: 1, price: 0, productName: '' };
+const handleItemChange = (index, field, value) => {
+  const newItems = [...formData.items];
+  
+  // Pastikan item di index tersebut ada
+  if (!newItems[index]) {
+    newItems[index] = { product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: '' };
+  }
+  
+  newItems[index][field] = value;
+  
+  if (field === 'product' && value) {
+    const selectedProduct = products.find(p => p.id === parseInt(value));
+    if (selectedProduct) {
+      newItems[index].price = selectedProduct.basePrice || 0;
+      newItems[index].productName = selectedProduct.name || '';
+      // Reset size and color when product changes
+      newItems[index].size = '';
+      newItems[index].color = '';
+      newItems[index].variantId = '';
     }
-    
-    newItems[index][field] = value;
-    
-    if (field === 'product' && value) {
-      const selectedProduct = products.find(p => p.id === parseInt(value));
-      if (selectedProduct) {
-        newItems[index].price = selectedProduct.price || 0;
-        newItems[index].productName = selectedProduct.name || '';
-      }
-    } else if (field === 'product' && !value) {
-      // Reset jika produk dihapus
-      newItems[index].price = 0;
-      newItems[index].productName = '';
+  } else if (field === 'product' && !value) {
+    // Reset jika produk dihapus
+    newItems[index].price = 0;
+    newItems[index].productName = '';
+    newItems[index].size = '';
+    newItems[index].color = '';
+    newItems[index].variantId = '';
+  }
+  
+  setFormData(prev => ({
+    ...prev,
+    items: newItems
+  }));
+};
+
+// Tambahkan fungsi untuk handle variant change
+const handleVariantChange = (index, variantId) => {
+  const newItems = [...formData.items];
+  const selectedProduct = products.find(p => p.id === parseInt(newItems[index].product));
+  
+  if (selectedProduct && variantId) {
+    const variant = selectedProduct.variations.find(v => v.id === variantId);
+    if (variant) {
+      newItems[index].variantId = variantId;
+      newItems[index].size = variant.size;
+      newItems[index].color = variant.color;
+      newItems[index].price = variant.price;
     }
-    
-    setFormData(prev => ({
-      ...prev,
-      items: newItems
-    }));
-  };
+  }
+  
+  setFormData(prev => ({
+    ...prev,
+    items: newItems
+  }));
+};
+
+// Tambahkan juga helper functions
+const selectedProduct = (itemIndex) => {
+  const productId = formData.items[itemIndex]?.product;
+  return products.find(p => p.id === parseInt(productId));
+};
+
+const getAvailableVariations = (itemIndex) => {
+  const product = selectedProduct(itemIndex);
+  return product ? product.variations : [];
+};
 
   // Fungsi untuk menghapus item
   const handleRemoveItem = (index) => {
@@ -1559,6 +1670,57 @@ const removeNote = (noteId) => {
       )}
     </div>
   ))}
+</div>
+
+{/* Size Selector */}
+<div className="col-span-1">
+  {selectedProduct(itemIndex) ? (
+    <select 
+      className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      value={item.variantId}
+      onChange={(e) => handleVariantChange(index, e.target.value)}
+      required
+    >
+      <option value="">-- Pilih Ukuran --</option>
+      {getAvailableVariations(index).map(variant => (
+        <option key={variant.id} value={variant.id}>
+          {variant.size}
+        </option>
+      ))}
+    </select>
+  ) : (
+    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
+      <span className="text-gray-400 text-sm">Pilih produk</span>
+    </div>
+  )}
+</div>
+
+{/* Color Display */}
+<div className="col-span-1">
+  {item.color ? (
+    <div className="flex items-center">
+      <div 
+        className="w-6 h-6 rounded-full border border-gray-300 mr-2"
+        style={{ backgroundColor: item.color.toLowerCase() === 'putih' ? '#ffffff' : 
+                                     item.color.toLowerCase() === 'hitam' ? '#000000' : 
+                                     item.color.toLowerCase() === 'biru' ? '#2563eb' : 
+                                     item.color.toLowerCase() === 'merah' ? '#dc2626' : 
+                                     item.color.toLowerCase() === 'hijau' ? '#16a34a' : 
+                                     item.color.toLowerCase() === 'kuning' ? '#facc15' : 
+                                     item.color.toLowerCase() === 'abu-abu' ? '#6b7280' : 
+                                     item.color.toLowerCase() === 'coklat' ? '#92400e' : 
+                                     item.color.toLowerCase() === 'navy' ? '#1e3a8a' : 
+                                     item.color.toLowerCase() === 'khaki' ? '#d4af37' : 
+                                     item.color.toLowerCase() === 'pink' ? '#ec4899' : 
+                                     item.color.toLowerCase() === 'ungu' ? '#9333ea' : '#ccc' }}
+      ></div>
+      <span className="text-sm">{item.color}</span>
+    </div>
+  ) : (
+    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
+      <span className="text-gray-400 text-sm">-</span>
+    </div>
+  )}
 </div>
 
 // Tambahkan Notes Modal di akhir komponen (sebelum PhotoPreviewModal)

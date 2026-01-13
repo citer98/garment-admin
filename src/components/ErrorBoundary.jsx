@@ -1,6 +1,6 @@
 // ErrorBoundary.jsx
 import React, { Component } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, ArrowLeft } from 'lucide-react';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -24,52 +24,74 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-          <div className="max-w-lg w-full bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-red-100">
-            <div className="flex items-center mb-6">
-              <div className="p-3 bg-red-100 rounded-xl mr-4">
-                <AlertTriangle className="w-8 h-8 text-red-600" />
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 sm:p-6">
+          <div className="max-w-lg w-full bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl p-4 sm:p-6 md:p-8 border border-red-100">
+            {/* Header */}
+            <div className="flex items-start mb-4 sm:mb-6">
+              <div className="p-2 sm:p-3 bg-red-100 rounded-lg sm:rounded-xl mr-3 sm:mr-4 flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" />
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">⚠️ Terjadi Kesalahan</h2>
-                <p className="text-gray-600">Sistem mengalami masalah teknis</p>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1">
+                  ⚠️ Terjadi Kesalahan
+                </h2>
+                <p className="text-sm sm:text-base text-gray-600">
+                  Sistem mengalami masalah teknis
+                </p>
               </div>
             </div>
 
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 font-medium mb-2">Detail Kesalahan:</p>
-              <code className="text-sm text-red-700 bg-red-100 p-2 rounded block overflow-x-auto">
+            {/* Error Details */}
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 font-medium mb-2 text-sm sm:text-base">
+                Detail Kesalahan:
+              </p>
+              <code className="text-xs sm:text-sm text-red-700 bg-red-100 p-2 sm:p-3 rounded block overflow-x-auto whitespace-pre-wrap break-words">
                 {this.state.error?.toString()}
               </code>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button 
                 onClick={() => window.location.reload()}
-                className="flex items-center justify-center px-5 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors flex-1"
+                className="flex items-center justify-center px-4 py-2.5 sm:px-5 sm:py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors flex-1 text-sm sm:text-base"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Muat Ulang Halaman
+                <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0" />
+                Muat Ulang
               </button>
               
               <button 
-                onClick={() => window.location.href = '/'}
-                className="flex items-center justify-center px-5 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors flex-1"
+                onClick={() => window.history.back()}
+                className="flex items-center justify-center px-4 py-2.5 sm:px-5 sm:py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors flex-1 text-sm sm:text-base"
               >
-                <Home className="w-4 h-4 mr-2" />
-                Kembali ke Halaman Utama
+                <ArrowLeft className="w-4 h-4 mr-2 flex-shrink-0" />
+                Kembali
               </button>
 
               <button 
-                onClick={this.handleReset}
-                className="flex items-center justify-center px-5 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors flex-1"
+                onClick={() => window.location.href = '/'}
+                className="flex items-center justify-center px-4 py-2.5 sm:px-5 sm:py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors flex-1 text-sm sm:text-base"
               >
-                Coba Lagi
+                <Home className="w-4 h-4 mr-2 flex-shrink-0" />
+                Beranda
               </button>
             </div>
 
-            <p className="text-xs text-gray-500 mt-6 text-center">
+            {/* Try Again Button */}
+            <button 
+              onClick={this.handleReset}
+              className="w-full mt-3 px-4 py-2.5 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition-colors text-sm sm:text-base"
+            >
+              Coba Lagi
+            </button>
+
+            {/* Footer */}
+            <p className="text-xs text-gray-500 mt-4 sm:mt-6 text-center leading-relaxed">
               Jika masalah berlanjut, hubungi administrator sistem.
+              <br className="sm:hidden" />
+              <span className="hidden sm:inline"> </span>
+              Email: support@garmenttrackpro.com
             </p>
           </div>
         </div>

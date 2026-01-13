@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Eye, Edit, Download, Filter, Search, Package, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { formatCurrency, formatDate, safeString, safeNumber } from '../utils/formatters';
+import { syncOrderWithJobs } from '../utils/jobOrderSync';
+
+// Tambahkan fungsi untuk sync jobs
+const syncJobsForOrder = (orderId) => {
+  const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+  const order = savedOrders.find(o => o.id === orderId);
+  
+  if (order && order.status !== 'draft' && order.status !== 'cancelled') {
+    syncOrderWithJobs(order);
+  }
+};
 
 export default function Orders() {
   const navigate = useNavigate();
@@ -100,8 +111,18 @@ export default function Orders() {
         ];
         setOrders(mockOrders);
         localStorage.setItem('orders', JSON.stringify(mockOrders));
+        
+        // Generate jobs untuk orders yang sudah ada
+        mockOrders.forEach(order => {
+          syncJobsForOrder(order.id);
+        });
       } else {
         setOrders(validatedOrders);
+        
+        // Generate jobs untuk orders yang sudah ada
+        validatedOrders.forEach(order => {
+          syncJobsForOrder(order.id);
+        });
       }
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -133,6 +154,12 @@ export default function Orders() {
       const updatedOrders = orders.filter(order => order.id !== orderId);
       setOrders(updatedOrders);
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
+      
+      // Hapus jobs terkait
+      const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
+      const filteredJobs = availableJobs.filter(job => job.order_id !== orderId);
+      localStorage.setItem('availableJobs', JSON.stringify(filteredJobs));
+      
       alert('Pesanan berhasil dihapus!');
     }
   };
@@ -342,6 +369,12 @@ export default function Orders() {
             Menampilkan <span className="font-semibold">{filteredOrders.length}</span> dari{' '}
             <span className="font-semibold">{totalOrders}</span> pesanan
           </p>
+          <Link 
+            to="/joblist"
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            ↗ Lihat Pekerjaan Terkait
+          </Link>
         </div>
       </div>
     </div>

@@ -1,15 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calendar, User, Package, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Calendar, User, Package, ArrowLeft, MessageSquare, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { syncOrderWithJobs } from '../utils/jobOrderSync';
 
 export default function CreateOrder() {
   const navigate = useNavigate();
   const today = new Date().toISOString().split('T')[0];
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [items, setItems] = useState([{ product: '', qty: 1, price: 0, productName: '' }]);
+  const [items, setItems] = useState([{ 
+    product: '', 
+    qty: 1, 
+    price: 0, 
+    productName: '',
+    notes: []
+  }]);
   const [orderDate, setOrderDate] = useState(today);
+  const [orderStatus, setOrderStatus] = useState('draft');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // State untuk Notes Modal
+  const [notesModal, setNotesModal] = useState({
+    isOpen: false,
+    itemIndex: null,
+    currentNote: '',
+    notes: []
+  });
 
   // Helper function untuk format currency
   const formatCurrency = (value) => {
@@ -27,6 +43,15 @@ export default function CreateOrder() {
     { id: 6, name: 'Celana Chino', price: 200000, category: 'Celana' },
   ];
 
+  // Status options
+  const statusOptions = [
+    { value: 'draft', label: 'Draft' },
+    { value: 'processing', label: 'Diproses' },
+    { value: 'production', label: 'Produksi' },
+    { value: 'completed', label: 'Selesai' },
+    { value: 'delivered', label: 'Terkirim' },
+  ];
+
   // Simulasi data pelanggan
   useEffect(() => {
     const mockCustomers = [
@@ -39,15 +64,20 @@ export default function CreateOrder() {
   }, []);
 
   const handleAddItem = () => {
-    setItems([...items, { product: '', qty: 1, price: 0, productName: '' }]);
+    setItems([...items, { 
+      product: '', 
+      qty: 1, 
+      price: 0, 
+      productName: '',
+      notes: []
+    }]);
   };
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     
-    // Pastikan item di index tersebut ada
     if (!newItems[index]) {
-      newItems[index] = { product: '', qty: 1, price: 0, productName: '' };
+      newItems[index] = { product: '', qty: 1, price: 0, productName: '', notes: [] };
     }
     
     newItems[index][field] = value;
@@ -59,12 +89,74 @@ export default function CreateOrder() {
         newItems[index].productName = selectedProduct.name || '';
       }
     } else if (field === 'product' && !value) {
-      // Reset jika produk dihapus
       newItems[index].price = 0;
       newItems[index].productName = '';
     }
     
     setItems(newItems);
+  };
+
+  // Fungsi untuk Notes Modal
+  const openNotesModal = (index) => {
+    setNotesModal({
+      isOpen: true,
+      itemIndex: index,
+      currentNote: '',
+      notes: items[index]?.notes || []
+    });
+  };
+
+  const closeNotesModal = () => {
+    setNotesModal({
+      isOpen: false,
+      itemIndex: null,
+      currentNote: '',
+      notes: []
+    });
+  };
+
+  const addNote = () => {
+    if (!notesModal.currentNote.trim()) return;
+
+    const newNote = {
+      id: Date.now(),
+      text: notesModal.currentNote,
+      timestamp: new Date().toISOString(),
+      author: 'Admin',
+      type: 'general'
+    };
+
+    const updatedNotes = [...notesModal.notes, newNote];
+    
+    // Update notes modal state
+    setNotesModal(prev => ({
+      ...prev,
+      notes: updatedNotes,
+      currentNote: ''
+    }));
+
+    // Update notes in items
+    const newItems = [...items];
+    if (newItems[notesModal.itemIndex]) {
+      newItems[notesModal.itemIndex].notes = updatedNotes;
+      setItems(newItems);
+    }
+  };
+
+  const removeNote = (noteId) => {
+    const updatedNotes = notesModal.notes.filter(note => note.id !== noteId);
+    
+    setNotesModal(prev => ({
+      ...prev,
+      notes: updatedNotes
+    }));
+
+    // Update notes in items
+    const newItems = [...items];
+    if (newItems[notesModal.itemIndex]) {
+      newItems[notesModal.itemIndex].notes = updatedNotes;
+      setItems(newItems);
+    }
   };
 
   const calculateTotal = () => {
@@ -109,10 +201,11 @@ export default function CreateOrder() {
       qty: item.qty || 1,
       price: item.price || 0,
       productName: item.productName || '',
+      notes: item.notes || [],
       subtotal: (item.qty || 0) * (item.price || 0)
     }));
 
-    // Buat order data dengan struktur yang konsisten dengan Orders.jsx
+    // Buat order data
     const orderData = {
       id: `ORD-${String(Date.now()).slice(-6)}`,
       customerName: selectedCustomerData?.name || 'Pelanggan Tidak Dikenal',
@@ -121,30 +214,41 @@ export default function CreateOrder() {
       customerEmail: '',
       orderDate: orderDate,
       dueDate: '',
-      items: cleanedItems.length, // Jumlah item (bukan array)
+      items: cleanedItems.length,
       totalAmount: calculateTotal(),
-      status: 'draft',
+      status: orderStatus,
       notes: '',
       itemsDetail: cleanedItems.map(item => ({
         product: item.productName || '',
         qty: item.qty || 1,
         price: item.price || 0,
+        notes: item.notes || [],
         subtotal: (item.qty || 0) * (item.price || 0)
-      }))
+      })),
+      timeline: [],
+      priority: 'sedang',
+      created_at: new Date().toISOString()
     };
 
     // Simulasi API call
     setTimeout(() => {
       console.log('Order submitted:', orderData);
-      setIsSubmitting(false);
       
       // Simpan ke localStorage
       const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
       const updatedOrders = [orderData, ...existingOrders];
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
       
+      // Generate jobs untuk order ini jika status bukan draft
+      if (orderData.status !== 'draft' && orderData.status !== 'cancelled') {
+        syncOrderWithJobs(orderData);
+        console.log('✅ Jobs generated for order:', orderData.id);
+      }
+      
+      setIsSubmitting(false);
+      
       // Show success message
-      alert('✅ Pesanan berhasil disimpan!');
+      alert(`✅ Pesanan ${orderData.id} berhasil disimpan! ${orderData.status !== 'draft' ? 'Jobs telah digenerate.' : ''}`);
       
       // Redirect ke halaman orders
       navigate('/orders');
@@ -219,19 +323,41 @@ export default function CreateOrder() {
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <div className="flex items-center">
-                    <Calendar size={16} className="mr-2" />
-                    Tanggal Pesanan
-                  </div>
-                </label>
-                <input 
-                  type="date" 
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={orderDate}
-                  onChange={(e) => setOrderDate(e.target.value)}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div className="flex items-center">
+                      <Calendar size={16} className="mr-2" />
+                      Tanggal Pesanan
+                    </div>
+                  </label>
+                  <input 
+                    type="date" 
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={orderDate}
+                    onChange={(e) => setOrderDate(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status Awal
+                  </label>
+                  <select 
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={orderStatus}
+                    onChange={(e) => setOrderStatus(e.target.value)}
+                  >
+                    {statusOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {orderStatus !== 'draft' ? '✅ Jobs akan otomatis digenerate' : '⚠️ Jobs tidak digenerate untuk draft'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -259,6 +385,12 @@ export default function CreateOrder() {
                   </span>
                 </div>
               </div>
+            </div>
+
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-100 rounded-lg">
+              <p className="text-xs text-yellow-700">
+                💡 <strong>Info:</strong> Jika status diproses atau produksi, sistem akan otomatis membuat jobs untuk setiap departemen.
+              </p>
             </div>
           </div>
         </div>
@@ -289,11 +421,11 @@ export default function CreateOrder() {
 
             {/* Table Header */}
             <div className="bg-gray-50 px-6 py-3 grid grid-cols-12 gap-4 border-b border-gray-200">
-              <div className="col-span-5 text-sm font-semibold text-gray-700">PRODUK</div>
+              <div className="col-span-4 text-sm font-semibold text-gray-700">PRODUK</div>
               <div className="col-span-2 text-sm font-semibold text-gray-700">QTY</div>
-              <div className="col-span-2 text-sm font-semibold text-gray-700">HARGA SATUAN</div>
+              <div className="col-span-2 text-sm font-semibold text-gray-700">HARGA</div>
               <div className="col-span-2 text-sm font-semibold text-gray-700">SUBTOTAL</div>
-              <div className="col-span-1"></div>
+              <div className="col-span-2 text-sm font-semibold text-gray-700 text-center">CATATAN</div>
             </div>
 
             {/* Order Items */}
@@ -302,7 +434,7 @@ export default function CreateOrder() {
                 <div key={index} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                   <div className="grid grid-cols-12 gap-4 items-center">
                     {/* Product Select */}
-                    <div className="col-span-5">
+                    <div className="col-span-4">
                       <select 
                         className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         value={item.product}
@@ -367,8 +499,26 @@ export default function CreateOrder() {
                       </div>
                     </div>
 
-                    {/* Delete Button */}
-                    <div className="col-span-1 flex justify-center">
+                    {/* Notes Button */}
+                    <div className="col-span-2 flex justify-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => openNotesModal(index)}
+                        className={`p-2 rounded-lg transition-colors flex items-center ${
+                          item.notes?.length > 0 
+                            ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                        title="Kelola catatan item"
+                      >
+                        <MessageSquare size={18} />
+                        {item.notes?.length > 0 && (
+                          <span className="ml-1 text-xs font-semibold">
+                            {item.notes.length}
+                          </span>
+                        )}
+                      </button>
+                      
                       {items.length > 1 && (
                         <button 
                           type="button"
@@ -376,13 +526,33 @@ export default function CreateOrder() {
                             const newItems = items.filter((_, i) => i !== index);
                             setItems(newItems);
                           }}
-                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <Trash2 size={18} />
                         </button>
                       )}
                     </div>
                   </div>
+                  
+                  {/* Notes Preview */}
+                  {item.notes?.length > 0 && (
+                    <div className="mt-3 pl-4 border-l-2 border-yellow-400">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <MessageSquare size={14} className="mr-1" />
+                        <span className="font-medium mr-2">Catatan:</span>
+                        <span className="text-gray-500">
+                          {item.notes.length} catatan ditambahkan
+                        </span>
+                        <button
+                          onClick={() => openNotesModal(index)}
+                          className="ml-2 text-blue-600 hover:text-blue-800 text-xs flex items-center"
+                        >
+                          <Eye size={12} className="mr-1" />
+                          Lihat
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -433,12 +603,122 @@ export default function CreateOrder() {
           {/* Help Text */}
           <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg">
             <p className="text-sm text-blue-800">
-              💡 <strong>Tips:</strong> Pastikan semua item sudah benar sebelum menyimpan. 
-              Pesanan yang sudah disimpan akan muncul di sistem tracking.
+              💡 <strong>Tips Integrasi JobList:</strong><br/>
+              1. Pilih status <strong>"Diproses"</strong> atau <strong>"Produksi"</strong> untuk auto-generate jobs<br/>
+              2. Jobs akan otomatis dibuat untuk departemen: Potong, Jahit, Finishing, Packing, QC<br/>
+              3. Karyawan dapat mengambil jobs dari halaman <strong>JobList</strong><br/>
+              4. Timeline order akan otomatis terupdate dari progress jobs
             </p>
           </div>
         </div>
       </div>
+
+      {/* Notes Modal */}
+      {notesModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <div className="flex items-center">
+                <MessageSquare className="text-yellow-600 mr-3" size={24} />
+                <div>
+                  <h3 className="font-bold text-lg text-gray-800">Catatan Item</h3>
+                  <p className="text-sm text-gray-600">
+                    Item: {items[notesModal.itemIndex]?.productName || 'Belum dipilih'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeNotesModal}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* Add New Note */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tambah Catatan Baru
+                </label>
+                <div className="flex space-x-2">
+                  <textarea
+                    className="flex-1 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                    rows="3"
+                    placeholder="Tulis catatan untuk item ini..."
+                    value={notesModal.currentNote}
+                    onChange={(e) => setNotesModal(prev => ({ ...prev, currentNote: e.target.value }))}
+                  />
+                  <button
+                    onClick={addNote}
+                    disabled={!notesModal.currentNote.trim()}
+                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-start"
+                  >
+                    Tambah
+                  </button>
+                </div>
+              </div>
+
+              {/* Notes List */}
+              <div>
+                <h4 className="font-medium text-gray-800 mb-4">
+                  Daftar Catatan ({notesModal.notes.length})
+                </h4>
+                
+                {notesModal.notes.length === 0 ? (
+                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                    <MessageSquare className="text-gray-400 mx-auto mb-3" size={32} />
+                    <p className="text-gray-500">Belum ada catatan</p>
+                    <p className="text-gray-400 text-sm mt-1">Tambahkan catatan pertama Anda</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {notesModal.notes.map((note) => (
+                      <div key={note.id} className="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-medium text-gray-800">{note.author}</p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(note.timestamp).toLocaleString('id-ID')}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => removeNote(note.id)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            title="Hapus catatan"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                        <p className="text-gray-700">{note.text}</p>
+                        {note.type && (
+                          <span className="inline-block mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
+                            {note.type}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={closeNotesModal}
+                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

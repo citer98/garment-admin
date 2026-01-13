@@ -9,7 +9,7 @@ export default function Layout() {
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden">
       {/* Desktop Sidebar */}
-      <div className={`hidden lg:block ${sidebarOpen ? 'block' : 'hidden'}`}>
+      <div className="hidden lg:block">
         <Sidebar />
       </div>
       

@@ -13,6 +13,8 @@ import Layout from './components/Layout'
 import ErrorBoundary from './components/ErrorBoundary'
 import EditUser from './pages/EditUser'
 import ProtectedRoute from './components/ProtectedRoute'
+// HAPUS import App.css karena menggunakan Tailwind
+// import './App.css'
 
 export default function App() {
   return (

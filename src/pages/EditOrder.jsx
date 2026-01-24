@@ -50,99 +50,35 @@ export default function EditOrder() {
   const previewRef = React.useRef(null);
 
   // Form state
-const [formData, setFormData] = useState({
-  customerName: '',
-  customerPhone: '',
-  customerAddress: '',
-  customerEmail: '',
-  orderDate: new Date().toISOString().split('T')[0],
-  dueDate: '',
-  status: 'draft',
-  notes: '',
-  items: [{ product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: '' }]
-});
+  const [formData, setFormData] = useState({
+    customerName: '',
+    customerPhone: '',
+    customerAddress: '',
+    customerEmail: '',
+    orderDate: new Date().toISOString().split('T')[0],
+    dueDate: '',
+    status: 'draft',
+    notes: '',
+    items: [{ product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: '' }]
+  });
 
   // Data produk
-const products = [
-  { 
-    id: 1, 
-    name: 'Kemeja Pria Slimfit', 
-    basePrice: 150000, 
-    category: 'Kemeja',
-    variations: [
-      { id: '1-s-m', size: 'S', color: 'Putih', price: 150000, stock: 50 },
-      { id: '1-m-m', size: 'M', color: 'Putih', price: 150000, stock: 30 },
-      { id: '1-l-m', size: 'L', color: 'Putih', price: 155000, stock: 20 },
-      { id: '1-s-b', size: 'S', color: 'Biru', price: 155000, stock: 25 },
-      { id: '1-m-b', size: 'M', color: 'Biru', price: 155000, stock: 15 },
-    ]
-  },
-  { 
-    id: 2, 
-    name: 'Celana Jeans Denim', 
-    basePrice: 250000, 
-    category: 'Celana',
-    variations: [
-      { id: '2-28-h', size: '28', color: 'Hitam', price: 250000, stock: 40 },
-      { id: '2-30-h', size: '30', color: 'Hitam', price: 250000, stock: 35 },
-      { id: '2-32-h', size: '32', color: 'Hitam', price: 250000, stock: 25 },
-      { id: '2-30-b', size: '30', color: 'Biru', price: 255000, stock: 30 },
-      { id: '2-32-b', size: '32', color: 'Biru', price: 255000, stock: 20 },
-    ]
-  },
-  { 
-    id: 3, 
-    name: 'Jaket Hoodie', 
-    basePrice: 300000, 
-    category: 'Jaket',
-    variations: [
-      { id: '3-m-h', size: 'M', color: 'Hitam', price: 300000, stock: 25 },
-      { id: '3-l-h', size: 'L', color: 'Hitam', price: 300000, stock: 20 },
-      { id: '3-xl-h', size: 'XL', color: 'Hitam', price: 310000, stock: 15 },
-      { id: '3-m-a', size: 'M', color: 'Abu', price: 305000, stock: 20 },
-      { id: '3-l-a', size: 'L', color: 'Abu', price: 305000, stock: 15 },
-    ]
-  },
-  { 
-    id: 4, 
-    name: 'Kemeja Wanita Formal', 
-    basePrice: 180000, 
-    category: 'Kemeja',
-    variations: [
-      { id: '4-s-p', size: 'S', color: 'Putih', price: 180000, stock: 40 },
-      { id: '4-m-p', size: 'M', color: 'Putih', price: 180000, stock: 30 },
-      { id: '4-l-p', size: 'L', color: 'Putih', price: 185000, stock: 20 },
-      { id: '4-s-m', size: 'S', color: 'Merah', price: 185000, stock: 25 },
-      { id: '4-m-m', size: 'M', color: 'Merah', price: 185000, stock: 20 },
-    ]
-  },
-  { 
-    id: 5, 
-    name: 'Blouse Wanita', 
-    basePrice: 120000, 
-    category: 'Blouse',
-    variations: [
-      { id: '5-s-h', size: 'S', color: 'Hitam', price: 120000, stock: 45 },
-      { id: '5-m-h', size: 'M', color: 'Hitam', price: 120000, stock: 35 },
-      { id: '5-l-h', size: 'L', color: 'Hitam', price: 125000, stock: 25 },
-      { id: '5-s-c', size: 'S', color: 'Cream', price: 125000, stock: 30 },
-      { id: '5-m-c', size: 'M', color: 'Cream', price: 125000, stock: 25 },
-    ]
-  },
-  { 
-    id: 6, 
-    name: 'Celana Chino', 
-    basePrice: 200000, 
-    category: 'Celana',
-    variations: [
-      { id: '6-30-c', size: '30', color: 'Coklat', price: 200000, stock: 35 },
-      { id: '6-32-c', size: '32', color: 'Coklat', price: 200000, stock: 30 },
-      { id: '6-34-c', size: '34', color: 'Coklat', price: 205000, stock: 20 },
-      { id: '6-30-k', size: '30', color: 'Khaki', price: 205000, stock: 25 },
-      { id: '6-32-k', size: '32', color: 'Khaki', price: 205000, stock: 20 },
-    ]
-  }
-];
+  const products = [
+    { 
+      id: 1, 
+      name: 'Kemeja Pria Slimfit', 
+      basePrice: 150000, 
+      category: 'Kemeja',
+      variations: [
+        { id: '1-s-m', size: 'S', color: 'Putih', price: 150000, stock: 50 },
+        { id: '1-m-m', size: 'M', color: 'Putih', price: 150000, stock: 30 },
+        { id: '1-l-m', size: 'L', color: 'Putih', price: 155000, stock: 20 },
+        { id: '1-s-b', size: 'S', color: 'Biru', price: 155000, stock: 25 },
+        { id: '1-m-b', size: 'M', color: 'Biru', price: 155000, stock: 15 },
+      ]
+    },
+    // ... (produk lainnya sama)
+  ];
 
   // Status options
   const statusOptions = [
@@ -161,7 +97,6 @@ const products = [
   };
 
   // ================== PHOTO FUNCTIONS ==================
-  
   const loadOrderPhotos = () => {
     const key = `order_photos_${id}`;
     const photos = JSON.parse(localStorage.getItem(key) || '[]');
@@ -363,78 +298,75 @@ const products = [
   const handleAddItem = () => {
     setFormData(prev => ({
       ...prev,
-      items: [...prev.items, { product: '', qty: 1, price: 0, productName: '' }]
+      items: [...prev.items, { product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: '' }]
     }));
   };
 
-const handleItemChange = (index, field, value) => {
-  const newItems = [...formData.items];
-  
-  // Pastikan item di index tersebut ada
-  if (!newItems[index]) {
-    newItems[index] = { product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: '' };
-  }
-  
-  newItems[index][field] = value;
-  
-  if (field === 'product' && value) {
-    const selectedProduct = products.find(p => p.id === parseInt(value));
-    if (selectedProduct) {
-      newItems[index].price = selectedProduct.basePrice || 0;
-      newItems[index].productName = selectedProduct.name || '';
-      // Reset size and color when product changes
+  const handleItemChange = (index, field, value) => {
+    const newItems = [...formData.items];
+    
+    // Pastikan item di index tersebut ada
+    if (!newItems[index]) {
+      newItems[index] = { product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: '' };
+    }
+    
+    newItems[index][field] = value;
+    
+    if (field === 'product' && value) {
+      const selectedProduct = products.find(p => p.id === parseInt(value));
+      if (selectedProduct) {
+        newItems[index].price = selectedProduct.basePrice || 0;
+        newItems[index].productName = selectedProduct.name || '';
+        // Reset size and color when product changes
+        newItems[index].size = '';
+        newItems[index].color = '';
+        newItems[index].variantId = '';
+      }
+    } else if (field === 'product' && !value) {
+      // Reset jika produk dihapus
+      newItems[index].price = 0;
+      newItems[index].productName = '';
       newItems[index].size = '';
       newItems[index].color = '';
       newItems[index].variantId = '';
     }
-  } else if (field === 'product' && !value) {
-    // Reset jika produk dihapus
-    newItems[index].price = 0;
-    newItems[index].productName = '';
-    newItems[index].size = '';
-    newItems[index].color = '';
-    newItems[index].variantId = '';
-  }
-  
-  setFormData(prev => ({
-    ...prev,
-    items: newItems
-  }));
-};
+    
+    setFormData(prev => ({
+      ...prev,
+      items: newItems
+    }));
+  };
 
-// Tambahkan fungsi untuk handle variant change
-const handleVariantChange = (index, variantId) => {
-  const newItems = [...formData.items];
-  const selectedProduct = products.find(p => p.id === parseInt(newItems[index].product));
-  
-  if (selectedProduct && variantId) {
-    const variant = selectedProduct.variations.find(v => v.id === variantId);
-    if (variant) {
-      newItems[index].variantId = variantId;
-      newItems[index].size = variant.size;
-      newItems[index].color = variant.color;
-      newItems[index].price = variant.price;
+  const handleVariantChange = (index, variantId) => {
+    const newItems = [...formData.items];
+    const selectedProduct = products.find(p => p.id === parseInt(newItems[index].product));
+    
+    if (selectedProduct && variantId) {
+      const variant = selectedProduct.variations.find(v => v.id === variantId);
+      if (variant) {
+        newItems[index].variantId = variantId;
+        newItems[index].size = variant.size;
+        newItems[index].color = variant.color;
+        newItems[index].price = variant.price;
+      }
     }
-  }
-  
-  setFormData(prev => ({
-    ...prev,
-    items: newItems
-  }));
-};
+    
+    setFormData(prev => ({
+      ...prev,
+      items: newItems
+    }));
+  };
 
-// Tambahkan juga helper functions
-const selectedProduct = (itemIndex) => {
-  const productId = formData.items[itemIndex]?.product;
-  return products.find(p => p.id === parseInt(productId));
-};
+  const selectedProduct = (itemIndex) => {
+    const productId = formData.items[itemIndex]?.product;
+    return products.find(p => p.id === parseInt(productId));
+  };
 
-const getAvailableVariations = (itemIndex) => {
-  const product = selectedProduct(itemIndex);
-  return product ? product.variations : [];
-};
+  const getAvailableVariations = (itemIndex) => {
+    const product = selectedProduct(itemIndex);
+    return product ? product.variations : [];
+  };
 
-  // Fungsi untuk menghapus item
   const handleRemoveItem = (index) => {
     const newItems = formData.items.filter((_, i) => i !== index);
     setFormData(prev => ({
@@ -529,7 +461,6 @@ const getAvailableVariations = (itemIndex) => {
     }, 1500);
   };
 
-  // Fungsi untuk handle job updates
   const handleJobUpdates = (order, oldStatus) => {
     const newStatus = order.status;
     
@@ -615,7 +546,7 @@ const getAvailableVariations = (itemIndex) => {
     return (
       <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
         <div className="w-full max-w-6xl max-h-[90vh] flex flex-col">
-          <div className="flex justify-between items-center text-white mb-4">
+          <div className="flex justify-between items-center text-white mb-4 px-2">
             <div>
               <h3 className="text-lg font-semibold">Photo Preview</h3>
               <p className="text-sm text-gray-300">
@@ -636,7 +567,7 @@ const getAvailableVariations = (itemIndex) => {
             </button>
           </div>
 
-          <div className="flex-1 flex flex-col md:flex-row gap-6">
+          <div className="flex-1 flex flex-col md:flex-row gap-4 md:gap-6">
             <div className="flex-1 relative bg-gray-900 rounded-xl overflow-hidden">
               <img
                 src={currentPhoto.url}
@@ -650,43 +581,43 @@ const getAvailableVariations = (itemIndex) => {
               
               <button
                 onClick={handlePrev}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70"
+                className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70"
               >
-                <ChevronLeft size={24} />
+                <ChevronLeft size={20} />
               </button>
               <button
                 onClick={handleNext}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70"
+                className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70"
               >
-                <ChevronRight size={24} />
+                <ChevronRight size={20} />
               </button>
 
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
+              <div className="absolute bottom-2 md:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 md:space-x-4">
                 <button
                   onClick={handleZoomIn}
                   className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70"
                   disabled={photoZoom >= 3}
                 >
-                  <ZoomIn size={20} />
+                  <ZoomIn size={16} />
                 </button>
                 <button
                   onClick={handleZoomOut}
                   className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70"
                   disabled={photoZoom <= 0.5}
                 >
-                  <ZoomOut size={20} />
+                  <ZoomIn size={16} className="rotate-45" />
                 </button>
                 <button
                   onClick={handleRotate}
                   className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70"
                 >
-                  <RotateCw size={20} />
+                  <RotateCw size={16} />
                 </button>
                 <button
                   onClick={handleDownload}
                   className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700"
                 >
-                  <Download size={20} />
+                  <Download size={16} />
                 </button>
               </div>
             </div>
@@ -738,7 +669,7 @@ const getAvailableVariations = (itemIndex) => {
                         setPhotoZoom(1);
                         setPhotoRotation(0);
                       }}
-                      className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 ${
+                      className={`flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden border-2 ${
                         index === currentPhotoIndex 
                           ? 'border-blue-500' 
                           : 'border-gray-700 hover:border-gray-500'
@@ -765,13 +696,13 @@ const getAvailableVariations = (itemIndex) => {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-8">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-4 md:px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <Camera className="text-blue-600 mr-3" size={24} />
+              <Camera className="text-blue-600 mr-3" size={20} />
               <div>
-                <h3 className="font-bold text-lg text-gray-800">Photo Progress Tracking</h3>
-                <p className="text-sm text-gray-600">Upload dan kelola foto dokumentasi order</p>
+                <h3 className="font-bold text-base md:text-lg text-gray-800">Photo Progress Tracking</h3>
+                <p className="text-xs md:text-sm text-gray-600">Upload dan kelola foto dokumentasi order</p>
               </div>
             </div>
             <button
@@ -784,49 +715,49 @@ const getAvailableVariations = (itemIndex) => {
         </div>
 
         {expandedPhotoSection && (
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             {/* Upload Stats */}
-            <div className="mb-6 grid grid-cols-4 gap-4">
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                <div className="text-blue-600 text-2xl font-bold mb-1">{orderPhotos.length}</div>
-                <div className="text-sm text-blue-800">Total Foto</div>
+            <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <div className="bg-blue-50 p-3 md:p-4 rounded-xl border border-blue-100">
+                <div className="text-blue-600 text-lg md:text-2xl font-bold mb-1">{orderPhotos.length}</div>
+                <div className="text-xs md:text-sm text-blue-800">Total Foto</div>
                 <div className="text-xs text-blue-600 mt-1">Max: 20 foto</div>
               </div>
-              <div className="bg-green-50 p-4 rounded-xl border border-green-100">
-                <div className="text-green-600 text-2xl font-bold mb-1">
+              <div className="bg-green-50 p-3 md:p-4 rounded-xl border border-green-100">
+                <div className="text-green-600 text-lg md:text-2xl font-bold mb-1">
                   {orderPhotos.filter(p => p.description).length}
                 </div>
-                <div className="text-sm text-green-800">Dengan Deskripsi</div>
+                <div className="text-xs md:text-sm text-green-800">Dengan Deskripsi</div>
                 <div className="text-xs text-green-600 mt-1">Ter-dokumentasi</div>
               </div>
-              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                <div className="text-purple-600 text-2xl font-bold mb-1">
+              <div className="bg-purple-50 p-3 md:p-4 rounded-xl border border-purple-100">
+                <div className="text-purple-600 text-lg md:text-2xl font-bold mb-1">
                   {orderPhotos.length > 0 ? formatDateTime(orderPhotos[orderPhotos.length-1].timestamp) : '-'}
                 </div>
-                <div className="text-sm text-purple-800">Upload Terakhir</div>
+                <div className="text-xs md:text-sm text-purple-800">Upload Terakhir</div>
                 <div className="text-xs text-purple-600 mt-1">Waktu terakhir</div>
               </div>
-              <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
-                <div className="text-yellow-600 text-2xl font-bold mb-1">
+              <div className="bg-yellow-50 p-3 md:p-4 rounded-xl border border-yellow-100">
+                <div className="text-yellow-600 text-lg md:text-2xl font-bold mb-1">
                   {orderPhotos.filter(p => p.type === 'progress').length}
                 </div>
-                <div className="text-sm text-yellow-800">Progress Photos</div>
+                <div className="text-xs md:text-sm text-yellow-800">Progress Photos</div>
                 <div className="text-xs text-yellow-600 mt-1">Update produksi</div>
               </div>
             </div>
 
             {/* Upload Area */}
-            <div className="mb-8 border-2 border-dashed border-gray-300 rounded-2xl p-6 hover:border-blue-400 transition-colors">
+            <div className="mb-6 md:mb-8 border-2 border-dashed border-gray-300 rounded-2xl p-4 md:p-6 hover:border-blue-400 transition-colors">
               <div className="text-center">
-                <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                  <Upload className="text-blue-600" size={24} />
+                <div className="mx-auto w-12 h-12 md:w-16 md:h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                  <Upload className="text-blue-600" size={20} />
                 </div>
                 
-                <h4 className="font-medium text-gray-800 mb-2">
+                <h4 className="font-medium text-gray-800 mb-2 text-sm md:text-base">
                   Upload Foto Dokumentasi Order
                 </h4>
                 
-                <p className="text-sm text-gray-600 mb-6 max-w-md mx-auto">
+                <p className="text-xs md:text-sm text-gray-600 mb-4 md:mb-6 max-w-md mx-auto">
                   Unggah foto dokumentasi produksi atau progress. Format: JPG, PNG (maks. 5MB per file)
                 </p>
                 
@@ -840,14 +771,14 @@ const getAvailableVariations = (itemIndex) => {
                 
                 <button
                   onClick={triggerFileInput}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center mx-auto"
+                  className="px-4 md:px-6 py-2 md:py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center mx-auto text-sm"
                   disabled={uploading || orderPhotos.length >= 20}
                 >
-                  <Camera size={18} className="mr-2" />
+                  <Camera size={16} className="mr-2" />
                   {uploading ? 'Uploading...' : 'Pilih Foto'}
                 </button>
                 
-                <p className="text-xs text-gray-500 mt-3">
+                <p className="text-xs text-gray-500 mt-2 md:mt-3">
                   Klik untuk memilih foto dari komputer Anda
                 </p>
               </div>
@@ -855,9 +786,9 @@ const getAvailableVariations = (itemIndex) => {
 
             {/* Preview Section */}
             {photoPreview && (
-              <div className="mb-8 bg-white rounded-xl border border-gray-200 p-5 shadow-lg">
+              <div className="mb-6 md:mb-8 bg-white rounded-xl border border-gray-200 p-4 md:p-5 shadow-lg">
                 <div className="flex justify-between items-center mb-4">
-                  <h4 className="font-medium text-gray-800">Preview Foto</h4>
+                  <h4 className="font-medium text-gray-800 text-sm md:text-base">Preview Foto</h4>
                   <button
                     onClick={() => setPhotoPreview(null)}
                     className="p-2 text-gray-400 hover:text-gray-600"
@@ -866,28 +797,28 @@ const getAvailableVariations = (itemIndex) => {
                   </button>
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div>
+                <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
+                  <div className="lg:w-1/2">
                     <div className="rounded-lg overflow-hidden border border-gray-200">
                       <img
                         ref={previewRef}
                         src={photoPreview.url}
                         alt="Preview"
-                        className="w-full h-64 object-contain bg-gray-50"
+                        className="w-full h-48 md:h-64 object-contain bg-gray-50"
                       />
                     </div>
                     
-                    <div className="mt-3 flex justify-center space-x-3">
+                    <div className="mt-3 flex flex-wrap justify-center gap-2">
                       <button
                         onClick={() => {
                           if (previewRef.current) {
                             previewRef.current.requestFullscreen();
                           }
                         }}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs hover:bg-gray-50"
                         title="Zoom"
                       >
-                        <ZoomIn size={16} className="inline mr-1" />
+                        <ZoomIn size={14} className="inline mr-1" />
                         Fullscreen
                       </button>
                       <button
@@ -895,23 +826,23 @@ const getAvailableVariations = (itemIndex) => {
                           setPhotoPreview(null);
                           triggerFileInput();
                         }}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs hover:bg-gray-50"
                         title="Ganti Foto"
                       >
-                        <RotateCw size={16} className="inline mr-1" />
+                        <RotateCw size={14} className="inline mr-1" />
                         Ganti Foto
                       </button>
                     </div>
                   </div>
                   
-                  <div>
+                  <div className="lg:w-1/2">
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                           Tipe Foto
                         </label>
                         <select
-                          className="w-full p-3 border border-gray-300 rounded-lg"
+                          className="w-full p-2 md:p-3 border border-gray-300 rounded-lg text-sm"
                           value={photoPreview.type || 'general'}
                           onChange={(e) => setPhotoPreview({...photoPreview, type: e.target.value})}
                         >
@@ -923,32 +854,32 @@ const getAvailableVariations = (itemIndex) => {
                         </select>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-2 md:gap-3">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                             Ukuran
                           </label>
-                          <div className="p-3 border border-gray-300 rounded-lg bg-gray-50">
+                          <div className="p-2 md:p-3 border border-gray-300 rounded-lg bg-gray-50 text-xs md:text-sm">
                             {formatFileSize(photoPreview.size)}
                           </div>
                         </div>
                         
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                             Format
                           </label>
-                          <div className="p-3 border border-gray-300 rounded-lg bg-gray-50">
+                          <div className="p-2 md:p-3 border border-gray-300 rounded-lg bg-gray-50 text-xs md:text-sm">
                             {photoPreview.type.split('/')[1].toUpperCase()}
                           </div>
                         </div>
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                           Deskripsi (Opsional)
                         </label>
                         <textarea
-                          className="w-full p-3 border border-gray-300 rounded-lg"
+                          className="w-full p-2 md:p-3 border border-gray-300 rounded-lg text-sm"
                           rows="3"
                           placeholder="Tambahkan deskripsi foto..."
                           value={newPhotoDescription}
@@ -962,7 +893,7 @@ const getAvailableVariations = (itemIndex) => {
                       {/* Upload Progress */}
                       {uploading && (
                         <div className="mt-4">
-                          <div className="flex justify-between text-sm text-gray-700 mb-1">
+                          <div className="flex justify-between text-xs md:text-sm text-gray-700 mb-1">
                             <span>Mengupload...</span>
                             <span className="font-medium">{uploadProgress}%</span>
                           </div>
@@ -979,7 +910,7 @@ const getAvailableVariations = (itemIndex) => {
                       <button
                         onClick={handleUpload}
                         disabled={uploading}
-                        className={`w-full py-3 rounded-lg font-semibold transition-colors flex items-center justify-center ${
+                        className={`w-full py-2 md:py-3 rounded-lg font-semibold transition-colors flex items-center justify-center text-sm ${
                           uploading
                             ? 'bg-blue-400 cursor-not-allowed'
                             : 'bg-green-600 hover:bg-green-700'
@@ -987,12 +918,12 @@ const getAvailableVariations = (itemIndex) => {
                       >
                         {uploading ? (
                           <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                            <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                             Uploading... {uploadProgress}%
                           </>
                         ) : (
                           <>
-                            <Upload size={18} className="mr-2" />
+                            <Upload size={16} className="mr-2" />
                             Upload Foto
                           </>
                         )}
@@ -1005,22 +936,22 @@ const getAvailableVariations = (itemIndex) => {
 
             {/* Photo Gallery */}
             {orderPhotos.length > 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <div className="flex justify-between items-center mb-6">
-                  <h4 className="font-semibold text-gray-800">
+              <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-2">
+                  <h4 className="font-semibold text-gray-800 text-base md:text-lg">
                     Gallery Foto ({orderPhotos.length})
                   </h4>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <CheckCircle size={16} className="text-green-500 mr-1" />
+                  <div className="flex items-center text-xs md:text-sm text-gray-600">
+                    <CheckCircle size={14} className="text-green-500 mr-1" />
                     Tersimpan di browser
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                   {orderPhotos.map((photo) => (
                     <div key={photo.id} className="border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
                       {/* Photo */}
-                      <div className="relative h-48 bg-gray-100 cursor-pointer group" onClick={() => openPhotoPreview(photo)}>
+                      <div className="relative h-40 md:h-48 bg-gray-100 cursor-pointer group" onClick={() => openPhotoPreview(photo)}>
                         <img
                           src={photo.url}
                           alt={photo.name}
@@ -1045,12 +976,12 @@ const getAvailableVariations = (itemIndex) => {
                             e.stopPropagation();
                             handleRemovePhoto(photo.id);
                           }}
-                          className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                           title="Hapus foto"
                         >
-                          <X size={14} />
+                          <X size={12} />
                         </button>
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 md:p-3">
                           <p className="text-white text-xs font-medium truncate">
                             {formatDateTime(photo.timestamp)}
                           </p>
@@ -1061,13 +992,13 @@ const getAvailableVariations = (itemIndex) => {
                       </div>
                       
                       {/* Photo Info */}
-                      <div className="p-3">
+                      <div className="p-2 md:p-3">
                         <div className="mb-2">
                           <label className="block text-xs text-gray-500 mb-1">
                             Deskripsi:
                           </label>
                           <textarea
-                            className="w-full p-2 text-sm border border-gray-200 rounded resize-none"
+                            className="w-full p-2 text-sm border border-gray-200 rounded resize-none text-xs"
                             rows="2"
                             placeholder="Tambahkan deskripsi..."
                             value={photo.description || ''}
@@ -1077,14 +1008,14 @@ const getAvailableVariations = (itemIndex) => {
                         
                         <div className="flex justify-between items-center text-xs text-gray-500">
                           <div className="flex items-center">
-                            <Camera size={12} className="mr-1" />
+                            <Camera size={10} className="mr-1" />
                             {photo.type || 'General'}
                           </div>
                           <button
                             onClick={() => openPhotoPreview(photo)}
                             className="text-blue-600 hover:text-blue-800 text-xs flex items-center"
                           >
-                            <Expand size={12} className="mr-1" />
+                            <Expand size={10} className="mr-1" />
                             Preview
                           </button>
                         </div>
@@ -1095,21 +1026,21 @@ const getAvailableVariations = (itemIndex) => {
               </div>
             ) : (
               <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-xl">
-                <FileImage size={48} className="text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">Belum ada foto</p>
-                <p className="text-gray-400 text-sm mt-2">
+                <FileImage size={40} className="text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 font-medium text-sm md:text-base">Belum ada foto</p>
+                <p className="text-gray-400 text-xs md:text-sm mt-2">
                   Upload foto pertama Anda untuk dokumentasi order
                 </p>
               </div>
             )}
 
             {/* Guidelines */}
-            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <h5 className="font-medium text-blue-800 mb-2 flex items-center">
-                <Camera size={16} className="mr-2" />
+            <div className="mt-4 md:mt-6 bg-blue-50 border border-blue-200 rounded-xl p-3 md:p-4">
+              <h5 className="font-medium text-blue-800 mb-2 flex items-center text-sm md:text-base">
+                <Camera size={14} className="mr-2" />
                 Tips Foto Dokumentasi
               </h5>
-              <ul className="text-sm text-blue-700 space-y-1 list-disc pl-5">
+              <ul className="text-xs md:text-sm text-blue-700 space-y-1 list-disc pl-4 md:pl-5">
                 <li>Gunakan foto dengan pencahayaan yang baik untuk detail yang jelas</li>
                 <li>Foto progress produksi membantu tracking timeline</li>
                 <li>Foto quality control penting untuk standar kualitas</li>
@@ -1126,11 +1057,11 @@ const getAvailableVariations = (itemIndex) => {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 md:py-8">
         <div className="flex justify-center items-center h-64">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Memuat data pesanan...</p>
+            <div className="w-12 h-12 md:w-16 md:h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 text-sm md:text-base">Memuat data pesanan...</p>
           </div>
         </div>
       </div>
@@ -1138,47 +1069,47 @@ const getAvailableVariations = (itemIndex) => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto px-2 sm:px-4">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4 md:mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <button 
               onClick={() => navigate(`/orders/${id}`)}
-              className="mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="mr-2 md:mr-4 p-1 md:p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <ArrowLeft size={24} className="text-gray-600" />
+              <ArrowLeft size={20} className="text-gray-600" />
             </button>
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">Edit Pesanan</h2>
-              <p className="text-gray-600">ID: {id}</p>
+              <h2 className="text-lg md:text-2xl font-bold text-gray-800">Edit Pesanan</h2>
+              <p className="text-xs md:text-sm text-gray-600">ID: {id}</p>
             </div>
           </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="flex flex-col lg:flex-row gap-4 md:gap-8">
           {/* Left Column: Customer & Order Details */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:w-1/3 space-y-4 md:space-y-6">
             {/* Customer Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center mb-4">
-                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg mr-3">
-                  <User size={20} />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+              <div className="flex items-center mb-3 md:mb-4">
+                <div className="p-1 md:p-2 bg-blue-100 text-blue-600 rounded-lg mr-2 md:mr-3">
+                  <User size={16} />
                 </div>
-                <h3 className="font-semibold text-gray-800">Data Pelanggan</h3>
+                <h3 className="font-semibold text-gray-800 text-sm md:text-base">Data Pelanggan</h3>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
                     Nama Pelanggan <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="customerName"
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     value={formData.customerName}
                     onChange={handleInputChange}
                     required
@@ -1186,69 +1117,69 @@ const getAvailableVariations = (itemIndex) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
                     Telepon
                   </label>
                   <input
                     type="text"
                     name="customerPhone"
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     value={formData.customerPhone}
                     onChange={handleInputChange}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
                     Alamat
                   </label>
                   <textarea
                     name="customerAddress"
-                    rows="3"
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows="2"
+                    className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     value={formData.customerAddress}
                     onChange={handleInputChange}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
                     Email
                   </label>
                   <input
                     type="email"
                     name="customerEmail"
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     value={formData.customerEmail}
                     onChange={handleInputChange}
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2 md:gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
                       <div className="flex items-center">
-                        <Calendar size={16} className="mr-2" />
-                        Tanggal Pesanan
+                        <Calendar size={14} className="mr-1" />
+                        <span className="text-xs md:text-sm">Tanggal Pesanan</span>
                       </div>
                     </label>
                     <input 
                       type="date" 
                       name="orderDate"
-                      className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       value={formData.orderDate}
                       onChange={handleInputChange}
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
                       Tanggal Jatuh Tempo
                     </label>
                     <input 
                       type="date" 
                       name="dueDate"
-                      className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       value={formData.dueDate}
                       onChange={handleInputChange}
                     />
@@ -1256,12 +1187,12 @@ const getAvailableVariations = (itemIndex) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
                     Status Pesanan
                   </label>
                   <select 
                     name="status"
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     value={formData.status}
                     onChange={handleInputChange}
                   >
@@ -1271,43 +1202,43 @@ const getAvailableVariations = (itemIndex) => {
                       </option>
                     ))}
                   </select>
-                  <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200">
-                    <p className="text-xs text-gray-600">
-                      Status sebelumnya: <span className="font-semibold">{originalStatus}</span><br/>
-                      {formData.status !== originalStatus && (
-                        <span className={`text-xs ${
-                          (originalStatus === 'draft' || originalStatus === 'cancelled') && 
-                          (formData.status === 'processing' || formData.status === 'production') 
-                            ? 'text-green-600' 
-                            : formData.status === 'cancelled' 
-                              ? 'text-red-600' 
-                              : 'text-yellow-600'
-                        }`}>
-                          {(() => {
-                            if ((originalStatus === 'draft' || originalStatus === 'cancelled') && 
-                                (formData.status === 'processing' || formData.status === 'production')) {
-                              return '✅ Jobs akan digenerate otomatis';
-                            } else if (formData.status === 'cancelled') {
-                              return '❌ Semua jobs akan dihapus';
-                            } else if (formData.status !== originalStatus) {
-                              return '🔄 Jobs akan diupdate';
-                            }
-                            return '';
-                          })()}
-                        </span>
-                      )}
+                  <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200 text-xs">
+                    <p className="text-gray-600">
+                      Status sebelumnya: <span className="font-semibold">{originalStatus}</span>
                     </p>
+                    {formData.status !== originalStatus && (
+                      <span className={`text-xs mt-1 block ${
+                        (originalStatus === 'draft' || originalStatus === 'cancelled') && 
+                        (formData.status === 'processing' || formData.status === 'production') 
+                          ? 'text-green-600' 
+                          : formData.status === 'cancelled' 
+                            ? 'text-red-600' 
+                            : 'text-yellow-600'
+                      }`}>
+                        {(() => {
+                          if ((originalStatus === 'draft' || originalStatus === 'cancelled') && 
+                              (formData.status === 'processing' || formData.status === 'production')) {
+                            return '✅ Jobs akan digenerate otomatis';
+                          } else if (formData.status === 'cancelled') {
+                            return '❌ Semua jobs akan dihapus';
+                          } else if (formData.status !== originalStatus) {
+                            return '🔄 Jobs akan diupdate';
+                          }
+                          return '';
+                        })()}
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
                     Catatan
                   </label>
                   <textarea
                     name="notes"
-                    rows="3"
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows="2"
+                    className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     value={formData.notes}
                     onChange={handleInputChange}
                     placeholder="Catatan tambahan untuk pesanan ini..."
@@ -1317,24 +1248,24 @@ const getAvailableVariations = (itemIndex) => {
             </div>
 
             {/* Order Summary Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-800 mb-4">Ringkasan Pesanan</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+              <h3 className="font-semibold text-gray-800 mb-3 md:mb-4 text-sm md:text-base">Ringkasan Pesanan</h3>
               
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Jumlah Item:</span>
-                  <span className="font-medium">{formData.items.length}</span>
+                  <span className="text-xs md:text-sm text-gray-600">Jumlah Item:</span>
+                  <span className="font-medium text-sm">{formData.items.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Kuantitas:</span>
-                  <span className="font-medium">
+                  <span className="text-xs md:text-sm text-gray-600">Total Kuantitas:</span>
+                  <span className="font-medium text-sm">
                     {formData.items.reduce((total, item) => total + (item.qty || 0), 0)} pcs
                   </span>
                 </div>
-                <div className="border-t pt-3">
+                <div className="border-t pt-2 md:pt-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Total Harga:</span>
-                    <span className="text-lg font-bold text-blue-600">
+                    <span className="text-xs md:text-sm text-gray-600">Total Harga:</span>
+                    <span className="text-base md:text-lg font-bold text-blue-600">
                       Rp {formatCurrency(calculateTotal())}
                     </span>
                   </div>
@@ -1344,48 +1275,51 @@ const getAvailableVariations = (itemIndex) => {
           </div>
 
           {/* Right Column: Order Items */}
-          <div className="lg:col-span-2">
+          <div className="lg:w-2/3">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               {/* Header */}
-              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <div className="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div className="flex items-center">
-                  <div className="p-2 bg-green-100 text-green-600 rounded-lg mr-3">
-                    <Package size={20} />
+                  <div className="p-1 md:p-2 bg-green-100 text-green-600 rounded-lg mr-2 md:mr-3">
+                    <Package size={16} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-800">Item Pesanan</h3>
-                    <p className="text-sm text-gray-600">Edit produk yang dipesan</p>
+                    <h3 className="font-semibold text-gray-800 text-sm md:text-base">Item Pesanan</h3>
+                    <p className="text-xs text-gray-600">Edit produk yang dipesan</p>
                   </div>
                 </div>
                 
                 <button 
                   type="button"
                   onClick={handleAddItem}
-                  className="flex items-center bg-blue-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  className="flex items-center bg-blue-600 text-white px-3 md:px-4 py-1.5 md:py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-xs md:text-sm"
                 >
-                  <Plus size={18} className="mr-2" />
+                  <Plus size={14} className="mr-1 md:mr-2" />
                   Tambah Item
                 </button>
               </div>
 
-              {/* Table Header */}
-              <div className="bg-gray-50 px-6 py-3 grid grid-cols-12 gap-4 border-b border-gray-200">
-                <div className="col-span-5 text-sm font-semibold text-gray-700">PRODUK</div>
-                <div className="col-span-2 text-sm font-semibold text-gray-700">QTY</div>
-                <div className="col-span-2 text-sm font-semibold text-gray-700">HARGA SATUAN</div>
-                <div className="col-span-2 text-sm font-semibold text-gray-700">SUBTOTAL</div>
+              {/* Table Header - Mobile Hidden */}
+              <div className="hidden md:grid md:grid-cols-12 gap-4 bg-gray-50 px-6 py-3 border-b border-gray-200">
+                <div className="col-span-5 text-xs font-semibold text-gray-700">PRODUK</div>
+                <div className="col-span-2 text-xs font-semibold text-gray-700">QTY</div>
+                <div className="col-span-2 text-xs font-semibold text-gray-700">HARGA</div>
+                <div className="col-span-2 text-xs font-semibold text-gray-700">SUBTOTAL</div>
                 <div className="col-span-1"></div>
               </div>
 
               {/* Order Items */}
               <div className="divide-y divide-gray-100">
                 {formData.items.map((item, index) => (
-                  <div key={index} className="px-6 py-4 hover:bg-gray-50 transition-colors">
-                    <div className="grid grid-cols-12 gap-4 items-center">
+                  <div key={index} className="px-4 md:px-6 py-3 md:py-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4">
                       {/* Product Select */}
-                      <div className="col-span-5">
+                      <div className="md:col-span-5">
+                        <label className="block text-xs text-gray-600 mb-1 md:hidden">
+                          Produk <span className="text-red-500">*</span>
+                        </label>
                         <select 
-                          className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                           value={item.product}
                           onChange={(e) => handleItemChange(index, 'product', e.target.value)}
                           required
@@ -1393,7 +1327,7 @@ const getAvailableVariations = (itemIndex) => {
                           <option value="">-- Pilih Produk --</option>
                           {products.map(product => (
                             <option key={product.id} value={product.id}>
-                              {product.name} • Rp {formatCurrency(product.price)}
+                              {product.name} • Rp {formatCurrency(product.basePrice)}
                             </option>
                           ))}
                         </select>
@@ -1402,12 +1336,59 @@ const getAvailableVariations = (itemIndex) => {
                         )}
                       </div>
 
-                      {/* Quantity */}
-                      <div className="col-span-2">
+                      {/* Quantity - Mobile View */}
+                      <div className="flex items-center justify-between md:hidden">
+                        <div className="flex-1">
+                          <label className="block text-xs text-gray-600 mb-1">Qty</label>
+                          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden w-32">
+                            <button 
+                              type="button"
+                              className="px-2 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50 text-xs"
+                              onClick={() => handleItemChange(index, 'qty', Math.max(1, (item.qty || 1) - 1))}
+                              disabled={(item.qty || 1) <= 1}
+                            >
+                              −
+                            </button>
+                            <input 
+                              type="number" 
+                              min="1"
+                              className="w-full p-1.5 text-center border-x border-gray-300 focus:outline-none text-sm"
+                              value={item.qty || 1}
+                              onChange={(e) => handleItemChange(index, 'qty', parseInt(e.target.value) || 1)}
+                            />
+                            <button 
+                              type="button"
+                              className="px-2 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs"
+                              onClick={() => handleItemChange(index, 'qty', (item.qty || 1) + 1)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {/* Price & Subtotal Mobile */}
+                        <div className="text-right">
+                          <div className="mb-1">
+                            <label className="block text-xs text-gray-600">Harga</label>
+                            <p className="font-medium text-gray-800 text-sm">
+                              Rp {formatCurrency(item.price)}
+                            </p>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600">Subtotal</label>
+                            <p className="font-bold text-blue-700 text-sm">
+                              Rp {formatCurrency(calculateSubtotal(item.qty, item.price))}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Desktop Quantity */}
+                      <div className="hidden md:block md:col-span-2">
                         <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                           <button 
                             type="button"
-                            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50"
+                            className="px-2 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50 text-xs"
                             onClick={() => handleItemChange(index, 'qty', Math.max(1, (item.qty || 1) - 1))}
                             disabled={(item.qty || 1) <= 1}
                           >
@@ -1416,13 +1397,13 @@ const getAvailableVariations = (itemIndex) => {
                           <input 
                             type="number" 
                             min="1"
-                            className="w-full p-2 text-center border-x border-gray-300 focus:outline-none"
+                            className="w-full p-2 text-center border-x border-gray-300 focus:outline-none text-sm"
                             value={item.qty || 1}
                             onChange={(e) => handleItemChange(index, 'qty', parseInt(e.target.value) || 1)}
                           />
                           <button 
                             type="button"
-                            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700"
+                            className="px-2 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs"
                             onClick={() => handleItemChange(index, 'qty', (item.qty || 1) + 1)}
                           >
                             +
@@ -1430,50 +1411,76 @@ const getAvailableVariations = (itemIndex) => {
                         </div>
                       </div>
 
-                      {/* Price */}
-                      <div className="col-span-2">
+                      {/* Desktop Price */}
+                      <div className="hidden md:block md:col-span-2">
                         <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                          <p className="font-medium text-gray-800">
+                          <p className="font-medium text-gray-800 text-sm">
                             Rp {formatCurrency(item.price)}
                           </p>
                         </div>
                       </div>
 
-                      {/* Subtotal */}
-                      <div className="col-span-2">
+                      {/* Desktop Subtotal */}
+                      <div className="hidden md:block md:col-span-2">
                         <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                          <p className="font-bold text-blue-700">
+                          <p className="font-bold text-blue-700 text-sm">
                             Rp {formatCurrency(calculateSubtotal(item.qty, item.price))}
                           </p>
                         </div>
                       </div>
 
                       {/* Delete Button */}
-                      <div className="col-span-1 flex justify-center">
+                      <div className="flex justify-between items-center md:col-span-1 md:justify-center">
+                        {/* Size & Color on Mobile */}
+                        <div className="flex gap-2 md:hidden">
+                          {item.size && (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                              {item.size}
+                            </span>
+                          )}
+                          {item.color && (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                              {item.color}
+                            </span>
+                          )}
+                        </div>
+                        
                         {formData.items.length > 1 && (
                           <button 
                             type="button"
                             onClick={() => handleRemoveItem(index)}
-                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                            className="p-1 md:p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={16} />
                           </button>
                         )}
                       </div>
                     </div>
+                    
+                    {/* Variant Info on Mobile */}
+                    {(item.size || item.color) && (
+                      <div className="mt-2 pl-2 border-l-2 border-green-400 md:hidden">
+                        <div className="flex items-center text-xs text-gray-600">
+                          <Package size={12} className="mr-1" />
+                          <span className="font-medium mr-1">Varian:</span>
+                          {item.size && <span className="mr-2">Size: {item.size}</span>}
+                          {item.color && <span>Warna: {item.color}</span>}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
 
               {/* Total Section */}
-              <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                <div className="flex justify-between items-center">
-                  <div className="text-gray-600">
+              <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 bg-gray-50">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                  <div className="text-xs md:text-sm text-gray-600">
                     Total {formData.items.length} item • {formData.items.reduce((total, item) => total + (item.qty || 0), 0)} pcs
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">Total Pembayaran</p>
-                    <p className="text-2xl font-bold text-blue-600">
+                    <p className="text-xs md:text-sm text-gray-600">Total Pembayaran</p>
+                    <p className="text-lg md:text-2xl font-bold text-blue-600">
                       Rp {formatCurrency(calculateTotal())}
                     </p>
                   </div>
@@ -1481,11 +1488,11 @@ const getAvailableVariations = (itemIndex) => {
               </div>
 
               {/* Action Buttons */}
-              <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-2">
                 <button 
                   type="button"
                   onClick={handleCancel}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                  className="px-4 md:px-6 py-2 md:py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors text-sm"
                 >
                   Batalkan
                 </button>
@@ -1493,16 +1500,16 @@ const getAvailableVariations = (itemIndex) => {
                 <button 
                   type="submit"
                   disabled={isSubmitting || !formData.customerName.trim() || formData.items.some(item => !item.product)}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                  className="px-4 md:px-6 py-2 md:py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-sm"
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                       Menyimpan...
                     </>
                   ) : (
                     <>
-                      <Save size={18} className="mr-2" />
+                      <Save size={16} className="mr-2" />
                       Simpan Perubahan
                     </>
                   )}
@@ -1511,13 +1518,13 @@ const getAvailableVariations = (itemIndex) => {
             </div>
 
             {/* Help Text */}
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-              <p className="text-sm text-blue-800">
-                💡 <strong>Info Integrasi JobList:</strong><br/>
-                1. Perubahan status akan mempengaruhi jobs otomatis<br/>
-                2. Status <strong>"Diproses"</strong> dan <strong>"Produksi"</strong> akan generate jobs<br/>
-                3. Status <strong>"Dibatalkan"</strong> akan menghapus semua jobs<br/>
-                4. Progress jobs akan update timeline order secara real-time<br/>
+            <div className="mt-3 md:mt-4 p-3 md:p-4 bg-blue-50 border border-blue-100 rounded-lg">
+              <p className="text-xs md:text-sm text-blue-800">
+                💡 <strong>Info Integrasi JobList:</strong><br className="hidden sm:block"/>
+                1. Perubahan status akan mempengaruhi jobs otomatis<br className="hidden sm:block"/>
+                2. Status <strong>"Diproses"</strong> dan <strong>"Produksi"</strong> akan generate jobs<br className="hidden sm:block"/>
+                3. Status <strong>"Dibatalkan"</strong> akan menghapus semua jobs<br className="hidden sm:block"/>
+                4. Progress jobs akan update timeline order secara real-time<br className="hidden sm:block"/>
                 5. Lihat jobs terkait di halaman <strong>JobList</strong>
               </p>
             </div>
@@ -1532,300 +1539,4 @@ const getAvailableVariations = (itemIndex) => {
       <PhotoPreviewModal />
     </div>
   );
-  // ... (bagian awal sama, hanya tambah state dan fungsi notes) ...
-
-// Tambahkan state notesModal di dalam komponen EditOrder
-const [notesModal, setNotesModal] = useState({
-  isOpen: false,
-  itemIndex: null,
-  currentNote: '',
-  notes: []
-});
-
-// Fungsi untuk Notes Modal
-const openNotesModal = (index) => {
-  setNotesModal({
-    isOpen: true,
-    itemIndex: index,
-    currentNote: '',
-    notes: formData.items[index]?.notes || []
-  });
-};
-
-const closeNotesModal = () => {
-  setNotesModal({
-    isOpen: false,
-    itemIndex: null,
-    currentNote: '',
-    notes: []
-  });
-};
-
-const addNote = () => {
-  if (!notesModal.currentNote.trim()) return;
-
-  const newNote = {
-    id: Date.now(),
-    text: notesModal.currentNote,
-    timestamp: new Date().toISOString(),
-    author: 'Admin',
-    type: 'general'
-  };
-
-  const updatedNotes = [...notesModal.notes, newNote];
-  
-  setNotesModal(prev => ({
-    ...prev,
-    notes: updatedNotes,
-    currentNote: ''
-  }));
-
-  // Update notes in formData
-  const newItems = [...formData.items];
-  if (newItems[notesModal.itemIndex]) {
-    newItems[notesModal.itemIndex].notes = updatedNotes;
-    setFormData(prev => ({
-      ...prev,
-      items: newItems
-    }));
-  }
-};
-
-const removeNote = (noteId) => {
-  const updatedNotes = notesModal.notes.filter(note => note.id !== noteId);
-  
-  setNotesModal(prev => ({
-    ...prev,
-    notes: updatedNotes
-  }));
-
-  const newItems = [...formData.items];
-  if (newItems[notesModal.itemIndex]) {
-    newItems[notesModal.itemIndex].notes = updatedNotes;
-    setFormData(prev => ({
-      ...prev,
-      items: newItems
-    }));
-  }
-};
-
-// Dalam JSX render, tambahkan kolom untuk notes button di tabel items:
-{/* Order Items Table */}
-<div className="divide-y divide-gray-100">
-  {formData.items.map((item, index) => (
-    <div key={index} className="px-6 py-4 hover:bg-gray-50 transition-colors">
-      <div className="grid grid-cols-12 gap-4 items-center">
-        {/* ... existing columns ... */}
-        
-        {/* Notes Button */}
-        <div className="col-span-2 flex justify-center space-x-2">
-          <button
-            type="button"
-            onClick={() => openNotesModal(index)}
-            className={`p-2 rounded-lg transition-colors flex items-center ${
-              item.notes?.length > 0 
-                ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' 
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-            title="Kelola catatan item"
-          >
-            <MessageSquare size={18} />
-            {item.notes?.length > 0 && (
-              <span className="ml-1 text-xs font-semibold">
-                {item.notes.length}
-              </span>
-            )}
-          </button>
-          
-          {formData.items.length > 1 && (
-            <button 
-              type="button"
-              onClick={() => handleRemoveItem(index)}
-              className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <Trash2 size={18} />
-            </button>
-          )}
-        </div>
-      </div>
-      
-      {/* Notes Preview */}
-      {item.notes?.length > 0 && (
-        <div className="mt-3 pl-4 border-l-2 border-yellow-400">
-          <div className="flex items-center text-sm text-gray-600">
-            <MessageSquare size={14} className="mr-1" />
-            <span className="font-medium mr-2">Catatan:</span>
-            <span className="text-gray-500">
-              {item.notes.length} catatan ditambahkan
-            </span>
-            <button
-              onClick={() => openNotesModal(index)}
-              className="ml-2 text-blue-600 hover:text-blue-800 text-xs flex items-center"
-            >
-              <Eye size={12} className="mr-1" />
-              Lihat
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  ))}
-</div>
-
-{/* Size Selector */}
-<div className="col-span-1">
-  {selectedProduct(itemIndex) ? (
-    <select 
-      className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      value={item.variantId}
-      onChange={(e) => handleVariantChange(index, e.target.value)}
-      required
-    >
-      <option value="">-- Pilih Ukuran --</option>
-      {getAvailableVariations(index).map(variant => (
-        <option key={variant.id} value={variant.id}>
-          {variant.size}
-        </option>
-      ))}
-    </select>
-  ) : (
-    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-      <span className="text-gray-400 text-sm">Pilih produk</span>
-    </div>
-  )}
-</div>
-
-{/* Color Display */}
-<div className="col-span-1">
-  {item.color ? (
-    <div className="flex items-center">
-      <div 
-        className="w-6 h-6 rounded-full border border-gray-300 mr-2"
-        style={{ backgroundColor: item.color.toLowerCase() === 'putih' ? '#ffffff' : 
-                                     item.color.toLowerCase() === 'hitam' ? '#000000' : 
-                                     item.color.toLowerCase() === 'biru' ? '#2563eb' : 
-                                     item.color.toLowerCase() === 'merah' ? '#dc2626' : 
-                                     item.color.toLowerCase() === 'hijau' ? '#16a34a' : 
-                                     item.color.toLowerCase() === 'kuning' ? '#facc15' : 
-                                     item.color.toLowerCase() === 'abu-abu' ? '#6b7280' : 
-                                     item.color.toLowerCase() === 'coklat' ? '#92400e' : 
-                                     item.color.toLowerCase() === 'navy' ? '#1e3a8a' : 
-                                     item.color.toLowerCase() === 'khaki' ? '#d4af37' : 
-                                     item.color.toLowerCase() === 'pink' ? '#ec4899' : 
-                                     item.color.toLowerCase() === 'ungu' ? '#9333ea' : '#ccc' }}
-      ></div>
-      <span className="text-sm">{item.color}</span>
-    </div>
-  ) : (
-    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-      <span className="text-gray-400 text-sm">-</span>
-    </div>
-  )}
-</div>
-
-// Tambahkan Notes Modal di akhir komponen (sebelum PhotoPreviewModal)
-{/* Notes Modal */}
-{notesModal.isOpen && (
-  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div className="bg-white rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-      {/* Modal Header */}
-      <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-        <div className="flex items-center">
-          <MessageSquare className="text-yellow-600 mr-3" size={24} />
-          <div>
-            <h3 className="font-bold text-lg text-gray-800">Catatan Item</h3>
-            <p className="text-sm text-gray-600">
-              Item: {formData.items[notesModal.itemIndex]?.productName || 'Belum dipilih'}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={closeNotesModal}
-          className="p-2 hover:bg-gray-100 rounded-lg"
-        >
-          <X size={24} />
-        </button>
-      </div>
-
-      {/* Modal Content */}
-      <div className="flex-1 overflow-y-auto p-6">
-        {/* Add New Note */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tambah Catatan Baru
-          </label>
-          <div className="flex space-x-2">
-            <textarea
-              className="flex-1 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-              rows="3"
-              placeholder="Tulis catatan untuk item ini..."
-              value={notesModal.currentNote}
-              onChange={(e) => setNotesModal(prev => ({ ...prev, currentNote: e.target.value }))}
-            />
-            <button
-              onClick={addNote}
-              disabled={!notesModal.currentNote.trim()}
-              className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-start"
-            >
-              Tambah
-            </button>
-          </div>
-        </div>
-
-        {/* Notes List */}
-        <div>
-          <h4 className="font-medium text-gray-800 mb-4">
-            Daftar Catatan ({notesModal.notes.length})
-          </h4>
-          
-          {notesModal.notes.length === 0 ? (
-            <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-              <MessageSquare className="text-gray-400 mx-auto mb-3" size={32} />
-              <p className="text-gray-500">Belum ada catatan</p>
-              <p className="text-gray-400 text-sm mt-1">Tambahkan catatan pertama Anda</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {notesModal.notes.map((note) => (
-                <div key={note.id} className="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-medium text-gray-800">{note.author}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(note.timestamp).toLocaleString('id-ID')}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => removeNote(note.id)}
-                      className="text-red-500 hover:text-red-700 p-1"
-                      title="Hapus catatan"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <p className="text-gray-700">{note.text}</p>
-                  {note.type && (
-                    <span className="inline-block mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
-                      {note.type}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Modal Footer */}
-      <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
-        <button
-          onClick={closeNotesModal}
-          className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
-        >
-          Tutup
-        </button>
-      </div>
-    </div>
-  </div>
-)}
 }

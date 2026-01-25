@@ -1,4 +1,4 @@
-/* D:\New folder\garment-admin\src\index.css */
+/* D:/New folder/garment-admin/src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -63,12 +63,12 @@ body {
 
 /* Timeline Component Classes */
 .timeline-connector {
-  @apply transition-all duration-300;
+  transition: all 0.3s;
   animation: connector-grow 0.5s ease-out;
 }
 
 .timeline-step-completed .timeline-connector {
-  @apply bg-green-500;
+  background-color: #10b981;
 }
 
 .timeline-step-active {
@@ -81,38 +81,56 @@ body {
 
 /* Timeline Input Styles */
 .timeline-time-input {
-  @apply text-sm font-mono transition-all duration-200;
+  font-size: 0.875rem;
+  font-family: monospace;
+  transition: all 0.2s;
 }
 
 .timeline-time-input:focus {
-  @apply ring-2 ring-blue-500 border-blue-500;
+  outline: 2px solid #3b82f6;
+  border-color: #3b82f6;
 }
 
 .timeline-time-label {
-  @apply text-xs font-medium text-gray-700 flex items-center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+  display: flex;
+  align-items: center;
 }
 
 /* Timeline Status Badges */
 .timeline-status-badge {
-  @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .timeline-status-current {
-  @apply bg-blue-100 text-blue-800 border border-blue-200;
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
 }
 
 .timeline-status-completed {
-  @apply bg-green-100 text-green-800 border border-green-200;
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
 }
 
 .timeline-status-pending {
-  @apply bg-gray-100 text-gray-800 border border-gray-200;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
 }
 
 /* Timeline Responsive */
 @media (max-width: 768px) {
   .timeline-step-container {
-    @apply flex-col;
+    flex-direction: column;
   }
   
   .timeline-connector-mobile {
@@ -120,22 +138,23 @@ body {
   }
   
   .timeline-time-inputs {
-    @apply grid-cols-1 !important;
+    grid-template-columns: 1fr !important;
   }
   
   .timeline-step-content {
-    @apply ml-0 mt-3;
+    margin-left: 0;
+    margin-top: 0.75rem;
   }
 }
 
 /* Print Styles for Timeline */
 @media print {
   .timeline-no-print {
-    @apply !hidden;
+    display: none !important;
   }
   
   .timeline-print-only {
-    @apply !block;
+    display: block !important;
   }
   
   .timeline-step {
@@ -143,39 +162,55 @@ body {
   }
   
   .timeline-time-input {
-    @apply border-none bg-transparent p-0;
+    border: none;
+    background: transparent;
+    padding: 0;
   }
 }
 
 /* Timeline Progress Bar */
 .timeline-progress-bar {
-  @apply w-full bg-gray-200 rounded-full h-2;
+  width: 100%;
+  background-color: #e5e7eb;
+  border-radius: 0.25rem;
+  height: 0.5rem;
 }
 
 .timeline-progress-fill {
-  @apply h-2 rounded-full transition-all duration-500;
+  height: 0.5rem;
+  border-radius: 0.25rem;
+  transition: all 0.5s;
 }
 
 .timeline-progress-fill-completed {
-  @apply bg-green-500;
+  background-color: #10b981;
 }
 
 .timeline-progress-fill-inprogress {
-  @apply bg-blue-500;
+  background-color: #3b82f6;
 }
 
 /* Timeline Hover Effects */
 .timeline-step-hover:hover {
-  @apply transform -translate-y-1 transition-transform duration-200;
+  transform: translateY(-0.25rem);
+  transition: transform 0.2s;
 }
 
 .timeline-step-hover:hover .timeline-step-card {
-  @apply shadow-lg border-blue-200;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border-color: #bfdbfe;
 }
 
 /* Timeline Duration Display */
 .timeline-duration-badge {
-  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-gray-100 text-gray-700;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-family: monospace;
+  background-color: #f3f4f6;
+  color: #374151;
 }
 
 /* ==================== */
@@ -202,25 +237,6 @@ header {
   .header-content {
     font-size: 0.875rem;
   }
-}
-
-.truncate-text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 150px;
-}
-
-.search-input {
-  font-size: 0.875rem;
-  padding-top: 0.375rem;
-  padding-bottom: 0.375rem;
-}
-
-.container-adjust {
-  transform: scale(0.8);
-  transform-origin: 0 0;
-  width: 125%;
 }
 
 /* ==================== */
@@ -758,13 +774,44 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .department-badge {
-  @apply px-2 py-1 rounded text-xs font-semibold;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .progress-bar {
-  @apply w-full bg-gray-200 rounded-full h-2.5;
+  width: 100%;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  height: 0.625rem;
 }
 
 .progress-fill {
-  @apply h-2.5 rounded-full transition-all duration-300;
+  height: 0.625rem;
+  border-radius: 9999px;
+  transition: all 0.3s;
 }
+
+/* ==================== */
+/* FIX UNTUK ERROR DI BARIS 214 */
+/* ==================== */
+/* Hapus kode berikut jika ada di baris 214: */
+/* .truncate-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.search-input {
+  font-size: 0.875rem;
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+
+.container-adjust {
+  transform: scale(0.8);
+  transform-origin: 0 0;
+  width: 125%;
+} */

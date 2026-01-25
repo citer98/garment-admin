@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  name          String
+  password      String
+  role          String         // 'admin', 'manager', 'operator', 'customer', 'qc'
+  phone         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  orders        Order[]
+  timelines     Timeline[]     // Tambahkan ini
+  notifications Notification[] // Tambahkan ini
+}
+
+model Order {
+  id            Int       @id @default(autoincrement())
+  orderNumber   String    @unique
+  customerId    Int
+  customerName  String
+  productType   String    // 'shirt', 'pants', 'jacket', 'dress', etc.
+  quantity      Int
+  deadline      DateTime
+  status        String    @default("pending") // 'pending', 'cutting', 'sewing', 'finishing', 'quality_check', 'completed', 'cancelled'
+  priority      String    @default("normal")  // 'low', 'normal', 'high', 'urgent'
+  notes         String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  completedAt   DateTime?
+  
+  customer      User      @relation(fields: [customerId], references: [id])
+  timelines     Timeline[]
+}
+
+model Timeline {
+  id            Int       @id @default(autoincrement())
+  orderId       Int
+  step          String    // 'cutting', 'sewing', 'finishing', 'quality_check'
+  status        String    @default("pending") // 'pending', 'in_progress', 'completed', 'delayed'
+  startedAt     DateTime?
+  completedAt   DateTime?
+  operatorId    Int?
+  notes         String?
+  
+  createdAt     DateTime  @default(now())
+  
+  order         Order     @relation(fields: [orderId], references: [id])
+  operator      User?     @relation(fields: [operatorId], references: [id])
+}
+
+model Notification {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  type          String    // 'order_update', 'deadline', 'system', 'message'
+  title         String
+  message       String
+  isRead        Boolean   @default(false)
+  relatedId     Int?      // ID order atau terkait lainnya
+  
+  createdAt     DateTime  @default(now())
+  
+  user          User      @relation(fields: [userId], references: [id])
+}

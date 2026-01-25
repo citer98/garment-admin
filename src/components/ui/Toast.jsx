@@ -5,7 +5,8 @@ const Toast = ({
   message, 
   type = 'success', 
   duration = 5000,
-  onClose 
+  onClose,
+  position = 'top-right'
 }) => {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -32,20 +33,35 @@ const Toast = ({
     warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
   };
 
+  const positions = {
+    'top-right': 'top-4 right-4',
+    'top-left': 'top-4 left-4',
+    'bottom-right': 'bottom-4 right-4',
+    'bottom-left': 'bottom-4 left-4',
+    'top-center': 'top-4 left-1/2 transform -translate-x-1/2',
+    'bottom-center': 'bottom-4 left-1/2 transform -translate-x-1/2',
+  };
+
   if (!isVisible) return null;
 
   return (
-    <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg border shadow-lg ${colors[type]} flex items-center space-x-3 animate-slide-in`}>
-      <div className="flex-shrink-0">
+    <div className={`
+      fixed ${positions[position]} z-50 max-w-[calc(100vw-2rem)] w-full sm:max-w-sm
+      p-4 rounded-lg border shadow-lg ${colors[type]} flex items-start space-x-3
+      animate-slide-in
+    `}>
+      <div className="flex-shrink-0 mt-0.5">
         {icons[type]}
       </div>
-      <p className="font-medium">{message}</p>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm sm:text-base break-words">{message}</p>
+      </div>
       <button
         onClick={() => {
           setIsVisible(false);
           setTimeout(onClose, 300);
         }}
-        className="flex-shrink-0 ml-2 hover:opacity-70"
+        className="flex-shrink-0 ml-2 hover:opacity-70 p-1 -mt-1 -mr-1"
       >
         <X className="w-4 h-4" />
       </button>
@@ -56,9 +72,9 @@ const Toast = ({
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
-  const showToast = (message, type = 'success') => {
+  const showToast = (message, type = 'success', position = 'top-right') => {
     const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
+    setToasts(prev => [...prev, { id, message, type, position }]);
     return id;
   };
 
@@ -69,35 +85,76 @@ export const ToastProvider = ({ children }) => {
   return (
     <>
       {children}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
-        {toasts.map(toast => (
-          <Toast
-            key={toast.id}
-            message={toast.message}
-            type={toast.type}
-            onClose={() => removeToast(toast.id)}
-          />
-        ))}
-      </div>
+      {toasts.map(toast => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          position={toast.position}
+          onClose={() => removeToast(toast.id)}
+        />
+      ))}
     </>
   );
 };
 
 // Hook untuk menggunakan toast
 export const useToast = () => {
-  const [toasts, setToasts] = useState([]);
+  const showToast = (message, type = 'success', position = 'top-right') => {
+    const toastContainer = document.getElementById('toast-container');
+    
+    if (!toastContainer) {
+      console.warn('Toast container not found');
+      return;
+    }
 
-  const toast = (message, type = 'success') => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
+    const toast = document.createElement('div');
+    toast.className = `
+      fixed ${positions[position]} z-50 max-w-[calc(100vw-2rem)] w-full sm:max-w-sm
+      p-4 rounded-lg border shadow-lg ${colors[type]} flex items-start space-x-3
+      animate-slide-in
+    `;
     
-    // Auto remove after 5 seconds
+    toast.innerHTML = `
+      <div class="flex-shrink-0 mt-0.5">
+        ${icons[type].outerHTML}
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-medium text-sm sm:text-base break-words">${message}</p>
+      </div>
+      <button class="flex-shrink-0 ml-2 hover:opacity-70 p-1 -mt-1 -mr-1 close-toast">
+        ${X.outerHTML}
+      </button>
+    `;
+
+    toastContainer.appendChild(toast);
+
+    // Auto remove
     setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
+      if (toast.parentNode) {
+        toast.classList.remove('animate-slide-in');
+        toast.classList.add('animate-slide-out');
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toastContainer.removeChild(toast);
+          }
+        }, 300);
+      }
     }, 5000);
-    
-    return id;
+
+    // Close button
+    toast.querySelector('.close-toast').addEventListener('click', () => {
+      toast.classList.remove('animate-slide-in');
+      toast.classList.add('animate-slide-out');
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toastContainer.removeChild(toast);
+        }
+      }, 300);
+    });
+
+    return toast;
   };
 
-  return { toast, toasts };
+  return { showToast };
 };

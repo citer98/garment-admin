@@ -29,6 +29,7 @@ export default {
         'lg': '1024px',
         'xl': '1280px',
         '2xl': '1536px',
+        '3xl': '1920px',
       },
       fontSize: {
         'xs': ['0.75rem', { lineHeight: '1rem' }],
@@ -85,11 +86,12 @@ export default {
         '2xl': '1rem',
         '3xl': '1.5rem',
       },
-      // TAMBAHKAN ANIMATION CONFIG DI SINI
       animation: {
         'timeline-pulse': 'timeline-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'timeline-pulse-slow': 'timeline-pulse 3s ease-in-out infinite',
         'connector-grow': 'connector-grow 0.5s ease-out',
+        'slide-in': 'slideIn 0.3s ease-out',
+        'slide-out': 'slideOut 0.3s ease-in',
       },
       keyframes: {
         'timeline-pulse': {
@@ -99,7 +101,15 @@ export default {
         'connector-grow': {
           '0%': { height: '0', opacity: '0' },
           '100%': { height: '100%', opacity: '1' },
-        }
+        },
+        slideIn: {
+          '0%': { transform: 'translateX(100%)', opacity: 0 },
+          '100%': { transform: 'translateX(0)', opacity: 1 },
+        },
+        slideOut: {
+          '0%': { transform: 'translateX(0)', opacity: 1 },
+          '100%': { transform: 'translateX(100%)', opacity: 0 },
+        },
       },
     },
   },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calendar, User, Package, ArrowLeft, MessageSquare, Eye, Upload, FileText, Check, X } from 'lucide-react';
+import { Plus, Trash2, Calendar, User, Package, ArrowLeft, MessageSquare, Eye, Upload, FileText, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { syncOrderWithJobs } from '../utils/jobOrderSync';
 
@@ -21,6 +21,7 @@ export default function CreateOrder() {
   const [orderDate, setOrderDate] = useState(today);
   const [orderStatus, setOrderStatus] = useState('draft');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   // State untuk Notes Modal
   const [notesModal, setNotesModal] = useState({
@@ -37,8 +38,19 @@ export default function CreateOrder() {
     previewData: [],
     mapping: {},
     errors: [],
-    step: 'upload' // 'upload', 'mapping', 'preview'
+    step: 'upload'
   });
+
+  // Deteksi ukuran layar
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Helper function untuk format currency
   const formatCurrency = (value) => {
@@ -130,10 +142,6 @@ export default function CreateOrder() {
     { value: 'completed', label: 'Selesai' },
     { value: 'delivered', label: 'Terkirim' },
   ];
-
-  // Available sizes and colors
-  const sizeOptions = ['S', 'M', 'L', 'XL', '28', '30', '32', '34', '36'];
-  const colorOptions = ['Putih', 'Hitam', 'Biru', 'Merah', 'Hijau', 'Kuning', 'Abu-abu', 'Coklat', 'Navy', 'Khaki', 'Pink', 'Ungu'];
 
   // Simulasi data pelanggan
   useEffect(() => {
@@ -539,54 +547,246 @@ export default function CreateOrder() {
     return product ? product.variations : [];
   };
 
+  // Komponen Item Card untuk Mobile
+  const MobileItemCard = ({ item, index }) => {
+    const product = selectedProduct(index);
+    const variations = getAvailableVariations(index);
+    
+    return (
+      <div key={index} className="bg-white rounded-lg border border-gray-200 p-4 mb-3">
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <h4 className="font-semibold text-gray-800">Item {index + 1}</h4>
+            {item.productName && (
+              <p className="text-sm text-gray-600">{item.productName}</p>
+            )}
+          </div>
+          {items.length > 1 && (
+            <button 
+              type="button"
+              onClick={() => {
+                const newItems = items.filter((_, i) => i !== index);
+                setItems(newItems);
+              }}
+              className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg"
+            >
+              <Trash2 size={18} />
+            </button>
+          )}
+        </div>
+        
+        <div className="space-y-3">
+          {/* Product Select */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">
+              Produk
+            </label>
+            <select 
+              className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={item.product}
+              onChange={(e) => handleItemChange(index, 'product', e.target.value)}
+              required
+            >
+              <option value="">-- Pilih Produk --</option>
+              {products.map(product => (
+                <option key={product.id} value={product.id}>
+                  {product.name} • Rp {formatCurrency(product.basePrice)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Variant Selection */}
+          {product && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                Varian (Size & Warna)
+              </label>
+              <select 
+                className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={item.variantId}
+                onChange={(e) => handleVariantChange(index, e.target.value)}
+                required
+              >
+                <option value="">-- Pilih Varian --</option>
+                {variations.map(variant => (
+                  <option key={variant.id} value={variant.id}>
+                    Size: {variant.size} • Warna: {variant.color} • Rp {formatCurrency(variant.price)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Selected Variant Info */}
+          {item.variantId && product && (
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div 
+                    className="w-6 h-6 rounded-full border border-gray-300 mr-2"
+                    style={{ backgroundColor: item.color.toLowerCase() === 'putih' ? '#ffffff' : 
+                                                   item.color.toLowerCase() === 'hitam' ? '#000000' : 
+                                                   item.color.toLowerCase() === 'biru' ? '#2563eb' : 
+                                                   item.color.toLowerCase() === 'merah' ? '#dc2626' : 
+                                                   item.color.toLowerCase() === 'hijau' ? '#16a34a' : 
+                                                   item.color.toLowerCase() === 'kuning' ? '#facc15' : 
+                                                   item.color.toLowerCase() === 'abu-abu' ? '#6b7280' : 
+                                                   item.color.toLowerCase() === 'coklat' ? '#92400e' : 
+                                                   item.color.toLowerCase() === 'navy' ? '#1e3a8a' : 
+                                                   item.color.toLowerCase() === 'khaki' ? '#d4af37' : 
+                                                   item.color.toLowerCase() === 'pink' ? '#ec4899' : 
+                                                   item.color.toLowerCase() === 'ungu' ? '#9333ea' : '#ccc' }}
+                  ></div>
+                  <span className="text-sm font-medium">{item.size} - {item.color}</span>
+                </div>
+                {variations.find(v => v.id === item.variantId)?.stock && (
+                  <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                    Stok: {variations.find(v => v.id === item.variantId).stock}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Quantity */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">
+              Kuantitas
+            </label>
+            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+              <button 
+                type="button"
+                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50 text-sm"
+                onClick={() => handleItemChange(index, 'qty', Math.max(1, (item.qty || 1) - 1))}
+                disabled={(item.qty || 1) <= 1}
+              >
+                −
+              </button>
+              <input 
+                type="number" 
+                min="1"
+                className="w-full p-2 text-center border-x border-gray-300 focus:outline-none text-sm"
+                value={item.qty || 1}
+                onChange={(e) => handleItemChange(index, 'qty', parseInt(e.target.value) || 1)}
+              />
+              <button 
+                type="button"
+                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm"
+                onClick={() => handleItemChange(index, 'qty', (item.qty || 1) + 1)}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {/* Price & Subtotal */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                Harga Satuan
+              </label>
+              <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="font-medium text-gray-800 text-sm">
+                  Rp {formatCurrency(item.price)}
+                </p>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                Subtotal
+              </label>
+              <div className="p-2.5 bg-blue-50 rounded-lg border border-blue-100">
+                <p className="font-bold text-blue-700 text-sm">
+                  Rp {formatCurrency(calculateSubtotal(item.qty, item.price))}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Notes Button */}
+          <div>
+            <button
+              type="button"
+              onClick={() => openNotesModal(index)}
+              className={`w-full p-2.5 rounded-lg transition-colors flex items-center justify-center ${
+                item.notes?.length > 0 
+                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <MessageSquare size={16} className="mr-2" />
+              <span className="text-sm">
+                Catatan {item.notes?.length > 0 && `(${item.notes.length})`}
+              </span>
+            </button>
+          </div>
+
+          {/* Notes Preview */}
+          {item.notes?.length > 0 && (
+            <div className="pt-2 border-t border-gray-200">
+              <div className="flex items-center text-sm text-gray-600">
+                <MessageSquare size={14} className="mr-1.5" />
+                <span className="font-medium mr-2">Catatan:</span>
+                <span className="text-gray-500">
+                  {item.notes.length} catatan ditambahkan
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4 md:mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <button 
               onClick={() => navigate('/orders')}
-              className="mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="mr-2 md:mr-4 p-1.5 md:p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <ArrowLeft size={24} className="text-gray-600" />
+              <ArrowLeft size={isMobile ? 20 : 24} className="text-gray-600" />
             </button>
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">Buat Pesanan Baru</h2>
-              <p className="text-gray-600">Input data pesanan dari pelanggan</p>
+              <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800">Buat Pesanan Baru</h2>
+              <p className="text-xs md:text-sm text-gray-600">Input data pesanan dari pelanggan</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className={`${isMobile ? 'space-y-4' : 'grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8'}`}>
         {/* Left Column: Customer & Order Details */}
-        <div className="lg:col-span-1 space-y-6">
+        <div className={isMobile ? '' : 'lg:col-span-1 space-y-4 md:space-y-6'}>
           {/* Customer Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
               <div className="flex items-center">
-                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg mr-3">
-                  <User size={20} />
+                <div className="p-1.5 md:p-2 bg-blue-100 text-blue-600 rounded-lg mr-2 md:mr-3">
+                  <User size={isMobile ? 16 : 20} />
                 </div>
-                <h3 className="font-semibold text-gray-800">Data Pelanggan</h3>
+                <h3 className="font-semibold text-gray-800 text-sm md:text-base">Data Pelanggan</h3>
               </div>
               <button
                 onClick={openCsvModal}
-                className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center"
+                className="px-2.5 md:px-3 py-1.5 md:py-2 bg-green-600 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-green-700 transition-colors flex items-center justify-center"
               >
-                <Upload size={14} className="mr-1" />
+                <Upload size={isMobile ? 12 : 14} className="mr-1" />
                 Import CSV
               </button>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5">
                   Pilih Pelanggan <span className="text-red-500">*</span>
                 </label>
                 <select 
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={selectedCustomer}
                   onChange={(e) => setSelectedCustomer(e.target.value)}
                   required
@@ -601,41 +801,41 @@ export default function CreateOrder() {
               </div>
 
               {selectedCustomerData && (
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                  <p className="font-medium text-blue-800">{selectedCustomerData.name}</p>
-                  <p className="text-sm text-blue-600 mt-1">{selectedCustomerData.address}</p>
-                  <p className="text-sm text-blue-600">{selectedCustomerData.phone}</p>
+                <div className="p-3 md:p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <p className="font-medium text-blue-800 text-sm md:text-base">{selectedCustomerData.name}</p>
+                  <p className="text-xs md:text-sm text-blue-600 mt-0.5 md:mt-1">{selectedCustomerData.address}</p>
+                  <p className="text-xs md:text-sm text-blue-600">{selectedCustomerData.phone}</p>
                   {selectedCustomerData.email && (
-                    <p className="text-sm text-blue-600">{selectedCustomerData.email}</p>
+                    <p className="text-xs md:text-sm text-blue-600">{selectedCustomerData.email}</p>
                   )}
-                  <p className="text-xs text-blue-500 mt-2">
+                  <p className="text-xs text-blue-500 mt-1.5 md:mt-2">
                     Bergabung: {new Date(selectedCustomerData.joinDate).toLocaleDateString('id-ID')}
                   </p>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5">
                     <div className="flex items-center">
-                      <Calendar size={16} className="mr-2" />
-                      Tanggal Pesanan
+                      <Calendar size={isMobile ? 14 : 16} className="mr-1.5" />
+                      <span className="text-xs md:text-sm">Tanggal Pesanan</span>
                     </div>
                   </label>
                   <input 
                     type="date" 
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={orderDate}
                     onChange={(e) => setOrderDate(e.target.value)}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5">
                     Status Awal
                   </label>
                   <select 
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={orderStatus}
                     onChange={(e) => setOrderStatus(e.target.value)}
                   >
@@ -646,7 +846,7 @@ export default function CreateOrder() {
                     ))}
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    {orderStatus !== 'draft' ? '✅ Jobs akan otomatis digenerate' : '⚠️ Jobs tidak digenerate untuk draft'}
+                    {orderStatus !== 'draft' ? '✅ Jobs otomatis' : '⚠️ Draft mode'}
                   </p>
                 </div>
               </div>
@@ -654,288 +854,299 @@ export default function CreateOrder() {
           </div>
 
           {/* Order Summary Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-800 mb-4">Ringkasan Pesanan</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+            <h3 className="font-semibold text-gray-800 text-sm md:text-base mb-3 md:mb-4">Ringkasan Pesanan</h3>
             
-            <div className="space-y-3">
+            <div className="space-y-2 md:space-y-3">
               <div className="flex justify-between">
-                <span className="text-gray-600">Jumlah Item:</span>
-                <span className="font-medium">{items.length}</span>
+                <span className="text-xs md:text-sm text-gray-600">Jumlah Item:</span>
+                <span className="font-medium text-sm md:text-base">{items.length}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Total Kuantitas:</span>
-                <span className="font-medium">
+                <span className="text-xs md:text-sm text-gray-600">Total Kuantitas:</span>
+                <span className="font-medium text-sm md:text-base">
                   {items.reduce((total, item) => total + (item.qty || 0), 0)} pcs
                 </span>
               </div>
-              <div className="border-t pt-3">
+              <div className="border-t pt-2 md:pt-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Harga:</span>
-                  <span className="text-lg font-bold text-blue-600">
+                  <span className="text-xs md:text-sm text-gray-600">Total Harga:</span>
+                  <span className="text-base md:text-lg font-bold text-blue-600">
                     Rp {formatCurrency(calculateTotal())}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-100 rounded-lg">
+            <div className="mt-3 md:mt-4 p-2.5 md:p-3 bg-yellow-50 border border-yellow-100 rounded-lg">
               <p className="text-xs text-yellow-700">
-                💡 <strong>Info:</strong> Jika status diproses atau produksi, sistem akan otomatis membuat jobs untuk setiap departemen.
+                💡 <strong>Info:</strong> Status "Diproses" atau "Produksi" akan auto-generate jobs.
               </p>
             </div>
           </div>
         </div>
 
         {/* Right Column: Order Items */}
-        <div className="lg:col-span-2">
+        <div className={isMobile ? '' : 'lg:col-span-2'}>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <div className="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center">
-                <div className="p-2 bg-green-100 text-green-600 rounded-lg mr-3">
-                  <Package size={20} />
+                <div className="p-1.5 md:p-2 bg-green-100 text-green-600 rounded-lg mr-2 md:mr-3">
+                  <Package size={isMobile ? 16 : 20} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-800">Item Pesanan</h3>
-                  <p className="text-sm text-gray-600">Tambahkan produk yang dipesan</p>
+                  <h3 className="font-semibold text-gray-800 text-sm md:text-base">Item Pesanan</h3>
+                  <p className="text-xs text-gray-600">Tambahkan produk yang dipesan</p>
                 </div>
               </div>
               
               <button 
                 onClick={handleAddItem}
-                className="flex items-center bg-blue-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                className="flex items-center bg-blue-600 text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-xs md:text-sm w-full sm:w-auto justify-center"
               >
-                <Plus size={18} className="mr-2" />
+                <Plus size={isMobile ? 14 : 18} className="mr-1.5" />
                 Tambah Item
               </button>
             </div>
 
-            {/* Table Header */}
-            <div className="bg-gray-50 px-6 py-3 grid grid-cols-12 gap-4 border-b border-gray-200">
-              <div className="col-span-3 text-sm font-semibold text-gray-700">PRODUK</div>
-              <div className="col-span-1 text-sm font-semibold text-gray-700">UKURAN</div>
-              <div className="col-span-1 text-sm font-semibold text-gray-700">WARNA</div>
-              <div className="col-span-1 text-sm font-semibold text-gray-700">QTY</div>
-              <div className="col-span-2 text-sm font-semibold text-gray-700">HARGA</div>
-              <div className="col-span-2 text-sm font-semibold text-gray-700">SUBTOTAL</div>
-              <div className="col-span-2 text-sm font-semibold text-gray-700 text-center">CATATAN</div>
-            </div>
+            {/* Mobile View: Item Cards */}
+            {isMobile ? (
+              <div className="p-3">
+                {items.map((item, index) => (
+                  <MobileItemCard key={index} item={item} index={index} />
+                ))}
+              </div>
+            ) : (
+              <>
+                {/* Desktop Table Header */}
+                <div className="hidden md:block bg-gray-50 px-6 py-3 grid grid-cols-12 gap-4 border-b border-gray-200">
+                  <div className="col-span-3 text-xs md:text-sm font-semibold text-gray-700">PRODUK</div>
+                  <div className="col-span-1 text-xs md:text-sm font-semibold text-gray-700">UKURAN</div>
+                  <div className="col-span-1 text-xs md:text-sm font-semibold text-gray-700">WARNA</div>
+                  <div className="col-span-1 text-xs md:text-sm font-semibold text-gray-700">QTY</div>
+                  <div className="col-span-2 text-xs md:text-sm font-semibold text-gray-700">HARGA</div>
+                  <div className="col-span-2 text-xs md:text-sm font-semibold text-gray-700">SUBTOTAL</div>
+                  <div className="col-span-2 text-xs md:text-sm font-semibold text-gray-700 text-center">CATATAN</div>
+                </div>
 
-            {/* Order Items */}
-            <div className="divide-y divide-gray-100">
-              {items.map((item, index) => {
-                const product = selectedProduct(index);
-                const variations = getAvailableVariations(index);
-                
-                return (
-                  <div key={index} className="px-6 py-4 hover:bg-gray-50 transition-colors">
-                    <div className="grid grid-cols-12 gap-4 items-center">
-                      {/* Product Select */}
-                      <div className="col-span-3">
-                        <select 
-                          className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          value={item.product}
-                          onChange={(e) => handleItemChange(index, 'product', e.target.value)}
-                          required
-                        >
-                          <option value="">-- Pilih Produk --</option>
-                          {products.map(product => (
-                            <option key={product.id} value={product.id}>
-                              {product.name} • Rp {formatCurrency(product.basePrice)}
-                            </option>
-                          ))}
-                        </select>
-                        {item.productName && (
-                          <p className="text-xs text-gray-500 mt-1">{item.productName}</p>
-                        )}
-                      </div>
-
-                      {/* Size Selector */}
-                      <div className="col-span-1">
-                        {product ? (
-                          <select 
-                            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            value={item.variantId}
-                            onChange={(e) => handleVariantChange(index, e.target.value)}
-                            required
-                          >
-                            <option value="">-- Pilih --</option>
-                            {variations.map(variant => (
-                              <option key={variant.id} value={variant.id}>
-                                {variant.size}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-                            <span className="text-gray-400 text-sm">Pilih produk</span>
+                {/* Desktop Order Items */}
+                <div className="hidden md:block divide-y divide-gray-100">
+                  {items.map((item, index) => {
+                    const product = selectedProduct(index);
+                    const variations = getAvailableVariations(index);
+                    
+                    return (
+                      <div key={index} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                        <div className="grid grid-cols-12 gap-4 items-center">
+                          {/* Product Select */}
+                          <div className="col-span-3">
+                            <select 
+                              className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              value={item.product}
+                              onChange={(e) => handleItemChange(index, 'product', e.target.value)}
+                              required
+                            >
+                              <option value="">-- Pilih Produk --</option>
+                              {products.map(product => (
+                                <option key={product.id} value={product.id}>
+                                  {product.name} • Rp {formatCurrency(product.basePrice)}
+                                </option>
+                              ))}
+                            </select>
+                            {item.productName && (
+                              <p className="text-xs text-gray-500 mt-1">{item.productName}</p>
+                            )}
                           </div>
-                        )}
-                        {item.size && (
-                          <p className="text-xs text-gray-500 mt-1">{item.size}</p>
-                        )}
-                      </div>
 
-                      {/* Color Display */}
-                      <div className="col-span-1">
-                        {item.color ? (
-                          <div className="flex items-center">
-                            <div 
-                              className="w-6 h-6 rounded-full border border-gray-300 mr-2"
-                              style={{ backgroundColor: item.color.toLowerCase() === 'putih' ? '#ffffff' : 
-                                                         item.color.toLowerCase() === 'hitam' ? '#000000' : 
-                                                         item.color.toLowerCase() === 'biru' ? '#2563eb' : 
-                                                         item.color.toLowerCase() === 'merah' ? '#dc2626' : 
-                                                         item.color.toLowerCase() === 'hijau' ? '#16a34a' : 
-                                                         item.color.toLowerCase() === 'kuning' ? '#facc15' : 
-                                                         item.color.toLowerCase() === 'abu-abu' ? '#6b7280' : 
-                                                         item.color.toLowerCase() === 'coklat' ? '#92400e' : 
-                                                         item.color.toLowerCase() === 'navy' ? '#1e3a8a' : 
-                                                         item.color.toLowerCase() === 'khaki' ? '#d4af37' : 
-                                                         item.color.toLowerCase() === 'pink' ? '#ec4899' : 
-                                                         item.color.toLowerCase() === 'ungu' ? '#9333ea' : '#ccc' }}
-                            ></div>
-                            <span className="text-sm">{item.color}</span>
+                          {/* Size Selector */}
+                          <div className="col-span-1">
+                            {product ? (
+                              <select 
+                                className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                value={item.variantId}
+                                onChange={(e) => handleVariantChange(index, e.target.value)}
+                                required
+                              >
+                                <option value="">-- Pilih --</option>
+                                {variations.map(variant => (
+                                  <option key={variant.id} value={variant.id}>
+                                    {variant.size}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                                <span className="text-gray-400 text-xs">Pilih produk</span>
+                              </div>
+                            )}
+                            {item.size && (
+                              <p className="text-xs text-gray-500 mt-1">{item.size}</p>
+                            )}
                           </div>
-                        ) : (
-                          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-                            <span className="text-gray-400 text-sm">-</span>
+
+                          {/* Color Display */}
+                          <div className="col-span-1">
+                            {item.color ? (
+                              <div className="flex items-center">
+                                <div 
+                                  className="w-6 h-6 rounded-full border border-gray-300 mr-2"
+                                  style={{ backgroundColor: item.color.toLowerCase() === 'putih' ? '#ffffff' : 
+                                                                 item.color.toLowerCase() === 'hitam' ? '#000000' : 
+                                                                 item.color.toLowerCase() === 'biru' ? '#2563eb' : 
+                                                                 item.color.toLowerCase() === 'merah' ? '#dc2626' : 
+                                                                 item.color.toLowerCase() === 'hijau' ? '#16a34a' : 
+                                                                 item.color.toLowerCase() === 'kuning' ? '#facc15' : 
+                                                                 item.color.toLowerCase() === 'abu-abu' ? '#6b7280' : 
+                                                                 item.color.toLowerCase() === 'coklat' ? '#92400e' : 
+                                                                 item.color.toLowerCase() === 'navy' ? '#1e3a8a' : 
+                                                                 item.color.toLowerCase() === 'khaki' ? '#d4af37' : 
+                                                                 item.color.toLowerCase() === 'pink' ? '#ec4899' : 
+                                                                 item.color.toLowerCase() === 'ungu' ? '#9333ea' : '#ccc' }}
+                                ></div>
+                                <span className="text-sm">{item.color}</span>
+                              </div>
+                            ) : (
+                              <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                                <span className="text-gray-400 text-xs">-</span>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      {/* Quantity */}
-                      <div className="col-span-1">
-                        <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                          <button 
-                            type="button"
-                            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50"
-                            onClick={() => handleItemChange(index, 'qty', Math.max(1, (item.qty || 1) - 1))}
-                            disabled={(item.qty || 1) <= 1}
-                          >
-                            −
-                          </button>
-                          <input 
-                            type="number" 
-                            min="1"
-                            className="w-full p-2 text-center border-x border-gray-300 focus:outline-none"
-                            value={item.qty || 1}
-                            onChange={(e) => handleItemChange(index, 'qty', parseInt(e.target.value) || 1)}
-                          />
-                          <button 
-                            type="button"
-                            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700"
-                            onClick={() => handleItemChange(index, 'qty', (item.qty || 1) + 1)}
-                          >
-                            +
-                          </button>
+                          {/* Quantity */}
+                          <div className="col-span-1">
+                            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                              <button 
+                                type="button"
+                                className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50 text-sm"
+                                onClick={() => handleItemChange(index, 'qty', Math.max(1, (item.qty || 1) - 1))}
+                                disabled={(item.qty || 1) <= 1}
+                              >
+                                −
+                              </button>
+                              <input 
+                                type="number" 
+                                min="1"
+                                className="w-full p-1.5 text-center border-x border-gray-300 focus:outline-none text-sm"
+                                value={item.qty || 1}
+                                onChange={(e) => handleItemChange(index, 'qty', parseInt(e.target.value) || 1)}
+                              />
+                              <button 
+                                type="button"
+                                className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm"
+                                onClick={() => handleItemChange(index, 'qty', (item.qty || 1) + 1)}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Price */}
+                          <div className="col-span-2">
+                            <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200">
+                              <p className="font-medium text-gray-800 text-sm">
+                                Rp {formatCurrency(item.price)}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Subtotal */}
+                          <div className="col-span-2">
+                            <div className="p-2.5 bg-blue-50 rounded-lg border border-blue-100">
+                              <p className="font-bold text-blue-700 text-sm">
+                                Rp {formatCurrency(calculateSubtotal(item.qty, item.price))}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Notes Button */}
+                          <div className="col-span-2 flex justify-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={() => openNotesModal(index)}
+                              className={`p-1.5 md:p-2 rounded-lg transition-colors flex items-center ${
+                                item.notes?.length > 0 
+                                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' 
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              }`}
+                              title="Kelola catatan item"
+                            >
+                              <MessageSquare size={16} />
+                              {item.notes?.length > 0 && (
+                                <span className="ml-1 text-xs font-semibold">
+                                  {item.notes.length}
+                                </span>
+                              )}
+                            </button>
+                            
+                            {items.length > 1 && (
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  const newItems = items.filter((_, i) => i !== index);
+                                  setItems(newItems);
+                                }}
+                                className="p-1.5 md:p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Price */}
-                      <div className="col-span-2">
-                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                          <p className="font-medium text-gray-800">
-                            Rp {formatCurrency(item.price)}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Subtotal */}
-                      <div className="col-span-2">
-                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                          <p className="font-bold text-blue-700">
-                            Rp {formatCurrency(calculateSubtotal(item.qty, item.price))}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Notes Button */}
-                      <div className="col-span-2 flex justify-center space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => openNotesModal(index)}
-                          className={`p-2 rounded-lg transition-colors flex items-center ${
-                            item.notes?.length > 0 
-                              ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' 
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}
-                          title="Kelola catatan item"
-                        >
-                          <MessageSquare size={18} />
-                          {item.notes?.length > 0 && (
-                            <span className="ml-1 text-xs font-semibold">
-                              {item.notes.length}
-                            </span>
-                          )}
-                        </button>
                         
-                        {items.length > 1 && (
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              const newItems = items.filter((_, i) => i !== index);
-                              setItems(newItems);
-                            }}
-                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                        {/* Variant Info */}
+                        {item.variantId && product && (
+                          <div className="mt-2 pl-4 border-l-2 border-green-400">
+                            <div className="flex items-center text-xs md:text-sm text-gray-600">
+                              <Package size={12} className="mr-1" />
+                              <span className="font-medium mr-2">Varian:</span>
+                              <span className="text-gray-700">
+                                {product.name} - Size: {item.size} - Warna: {item.color}
+                              </span>
+                              {variations.find(v => v.id === item.variantId)?.stock && (
+                                <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                                  Stok: {variations.find(v => v.id === item.variantId).stock}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Notes Preview */}
+                        {item.notes?.length > 0 && (
+                          <div className="mt-2 pl-4 border-l-2 border-yellow-400">
+                            <div className="flex items-center text-xs md:text-sm text-gray-600">
+                              <MessageSquare size={12} className="mr-1" />
+                              <span className="font-medium mr-2">Catatan:</span>
+                              <span className="text-gray-500">
+                                {item.notes.length} catatan ditambahkan
+                              </span>
+                              <button
+                                onClick={() => openNotesModal(index)}
+                                className="ml-2 text-blue-600 hover:text-blue-800 text-xs flex items-center"
+                              >
+                                <Eye size={10} className="mr-1" />
+                                Lihat
+                              </button>
+                            </div>
+                          </div>
                         )}
                       </div>
-                    </div>
-                    
-                    {/* Variant Info */}
-                    {item.variantId && product && (
-                      <div className="mt-2 pl-4 border-l-2 border-green-400">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Package size={14} className="mr-1" />
-                          <span className="font-medium mr-2">Varian:</span>
-                          <span className="text-gray-700">
-                            {product.name} - Size: {item.size} - Warna: {item.color}
-                          </span>
-                          {variations.find(v => v.id === item.variantId)?.stock && (
-                            <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">
-                              Stok: {variations.find(v => v.id === item.variantId).stock}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Notes Preview */}
-                    {item.notes?.length > 0 && (
-                      <div className="mt-3 pl-4 border-l-2 border-yellow-400">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <MessageSquare size={14} className="mr-1" />
-                          <span className="font-medium mr-2">Catatan:</span>
-                          <span className="text-gray-500">
-                            {item.notes.length} catatan ditambahkan
-                          </span>
-                          <button
-                            onClick={() => openNotesModal(index)}
-                            className="ml-2 text-blue-600 hover:text-blue-800 text-xs flex items-center"
-                          >
-                            <Eye size={12} className="mr-1" />
-                            Lihat
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             {/* Total Section */}
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <div className="flex justify-between items-center">
-                <div className="text-gray-600">
+            <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div className="text-xs md:text-sm text-gray-600">
                   Total {items.length} item • {items.reduce((total, item) => total + (item.qty || 0), 0)} pcs
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-600">Total Pembayaran</p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-xs md:text-sm text-gray-600">Total Pembayaran</p>
+                  <p className="text-lg md:text-xl lg:text-2xl font-bold text-blue-600">
                     Rp {formatCurrency(calculateTotal())}
                   </p>
                 </div>
@@ -943,11 +1154,11 @@ export default function CreateOrder() {
             </div>
 
             {/* Action Buttons */}
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+            <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-2">
               <button 
                 type="button"
                 onClick={handleCancel}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                className="px-4 md:px-6 py-2.5 md:py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors text-sm w-full sm:w-auto"
               >
                 Batalkan
               </button>
@@ -956,11 +1167,11 @@ export default function CreateOrder() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting || !selectedCustomer || items.some(item => !item.product)}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                className="px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-sm w-full sm:w-auto"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                     Menyimpan...
                   </>
                 ) : (
@@ -971,8 +1182,8 @@ export default function CreateOrder() {
           </div>
 
           {/* Help Text */}
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-            <p className="text-sm text-blue-800">
+          <div className="mt-3 md:mt-4 p-3 md:p-4 bg-blue-50 border border-blue-100 rounded-lg">
+            <p className="text-xs md:text-sm text-blue-800">
               💡 <strong>Tips Integrasi JobList:</strong><br/>
               1. Pilih status <strong>"Diproses"</strong> atau <strong>"Produksi"</strong> untuk auto-generate jobs<br/>
               2. Jobs akan otomatis dibuat untuk departemen: Potong, Jahit, Finishing, Packing, QC<br/>
@@ -983,41 +1194,39 @@ export default function CreateOrder() {
         </div>
       </div>
 
-      {/* Notes Modal */}
+      {/* Notes Modal - Responsive */}
       {notesModal.isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 md:p-4">
+          <div className="bg-white rounded-xl w-full max-w-xs md:max-w-md lg:max-w-2xl max-h-[80vh] flex flex-col">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <div className="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200 flex justify-between items-center">
               <div className="flex items-center">
-                <MessageSquare className="text-yellow-600 mr-3" size={24} />
+                <MessageSquare className="text-yellow-600 mr-2 md:mr-3" size={isMobile ? 20 : 24} />
                 <div>
-                  <h3 className="font-bold text-lg text-gray-800">Catatan Item</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-bold text-gray-800 text-base md:text-lg">Catatan Item</h3>
+                  <p className="text-xs md:text-sm text-gray-600">
                     Item: {items[notesModal.itemIndex]?.productName || 'Belum dipilih'}
                   </p>
                 </div>
               </div>
               <button
                 onClick={closeNotesModal}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-1.5 hover:bg-gray-100 rounded-lg"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X size={isMobile ? 18 : 20} />
               </button>
             </div>
 
             {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6">
               {/* Add New Note */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mb-4 md:mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">
                   Tambah Catatan Baru
                 </label>
-                <div className="flex space-x-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <textarea
-                    className="flex-1 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                    className="flex-1 border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                     rows="3"
                     placeholder="Tulis catatan untuk item ini..."
                     value={notesModal.currentNote}
@@ -1026,7 +1235,7 @@ export default function CreateOrder() {
                   <button
                     onClick={addNote}
                     disabled={!notesModal.currentNote.trim()}
-                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-start"
+                    className="px-3 md:px-4 py-2 md:py-2.5 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm self-start"
                   >
                     Tambah
                   </button>
@@ -1035,23 +1244,23 @@ export default function CreateOrder() {
 
               {/* Notes List */}
               <div>
-                <h4 className="font-medium text-gray-800 mb-4">
+                <h4 className="font-medium text-gray-800 text-sm md:text-base mb-3 md:mb-4">
                   Daftar Catatan ({notesModal.notes.length})
                 </h4>
                 
                 {notesModal.notes.length === 0 ? (
-                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                    <MessageSquare className="text-gray-400 mx-auto mb-3" size={32} />
-                    <p className="text-gray-500">Belum ada catatan</p>
-                    <p className="text-gray-400 text-sm mt-1">Tambahkan catatan pertama Anda</p>
+                  <div className="text-center py-6 md:py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                    <MessageSquare className="text-gray-400 mx-auto mb-2 md:mb-3" size={isMobile ? 24 : 32} />
+                    <p className="text-gray-500 text-sm">Belum ada catatan</p>
+                    <p className="text-gray-400 text-xs mt-1">Tambahkan catatan pertama Anda</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2 md:space-y-3">
                     {notesModal.notes.map((note) => (
-                      <div key={note.id} className="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
+                      <div key={note.id} className="bg-yellow-50 border border-yellow-100 rounded-lg p-3 md:p-4">
+                        <div className="flex justify-between items-start mb-1.5 md:mb-2">
                           <div>
-                            <p className="font-medium text-gray-800">{note.author}</p>
+                            <p className="font-medium text-gray-800 text-sm">{note.author}</p>
                             <p className="text-xs text-gray-500">
                               {new Date(note.timestamp).toLocaleString('id-ID')}
                             </p>
@@ -1061,12 +1270,12 @@ export default function CreateOrder() {
                             className="text-red-500 hover:text-red-700 p-1"
                             title="Hapus catatan"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
-                        <p className="text-gray-700">{note.text}</p>
+                        <p className="text-gray-700 text-sm">{note.text}</p>
                         {note.type && (
-                          <span className="inline-block mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
+                          <span className="inline-block mt-1 md:mt-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded">
                             {note.type}
                           </span>
                         )}
@@ -1078,10 +1287,10 @@ export default function CreateOrder() {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+            <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 flex justify-end">
               <button
                 onClick={closeNotesModal}
-                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                className="px-4 md:px-6 py-2 md:py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-sm"
               >
                 Tutup
               </button>
@@ -1090,80 +1299,84 @@ export default function CreateOrder() {
         </div>
       )}
 
-      {/* CSV Import Modal */}
+      {/* CSV Import Modal - Responsive */}
       {csvModal.isOpen && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-2 md:p-4">
+          <div className="bg-white rounded-xl w-full max-w-xs md:max-w-lg lg:max-w-4xl max-h-[90vh] flex flex-col">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
-              <div className="flex items-center">
-                <FileText className="text-green-600 mr-3" size={24} />
-                <div>
-                  <h3 className="font-bold text-lg text-gray-800">Import Pelanggan dari CSV</h3>
-                  <p className="text-sm text-gray-600">
-                    Upload file CSV untuk menambahkan pelanggan baru
-                  </p>
+            <div className="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <FileText className="text-green-600 mr-2 md:mr-3" size={isMobile ? 20 : 24} />
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-base md:text-lg">Import Pelanggan dari CSV</h3>
+                    <p className="text-xs md:text-sm text-gray-600">
+                      Upload file CSV untuk menambahkan pelanggan baru
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={closeCsvModal}
+                  className="p-1.5 hover:bg-gray-100 rounded-lg"
+                >
+                  <X size={isMobile ? 20 : 24} className="text-gray-600" />
+                </button>
               </div>
-              <button
-                onClick={closeCsvModal}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <X size={24} className="text-gray-600" />
-              </button>
             </div>
 
             {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6">
               {/* Step Indicator */}
-              <div className="mb-8">
-                <div className="flex items-center justify-center">
-                  {['upload', 'mapping', 'preview'].map((step, index) => (
-                    <div key={step} className="flex items-center">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        csvModal.step === step 
-                          ? 'bg-blue-600 text-white border-2 border-blue-600' 
-                          : index < ['upload', 'mapping', 'preview'].indexOf(csvModal.step)
-                            ? 'bg-green-500 text-white border-2 border-green-500'
-                            : 'bg-gray-100 text-gray-400 border-2 border-gray-300'
-                      }`}>
-                        {index < ['upload', 'mapping', 'preview'].indexOf(csvModal.step) ? (
-                          <Check size={16} />
-                        ) : (
-                          index + 1
+              <div className="mb-4 md:mb-8">
+                <div className="flex items-center justify-center overflow-x-auto">
+                  <div className="flex items-center min-w-max">
+                    {['upload', 'mapping', 'preview'].map((step, index) => (
+                      <div key={step} className="flex items-center">
+                        <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm ${
+                          csvModal.step === step 
+                            ? 'bg-blue-600 text-white border-2 border-blue-600' 
+                            : index < ['upload', 'mapping', 'preview'].indexOf(csvModal.step)
+                              ? 'bg-green-500 text-white border-2 border-green-500'
+                              : 'bg-gray-100 text-gray-400 border-2 border-gray-300'
+                        }`}>
+                          {index < ['upload', 'mapping', 'preview'].indexOf(csvModal.step) ? (
+                            <Check size={isMobile ? 12 : 16} />
+                          ) : (
+                            index + 1
+                          )}
+                        </div>
+                        <div className="ml-1 md:ml-2 mr-2 md:mr-4 text-xs md:text-sm font-medium">
+                          {step === 'upload' && 'Upload'}
+                          {step === 'mapping' && 'Mapping'}
+                          {step === 'preview' && 'Preview'}
+                        </div>
+                        {index < 2 && (
+                          <div className={`w-8 md:w-16 h-0.5 ${
+                            index < ['upload', 'mapping', 'preview'].indexOf(csvModal.step)
+                              ? 'bg-green-500'
+                              : 'bg-gray-300'
+                          }`}></div>
                         )}
                       </div>
-                      <div className="ml-2 mr-4 text-sm font-medium">
-                        {step === 'upload' && 'Upload File'}
-                        {step === 'mapping' && 'Mapping Data'}
-                        {step === 'preview' && 'Preview & Import'}
-                      </div>
-                      {index < 2 && (
-                        <div className={`w-16 h-0.5 ${
-                          index < ['upload', 'mapping', 'preview'].indexOf(csvModal.step)
-                            ? 'bg-green-500'
-                            : 'bg-gray-300'
-                        }`}></div>
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Step 1: Upload */}
               {csvModal.step === 'upload' && (
-                <div className="text-center py-8">
-                  <div className="mx-auto w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-6">
-                    <Upload className="text-blue-600" size={32} />
+                <div className="text-center py-4 md:py-8">
+                  <div className="mx-auto w-16 h-16 md:w-20 md:h-20 bg-blue-100 rounded-full flex items-center justify-center mb-4 md:mb-6">
+                    <Upload className="text-blue-600" size={isMobile ? 24 : 32} />
                   </div>
-                  <h4 className="text-xl font-semibold text-gray-800 mb-3">
+                  <h4 className="text-lg md:text-xl font-semibold text-gray-800 mb-2 md:mb-3">
                     Upload File CSV
                   </h4>
-                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                    Unggah file CSV yang berisi data pelanggan. Pastikan file memiliki kolom: Nama, Telepon, Alamat, Email.
+                  <p className="text-xs md:text-sm text-gray-600 mb-4 md:mb-6 max-w-md mx-auto">
+                    Unggah file CSV yang berisi data pelanggan.
                   </p>
                   
-                  <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 mb-6 hover:border-blue-400 transition-colors">
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl md:rounded-2xl p-4 md:p-8 mb-4 md:mb-6 hover:border-blue-400 transition-colors">
                     <input
                       type="file"
                       accept=".csv"
@@ -1175,24 +1388,23 @@ export default function CreateOrder() {
                       htmlFor="csv-upload"
                       className="cursor-pointer flex flex-col items-center"
                     >
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                        <FileText size={24} className="text-gray-400" />
+                      <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3 md:mb-4">
+                        <FileText size={isMobile ? 20 : 24} className="text-gray-400" />
                       </div>
-                      <p className="text-gray-700 font-medium mb-2">
+                      <p className="text-gray-700 font-medium text-sm mb-1 md:mb-2">
                         Klik untuk memilih file
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500">
                         atau drag & drop file CSV di sini
                       </p>
                     </label>
                   </div>
                   
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 max-w-md mx-auto">
-                    <h5 className="font-medium text-blue-800 mb-2">Format CSV yang didukung:</h5>
-                    <pre className="text-sm text-blue-700 bg-white p-3 rounded border border-blue-100 overflow-x-auto">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg md:rounded-xl p-3 md:p-4 max-w-md mx-auto">
+                    <h5 className="font-medium text-blue-800 text-sm mb-1.5 md:mb-2">Format CSV yang didukung:</h5>
+                    <pre className="text-xs md:text-sm text-blue-700 bg-white p-2 md:p-3 rounded border border-blue-100 overflow-x-auto">
 {`nama,telepon,alamat,email
-John Doe,08123456789,Jl. Contoh No.1,john@email.com
-Jane Smith,08234567890,Jl. Sample No.2,jane@email.com`}
+John Doe,08123456789,Jl. Contoh No.1,john@email.com`}
                     </pre>
                   </div>
                 </div>
@@ -1201,17 +1413,17 @@ Jane Smith,08234567890,Jl. Sample No.2,jane@email.com`}
               {/* Step 2: Mapping */}
               {csvModal.step === 'mapping' && csvModal.previewData.length > 0 && (
                 <div>
-                  <h4 className="text-xl font-semibold text-gray-800 mb-6">
+                  <h4 className="text-lg md:text-xl font-semibold text-gray-800 mb-4 md:mb-6">
                     Mapping Kolom CSV
                   </h4>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-8">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Kolom Nama
                       </label>
                       <select
-                        className="w-full border border-gray-300 rounded-lg p-3"
+                        className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm"
                         value={csvModal.mapping.name}
                         onChange={(e) => handleMappingChange('name', e.target.value)}
                       >
@@ -1223,11 +1435,11 @@ Jane Smith,08234567890,Jl. Sample No.2,jane@email.com`}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Kolom Telepon
                       </label>
                       <select
-                        className="w-full border border-gray-300 rounded-lg p-3"
+                        className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm"
                         value={csvModal.mapping.phone}
                         onChange={(e) => handleMappingChange('phone', e.target.value)}
                       >
@@ -1239,11 +1451,11 @@ Jane Smith,08234567890,Jl. Sample No.2,jane@email.com`}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Kolom Alamat
                       </label>
                       <select
-                        className="w-full border border-gray-300 rounded-lg p-3"
+                        className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm"
                         value={csvModal.mapping.address}
                         onChange={(e) => handleMappingChange('address', e.target.value)}
                       >
@@ -1255,11 +1467,11 @@ Jane Smith,08234567890,Jl. Sample No.2,jane@email.com`}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Kolom Email
                       </label>
                       <select
-                        className="w-full border border-gray-300 rounded-lg p-3"
+                        className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm"
                         value={csvModal.mapping.email}
                         onChange={(e) => handleMappingChange('email', e.target.value)}
                       >
@@ -1275,7 +1487,7 @@ Jane Smith,08234567890,Jl. Sample No.2,jane@email.com`}
                   <div className="flex justify-end">
                     <button
                       onClick={applyMapping}
-                      className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                      className="px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm"
                     >
                       Terapkan Mapping
                     </button>
@@ -1286,14 +1498,14 @@ Jane Smith,08234567890,Jl. Sample No.2,jane@email.com`}
               {/* Step 3: Preview */}
               {csvModal.step === 'preview' && csvModal.previewData.length > 0 && (
                 <div>
-                  <h4 className="text-xl font-semibold text-gray-800 mb-6">
+                  <h4 className="text-lg md:text-xl font-semibold text-gray-800 mb-4 md:mb-6">
                     Preview Data ({csvModal.previewData.length} pelanggan)
                   </h4>
                   
                   {csvModal.errors.length > 0 && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                      <h5 className="font-medium text-red-800 mb-2">Error Validasi:</h5>
-                      <ul className="text-sm text-red-700 list-disc pl-5">
+                    <div className="mb-4 md:mb-6 p-3 md:p-4 bg-red-50 border border-red-200 rounded-lg md:rounded-xl">
+                      <h5 className="font-medium text-red-800 text-sm mb-1.5 md:mb-2">Error Validasi:</h5>
+                      <ul className="text-xs md:text-sm text-red-700 list-disc pl-4">
                         {csvModal.errors.map((error, index) => (
                           <li key={index}>{error}</li>
                         ))}
@@ -1301,47 +1513,35 @@ Jane Smith,08234567890,Jl. Sample No.2,jane@email.com`}
                     </div>
                   )}
                   
-                  <div className="overflow-x-auto mb-6">
-                    <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto mb-4 md:mb-6">
+                    <table className="w-full border border-gray-200 rounded-lg overflow-hidden min-w-[400px]">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nama</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Telepon</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Alamat</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                          <th className="px-3 md:px-4 py-2 text-left text-xs md:text-sm font-semibold text-gray-700">Nama</th>
+                          <th className="px-3 md:px-4 py-2 text-left text-xs md:text-sm font-semibold text-gray-700">Telepon</th>
+                          <th className="px-3 md:px-4 py-2 text-left text-xs md:text-sm font-semibold text-gray-700">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {csvModal.previewData.slice(0, 10).map((item, index) => (
+                        {csvModal.previewData.slice(0, 5).map((item, index) => (
                           <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm">
+                            <td className="px-3 md:px-4 py-2 text-xs md:text-sm">
                               {item.parsed.name || (
                                 <span className="text-red-500 italic">Kosong</span>
                               )}
                             </td>
-                            <td className="px-4 py-3 text-sm">
+                            <td className="px-3 md:px-4 py-2 text-xs md:text-sm">
                               {item.parsed.phone || (
                                 <span className="text-gray-400 italic">-</span>
                               )}
                             </td>
-                            <td className="px-4 py-3 text-sm">
-                              {item.parsed.address || (
-                                <span className="text-gray-400 italic">-</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              {item.parsed.email || (
-                                <span className="text-gray-400 italic">-</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
+                            <td className="px-3 md:px-4 py-2">
                               {item.parsed.name ? (
-                                <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                                <span className="px-2 py-0.5 md:py-1 text-xs bg-green-100 text-green-800 rounded-full">
                                   Valid
                                 </span>
                               ) : (
-                                <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
+                                <span className="px-2 py-0.5 md:py-1 text-xs bg-red-100 text-red-800 rounded-full">
                                   Error
                                 </span>
                               )}
@@ -1350,51 +1550,51 @@ Jane Smith,08234567890,Jl. Sample No.2,jane@email.com`}
                         ))}
                       </tbody>
                     </table>
-                    {csvModal.previewData.length > 10 && (
-                      <p className="text-sm text-gray-500 mt-2 text-center">
-                        Menampilkan 10 dari {csvModal.previewData.length} baris
+                    {csvModal.previewData.length > 5 && (
+                      <p className="text-xs text-gray-500 mt-1.5 text-center">
+                        Menampilkan 5 dari {csvModal.previewData.length} baris
                       </p>
                     )}
                   </div>
                   
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                    <h5 className="font-medium text-blue-800 mb-2">Ringkasan Import:</h5>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-3 bg-white rounded-lg border border-blue-100">
-                        <div className="text-2xl font-bold text-blue-600">{csvModal.previewData.length}</div>
-                        <div className="text-sm text-blue-800">Total Data</div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg md:rounded-xl p-3 md:p-4 mb-4 md:mb-6">
+                    <h5 className="font-medium text-blue-800 text-sm mb-2 md:mb-2">Ringkasan Import:</h5>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+                      <div className="text-center p-2 md:p-3 bg-white rounded-lg border border-blue-100">
+                        <div className="text-lg md:text-xl lg:text-2xl font-bold text-blue-600">{csvModal.previewData.length}</div>
+                        <div className="text-xs md:text-sm text-blue-800">Total Data</div>
                       </div>
-                      <div className="text-center p-3 bg-white rounded-lg border border-blue-100">
-                        <div className="text-2xl font-bold text-green-600">
+                      <div className="text-center p-2 md:p-3 bg-white rounded-lg border border-blue-100">
+                        <div className="text-lg md:text-xl lg:text-2xl font-bold text-green-600">
                           {csvModal.previewData.filter(item => item.parsed.name).length}
                         </div>
-                        <div className="text-sm text-green-800">Data Valid</div>
+                        <div className="text-xs md:text-sm text-green-800">Data Valid</div>
                       </div>
-                      <div className="text-center p-3 bg-white rounded-lg border border-blue-100">
-                        <div className="text-2xl font-bold text-red-600">
+                      <div className="text-center p-2 md:p-3 bg-white rounded-lg border border-blue-100">
+                        <div className="text-lg md:text-xl lg:text-2xl font-bold text-red-600">
                           {csvModal.previewData.filter(item => !item.parsed.name).length}
                         </div>
-                        <div className="text-sm text-red-800">Data Error</div>
+                        <div className="text-xs md:text-sm text-red-800">Data Error</div>
                       </div>
-                      <div className="text-center p-3 bg-white rounded-lg border border-blue-100">
-                        <div className="text-2xl font-bold text-purple-600">
+                      <div className="text-center p-2 md:p-3 bg-white rounded-lg border border-blue-100">
+                        <div className="text-lg md:text-xl lg:text-2xl font-bold text-purple-600">
                           {csvModal.previewData.filter(item => item.parsed.email).length}
                         </div>
-                        <div className="text-sm text-purple-800">Dengan Email</div>
+                        <div className="text-xs md:text-sm text-purple-800">Dengan Email</div>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex justify-end space-x-3">
+                  <div className="flex flex-col sm:flex-row justify-end gap-2">
                     <button
                       onClick={() => setCsvModal(prev => ({ ...prev, step: 'mapping' }))}
-                      className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                      className="px-4 md:px-6 py-2.5 md:py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors text-sm w-full sm:w-auto"
                     >
                       Kembali ke Mapping
                     </button>
                     <button
                       onClick={importCustomers}
-                      className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                      className="px-4 md:px-6 py-2.5 md:py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm w-full sm:w-auto"
                     >
                       Import Pelanggan
                     </button>
@@ -1404,13 +1604,13 @@ Jane Smith,08234567890,Jl. Sample No.2,jane@email.com`}
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
-              <div className="text-sm text-gray-600">
+            <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-2">
+              <div className="text-xs md:text-sm text-gray-600">
                 Data akan ditambahkan ke daftar pelanggan
               </div>
               <button
                 onClick={closeCsvModal}
-                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                className="px-4 md:px-6 py-2 md:py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-sm w-full sm:w-auto"
               >
                 Tutup
               </button>

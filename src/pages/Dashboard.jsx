@@ -467,17 +467,17 @@ export default function Dashboard() {
       </div>
 
       {/* Alert Summary Cards - Responsive Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {/* Stuck Items Alert */}
-        <div className="bg-white border border-red-200 rounded-lg p-3 md:p-4 shadow-sm">
+        <div className="enterprise-card p-3 md:p-4 animate-enter-fade delay-100">
           <div className="flex items-center justify-between mb-2 md:mb-3">
             <div className="flex items-center">
               <div className="w-8 h-8 md:w-10 md:h-10 bg-red-100 rounded-lg flex items-center justify-center mr-2 md:mr-3">
                 <AlertTriangle size={isMobile ? 16 : 20} className="text-red-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800 text-sm md:text-base">Item Stuck</h3>
-                <p className="text-xs text-gray-600">Perlu perhatian</p>
+                <h3 className="font-bold text-slate-900 text-sm md:text-base">Item Stuck</h3>
+                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mt-0.5">Perhatian Khusus</p>
               </div>
             </div>
             <span className="bg-red-100 text-red-800 text-xs font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-full">
@@ -487,15 +487,18 @@ export default function Dashboard() {
 
           <div className="space-y-1.5 md:space-y-2">
             {stuckItems.slice(0, 2).map((item, index) => (
-              <div key={index} className="p-2 bg-red-50 rounded border border-red-100">
-                <div className="flex justify-between items-start">
+              <div key={index} className="py-2 border-b border-slate-100 last:border-0 group">
+                <div className="flex justify-between items-start mb-1">
                   <div>
-                    <p className="text-xs md:text-sm font-medium text-gray-800 line-clamp-1">{item.product}</p>
-                    <p className="text-xs text-gray-600">{item.department}</p>
+                    <p className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-red-700 transition-colors">{item.product}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                      <p className="text-[10px] text-slate-500 font-medium">{item.department}</p>
+                    </div>
                   </div>
-                  <span className="text-xs font-semibold text-red-600">{item.stuckFor}</span>
+                  <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded">{item.stuckFor}</span>
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{item.reason}</p>
+                <p className="text-xs text-slate-500 line-clamp-1 border-l-2 border-red-200 pl-2 mt-1.5">{item.reason}</p>
               </div>
             ))}
           </div>
@@ -509,15 +512,15 @@ export default function Dashboard() {
         </div>
 
         {/* Low Stock Alert */}
-        <div className="bg-white border border-yellow-200 rounded-lg p-3 md:p-4 shadow-sm">
+        <div className="enterprise-card p-3 md:p-4 animate-enter-fade delay-200">
           <div className="flex items-center justify-between mb-2 md:mb-3">
             <div className="flex items-center">
               <div className="w-8 h-8 md:w-10 md:h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-2 md:mr-3">
                 <AlertCircle size={isMobile ? 16 : 20} className="text-yellow-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800 text-sm md:text-base">Stok Menipis</h3>
-                <p className="text-xs text-gray-600">Segera restock</p>
+                <h3 className="font-bold text-slate-900 text-sm md:text-base">Stok Menipis</h3>
+                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mt-0.5">Daftar Pengadaan</p>
               </div>
             </div>
             <span className="bg-yellow-100 text-yellow-800 text-xs font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-full">
@@ -532,16 +535,18 @@ export default function Dashboard() {
               .map((item, index) => {
                 const stockStatus = getStockStatus(item.currentStock, item.minStock);
                 return (
-                  <div key={index} className="p-2 bg-yellow-50 rounded border border-yellow-100">
-                    <div className="flex justify-between items-start">
+                  <div key={index} className="py-2 border-b border-slate-100 last:border-0 group">
+                    <div className="flex justify-between items-center mb-1.5">
                       <div>
-                        <p className="text-xs md:text-sm font-medium text-gray-800 line-clamp-1">{item.material}</p>
-                        <p className="text-xs text-gray-600">Sisa: {item.currentStock} {item.unit}</p>
+                        <p className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1">{item.material}</p>
                       </div>
+                      <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                        {item.currentStock} {item.unit}
+                      </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1 md:h-1.5 mt-1">
+                    <div className="w-full bg-slate-100 rounded-full h-1 mt-1 overflow-hidden">
                       <div
-                        className="bg-red-500 h-1 md:h-1.5 rounded-full"
+                        className="bg-red-500 h-full rounded-full"
                         style={{ width: `${(item.currentStock / item.minStock) * 100}%` }}
                       ></div>
                     </div>
@@ -559,7 +564,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div className="bg-white border border-blue-200 rounded-lg p-3 md:p-4 shadow-sm">
+        <div className="enterprise-card p-3 md:p-4 animate-enter-fade delay-300">
           <div className="flex items-center justify-between mb-2 md:mb-3">
             <div className="flex items-center">
               <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-2 md:mr-3">
@@ -576,21 +581,24 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-2 gap-1.5 md:gap-2">
-            <div className="text-center p-1.5 md:p-2 bg-gray-50 rounded">
-              <div className="text-sm md:text-lg font-bold text-gray-800">85%</div>
-              <div className="text-xs text-gray-600">Efisiensi</div>
+            <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm">
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">85<span className="text-sm">%</span></div>
+              <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Efisiensi</div>
             </div>
-            <div className="text-center p-1.5 md:p-2 bg-gray-50 rounded">
-              <div className="text-sm md:text-lg font-bold text-green-600">92</div>
-              <div className="text-xs text-gray-600">Selesai</div>
+            <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">92</div>
+              <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Selesai</div>
             </div>
-            <div className="text-center p-1.5 md:p-2 bg-gray-50 rounded">
-              <div className="text-sm md:text-lg font-bold text-yellow-600">8</div>
-              <div className="text-xs text-gray-600">Pending</div>
+            <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-yellow-500"></div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">8</div>
+              <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Pending</div>
             </div>
-            <div className="text-center p-1.5 md:p-2 bg-gray-50 rounded">
-              <div className="text-sm md:text-lg font-bold text-red-600">3</div>
-              <div className="text-xs text-gray-600">Stuck</div>
+            <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">3</div>
+              <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Stuck</div>
             </div>
           </div>
 
@@ -601,25 +609,26 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
+      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {stats.map((stat, index) => (
           <a
             key={index}
             href={stat.link}
-            className="block bg-white p-3 md:p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+            className="block enterprise-card p-4 animate-enter-fade"
+            style={{ animationDelay: `${(index + 3) * 100}ms` }}
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-gray-500">{stat.title}</p>
                 <div className="flex items-end mt-0.5 md:mt-1">
-                  <p className="text-sm md:text-lg font-bold text-gray-800">{stat.value}</p>
+                  <p className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{stat.value}</p>
                   <span className={`ml-1 text-xs font-medium ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
                     {stat.change}
                   </span>
                 </div>
               </div>
-              <div className={`text-lg md:text-xl p-1.5 md:p-2 rounded-lg ${getColorClass(stat.color)}`}>
-                {stat.icon}
+              <div className={`text-lg md:text-xl p-2 md:p-2.5 rounded-xl enterprise-stat-icon ${getColorClass(stat.color)}`}>
+                <span className="drop-shadow-sm">{stat.icon}</span>
               </div>
             </div>
           </a>
@@ -629,7 +638,7 @@ export default function Dashboard() {
       {/* Main Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Order Trend Chart */}
-        <Card className="p-4 md:p-6 shadow-sm border-gray-200">
+        <Card className="enterprise-card p-4 md:p-6 animate-enter-fade delay-300">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold text-gray-800 flex items-center">
@@ -665,7 +674,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Production Mix Chart */}
-        <Card className="p-4 md:p-6 shadow-sm border-gray-200">
+        <Card className="enterprise-card p-4 md:p-6 animate-enter-fade delay-400">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold text-gray-800 flex items-center">
@@ -715,7 +724,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Revenue Performance Chart */}
-        <Card className="p-4 md:p-6 shadow-sm border-gray-200 lg:col-span-2">
+        <Card className="enterprise-card p-4 md:p-6 lg:col-span-2 animate-enter-fade delay-500">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold text-gray-800 flex items-center">
@@ -747,9 +756,9 @@ export default function Dashboard() {
       </div>
 
       {/* Three Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Recent Orders */}
-        <Card className="p-2 md:p-3 lg:col-span-1">
+        <Card className="enterprise-card p-2 md:p-3 lg:col-span-1 animate-enter-fade delay-200">
           <CardHeader className="pb-1 md:pb-2">
             <div className="flex justify-between items-center">
               <h3 className="font-semibold text-gray-800 text-sm md:text-base">Pesanan Terbaru</h3>
@@ -779,7 +788,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Production Status */}
-        <Card className="p-2 md:p-3 lg:col-span-1 shadow-sm border-gray-200">
+        <Card className="enterprise-card p-2 md:p-3 lg:col-span-1 animate-enter-fade delay-300">
           <CardHeader className="pb-1 md:pb-2 border-b border-gray-50 mb-3">
             <div className="flex justify-between items-center">
               <h3 className="font-bold text-gray-800 text-sm md:text-base">Status Produksi</h3>
@@ -794,7 +803,7 @@ export default function Dashboard() {
                 <div
                   key={stage}
                   onClick={() => handleStageClick(stage)}
-                  className="flex items-center justify-between p-2 hover:bg-slate-50 cursor-pointer rounded-xl transition-all duration-200 group border border-transparent hover:border-slate-100 active:scale-[0.98]"
+                  className="flex items-center justify-between p-2.5 hover:bg-slate-50 cursor-pointer rounded-xl transition-all duration-200 border border-transparent hover:border-slate-200 hover:shadow-sm active:scale-[0.98] group"
                 >
                   <div className="flex items-center">
                     <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-50 flex items-center justify-center mr-3 group-hover:bg-white group-hover:shadow-sm transition-colors border border-slate-100">
@@ -823,7 +832,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Department Performance Summary */}
-        <Card className="p-2 md:p-3 lg:col-span-1">
+        <Card className="enterprise-card p-2 md:p-3 lg:col-span-1 animate-enter-fade delay-400">
           <CardHeader className="pb-1 md:pb-2">
             <div className="flex justify-between items-center">
               <h3 className="font-semibold text-gray-800 text-sm md:text-base">Kinerja Departemen</h3>
@@ -835,19 +844,19 @@ export default function Dashboard() {
           <CardBody>
             <div className="space-y-2 md:space-y-4">
               <div className="grid grid-cols-2 gap-1.5 md:gap-3 mb-1 md:mb-2">
-                <div className="bg-blue-50 p-1.5 md:p-3 rounded-lg">
-                  <div className="flex items-center">
-                    <Users size={14} className="text-blue-600 mr-1 md:mr-2" />
-                    <span className="text-xs text-gray-600">Total Karyawan</span>
+                <div className="enterprise-pill p-2 md:p-3 overflow-hidden group">
+                  <div className="flex items-center relative z-10">
+                    <Users size={14} className="text-slate-600 mr-1 md:mr-2" />
+                    <span className="text-xs text-slate-500 font-medium">Karyawan</span>
                   </div>
-                  <p className="text-sm md:text-lg font-bold text-gray-800 mt-0.5 md:mt-1">35</p>
+                  <p className="text-sm md:text-xl font-black text-slate-900 mt-1 relative z-10">35</p>
                 </div>
-                <div className="bg-green-50 p-1.5 md:p-3 rounded-lg">
-                  <div className="flex items-center">
-                    <Package size={14} className="text-green-600 mr-1 md:mr-2" />
-                    <span className="text-xs text-gray-600">Total Pekerjaan</span>
+                <div className="enterprise-pill p-2 md:p-3 overflow-hidden group">
+                  <div className="flex items-center relative z-10">
+                    <Package size={14} className="text-slate-600 mr-1 md:mr-2" />
+                    <span className="text-xs text-slate-500 font-medium">Pekerjaan</span>
                   </div>
-                  <p className="text-sm md:text-lg font-bold text-gray-800 mt-0.5 md:mt-1">122</p>
+                  <p className="text-sm md:text-xl font-black text-slate-900 mt-1 relative z-10">122</p>
                 </div>
               </div>
 

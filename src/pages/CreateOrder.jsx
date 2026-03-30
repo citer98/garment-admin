@@ -876,7 +876,7 @@ export default function CreateOrder() {
                   className="px-2 md:px-3 py-1 md:py-1.5 bg-blue-600 text-white rounded-lg text-[10px] md:text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center whitespace-nowrap"
                 >
                   <Plus size={isMobile ? 12 : 14} className="mr-0.5 md:mr-1" />
-                  + Pelanggan
+                  Pelanggan
                 </button>
                 <button
                   onClick={openCsvModal}

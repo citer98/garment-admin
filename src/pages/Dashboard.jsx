@@ -1,66 +1,78 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
-  Package, 
-  Clock, 
-  Bell, 
-  AlertTriangle, 
-  AlertCircle, 
-  CheckCircle, 
-  ChevronRight, 
-  X, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Package,
+  Clock,
+  Bell,
+  AlertTriangle,
+  AlertCircle,
+  CheckCircle,
+  ChevronRight,
+  X,
   Filter,
   Plus,
   Maximize2,
   ChevronLeft,
   Menu,
   Grid,
-  BarChart3
+  BarChart3,
+  Calendar,
+  DollarSign
 } from 'lucide-react';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+  BarChart, Bar
+} from 'recharts';
 import { Card, CardHeader, CardBody } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import StatCard from '../components/StatCard';
 
 export default function Dashboard() {
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showAllAlerts, setShowAllAlerts] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [selectedStage, setSelectedStage] = useState(null);
+  const [stageOrders, setStageOrders] = useState([]);
+  const [productionCounts, setProductionCounts] = useState({
+    'Cutting': 0,
+    'Sewing': 0,
+    'Finishing': 0,
+    'Packing': 0
+  });
 
   const stats = [
-    { 
-      title: "Pesanan Aktif", 
-      value: "12", 
-      change: "+2", 
-      icon: "📦", 
+    {
+      title: "Pesanan Aktif",
+      value: "12",
+      change: "+2",
+      icon: "📦",
       color: "blue",
       link: "/orders"
     },
-    { 
-      title: "Revenue Bulan Ini", 
-      value: "Rp 48.5jt", 
-      change: "+12.5%", 
-      icon: "💰", 
+    {
+      title: "Revenue Bulan Ini",
+      value: "Rp 48.5jt",
+      change: "+12.5%",
+      icon: "💰",
       color: "green",
       link: "/finance"
     },
-    { 
-      title: "Profit Margin", 
-      value: "33.2%", 
-      change: "+2.1%", 
-      icon: "📊", 
+    {
+      title: "Profit Margin",
+      value: "33.2%",
+      change: "+2.1%",
+      icon: "📊",
       color: "purple",
       link: "/finance"
     },
-    { 
-      title: "Avg Order Value", 
-      value: "Rp 1.25jt", 
-      change: "+5.3%", 
-      icon: "📈", 
+    {
+      title: "Avg Order Value",
+      value: "Rp 1.25jt",
+      change: "+5.3%",
+      icon: "📈",
       color: "yellow",
       link: "/finance"
     },
@@ -136,6 +148,35 @@ export default function Dashboard() {
     }
   ];
 
+  // Data Mock untuk Charts
+  const orderHistoryData = [
+    { name: 'Mon', total: 4 },
+    { name: 'Tue', total: 7 },
+    { name: 'Wed', total: 5 },
+    { name: 'Thu', total: 9 },
+    { name: 'Fri', total: 12 },
+    { name: 'Sat', total: 8 },
+    { name: 'Sun', total: 3 },
+  ];
+
+  const revenueData = [
+    { month: 'Jan', revenue: 35 },
+    { month: 'Feb', revenue: 42 },
+    { month: 'Mar', revenue: 48 },
+    { month: 'Apr', revenue: 38 },
+    { month: 'May', revenue: 52 },
+    { month: 'Jun', revenue: 61 },
+  ];
+
+  const productionMixData = [
+    { name: 'Cutting', value: productionCounts.Cutting || 15 },
+    { name: 'Sewing', value: productionCounts.Sewing || 45 },
+    { name: 'Finishing', value: productionCounts.Finishing || 10 },
+    { name: 'Packing', value: productionCounts.Packing || 20 },
+  ];
+
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+
   // Data stuck items
   const stuckItems = [
     {
@@ -175,8 +216,7 @@ export default function Dashboard() {
       currentStock: 45,
       minStock: 100,
       unit: 'meter',
-      status: 'critical',
-      estimatedDays: 2
+      status: 'critical'
     },
     {
       id: 'MAT-002',
@@ -184,8 +224,7 @@ export default function Dashboard() {
       currentStock: 12,
       minStock: 50,
       unit: 'roll',
-      status: 'critical',
-      estimatedDays: 1
+      status: 'critical'
     },
     {
       id: 'MAT-003',
@@ -193,8 +232,7 @@ export default function Dashboard() {
       currentStock: 85,
       minStock: 200,
       unit: 'pcs',
-      status: 'warning',
-      estimatedDays: 5
+      status: 'warning'
     },
     {
       id: 'MAT-004',
@@ -202,8 +240,7 @@ export default function Dashboard() {
       currentStock: 60,
       minStock: 150,
       unit: 'pcs',
-      status: 'warning',
-      estimatedDays: 4
+      status: 'warning'
     },
     {
       id: 'MAT-005',
@@ -211,8 +248,7 @@ export default function Dashboard() {
       currentStock: 110,
       minStock: 300,
       unit: 'pcs',
-      status: 'low',
-      estimatedDays: 7
+      status: 'low'
     }
   ];
 
@@ -221,65 +257,75 @@ export default function Dashboard() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Inisialisasi notifikasi
+  // Sync real counts from localStorage
   useEffect(() => {
-    const initialNotifications = [
-      {
-        id: 1,
-        type: 'stuck',
-        title: 'Item Stuck di Departemen Jahit',
-        message: 'Kemeja Pria Slimfit (ORD-00120) stuck selama 3 hari',
-        time: '10 menit lalu',
-        read: false,
-        priority: 'high'
-      },
-      {
-        id: 2,
-        type: 'stock',
-        title: 'Stok Kain Katun Menipis',
-        message: 'Sisa 45 meter, minimal 100 meter',
-        time: '1 jam lalu',
-        read: false,
-        priority: 'critical'
-      },
-      {
-        id: 3,
-        type: 'stuck',
-        title: 'Celana Chino Tertahan di Finishing',
-        message: 'Menunggu kancing (ORD-00118)',
-        time: '3 jam lalu',
-        read: false,
-        priority: 'medium'
-      },
-      {
-        id: 4,
-        type: 'stock',
-        title: 'Benang Polyester Hampir Habis',
-        message: 'Sisa 12 roll, minimal 50 roll',
-        time: '5 jam lalu',
-        read: true,
-        priority: 'critical'
-      },
-      {
-        id: 5,
-        type: 'system',
-        title: 'Maintenance Jadwal',
-        message: 'Maintenance sistem hari Sabtu, 08:00-10:00',
-        time: '1 hari lalu',
-        read: true,
-        priority: 'low'
+    const loadProductionData = () => {
+      try {
+        const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
+
+        // Map Indonesian department names to English labels in the card
+        const counts = {
+          'Cutting': 0,
+          'Sewing': 0,
+          'Finishing': 0,
+          'Packing': 0
+        };
+
+        availableJobs.forEach(job => {
+          if (job.status !== 'selesai') {
+            if (job.department === 'Potong') counts['Cutting'] += (job.qty || 0);
+            if (job.department === 'Jahit') counts['Sewing'] += (job.qty || 0);
+            if (job.department === 'Finishing') counts['Finishing'] += (job.qty || 0);
+            if (job.department === 'Packing') counts['Packing'] += (job.qty || 0);
+          }
+        });
+
+        setProductionCounts(counts);
+      } catch (error) {
+        console.error('Error loading production data:', error);
       }
-    ];
-    
-    setNotifications(initialNotifications);
-    setUnreadCount(initialNotifications.filter(n => !n.read).length);
+    };
+
+    loadProductionData();
+    // Refresh every 30 seconds
+    const interval = setInterval(loadProductionData, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  const handleStageClick = (stageName) => {
+    const deptMap = {
+      'Cutting': 'Potong',
+      'Sewing': 'Jahit',
+      'Finishing': 'Finishing',
+      'Packing': 'Packing'
+    };
+
+    const targetDept = deptMap[stageName];
+    const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
+    const filteredOrders = availableJobs
+      .filter(job => job.department === targetDept && job.status !== 'selesai')
+      .map(job => ({
+        id: job.order_id,
+        customer: job.customer_name || 'Pelanggan',
+        product: job.product_name || 'Produk',
+        qty: job.qty,
+        deadline: job.deadline,
+        priority: job.priority
+      }));
+
+    // Remove duplicates if any (one order might have multiple jobs, though rarely in the same dept)
+    const uniqueOrders = Array.from(new Set(filteredOrders.map(o => o.id)))
+      .map(id => filteredOrders.find(o => o.id === id));
+
+    setStageOrders(uniqueOrders);
+    setSelectedStage(stageName);
+  };
 
   // Helper untuk color classes
   const getColorClass = (color) => {
@@ -295,7 +341,7 @@ export default function Dashboard() {
 
   // Helper untuk trend icon
   const getTrendIcon = (trend) => {
-    switch(trend) {
+    switch (trend) {
       case 'up': return <TrendingUp size={14} className="text-green-500" />;
       case 'down': return <TrendingDown size={14} className="text-red-500" />;
       default: return <span className="text-gray-400">→</span>;
@@ -312,7 +358,7 @@ export default function Dashboard() {
 
   // Helper untuk priority badge
   const getPriorityBadge = (priority) => {
-    switch(priority) {
+    switch (priority) {
       case 'critical':
       case 'high':
         return 'bg-red-100 text-red-800 border border-red-200';
@@ -333,138 +379,7 @@ export default function Dashboard() {
     return { status: 'low', color: 'text-green-600', bg: 'bg-green-50' };
   };
 
-  // Helper untuk notification icon
-  const getNotificationIcon = (type, priority) => {
-    switch(type) {
-      case 'stuck':
-        return <AlertTriangle size={16} className={priority === 'high' ? 'text-red-500' : 'text-yellow-500'} />;
-      case 'stock':
-        return <AlertCircle size={16} className="text-orange-500" />;
-      case 'system':
-        return <Bell size={16} className="text-blue-500" />;
-      default:
-        return <Bell size={16} className="text-gray-500" />;
-    }
-  };
 
-  // Mark notification as read
-  const markAsRead = (id) => {
-    const updatedNotifications = notifications.map(notification =>
-      notification.id === id ? { ...notification, read: true } : notification
-    );
-    setNotifications(updatedNotifications);
-    setUnreadCount(updatedNotifications.filter(n => !n.read).length);
-  };
-
-  // Mark all as read
-  const markAllAsRead = () => {
-    const updatedNotifications = notifications.map(notification => ({
-      ...notification,
-      read: true
-    }));
-    setNotifications(updatedNotifications);
-    setUnreadCount(0);
-  };
-
-  // Remove notification
-  const removeNotification = (id) => {
-    const updatedNotifications = notifications.filter(notification => notification.id !== id);
-    setNotifications(updatedNotifications);
-    setUnreadCount(updatedNotifications.filter(n => !n.read).length);
-  };
-
-  // Mobile Notification Drawer
-  const MobileNotificationDrawer = () => (
-    <div className="fixed inset-0 bg-black/50 z-50">
-      <div className="fixed right-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-xl">
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-gray-800 text-lg">Notifikasi</h3>
-            <div className="flex items-center space-x-2">
-              <button 
-                onClick={markAllAsRead}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Tandai semua
-              </button>
-              <button 
-                onClick={() => setShowNotifications(false)}
-                className="p-1.5 hover:bg-gray-100 rounded"
-              >
-                <X size={20} className="text-gray-500" />
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <div className="overflow-y-auto h-[calc(100vh-80px)]">
-          {notifications.length > 0 ? (
-            <div className="divide-y divide-gray-100">
-              {notifications.map(notification => (
-                <div 
-                  key={notification.id} 
-                  className={`p-4 ${!notification.read ? 'bg-blue-50/50' : ''}`}
-                >
-                  <div className="flex items-start space-x-3">
-                    <div className="mt-1">
-                      {getNotificationIcon(notification.type, notification.priority)}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className={`font-semibold ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
-                          {notification.title}
-                        </h4>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${getPriorityBadge(notification.priority)}`}>
-                            {notification.priority}
-                          </span>
-                          <span className="text-xs text-gray-500">{notification.time}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {!notification.read && (
-                            <button 
-                              onClick={() => markAsRead(notification.id)}
-                              className="text-xs text-blue-600 hover:text-blue-800"
-                            >
-                              Baca
-                            </button>
-                          )}
-                          <button 
-                            onClick={() => removeNotification(notification.id)}
-                            className="text-gray-400 hover:text-red-600"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-8 text-center">
-              <Bell size={32} className="text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">Tidak ada notifikasi</p>
-            </div>
-          )}
-        </div>
-        
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <a 
-            href="/alerts" 
-            className="flex items-center justify-center text-sm text-blue-600 hover:text-blue-800 font-medium"
-          >
-            Lihat semua notifikasi
-            <ChevronRight size={16} className="ml-1" />
-          </a>
-        </div>
-      </div>
-    </div>
-  );
 
   // Mobile Department Card
   const MobileDepartmentCard = ({ dept }) => (
@@ -489,7 +404,7 @@ export default function Dashboard() {
           <span className="font-bold">{dept.efficiency}%</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
+          <div
             className={`h-2 rounded-full ${getProgressColor(dept.efficiency)}`}
             style={{ width: `${dept.efficiency}%` }}
           ></div>
@@ -524,30 +439,17 @@ export default function Dashboard() {
           <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800">Dashboard Produksi</h2>
           <p className="text-xs md:text-sm text-gray-600 mt-0.5">Ringkasan aktivitas produksi terkini</p>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          {/* Notification Bell - Mobile */}
           {isMobile ? (
             <>
-              <button 
-                onClick={() => setShowNotifications(true)}
-                className="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
-              >
-                <Bell size={20} />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-              
-              <button 
+              <button
                 onClick={() => setIsFullscreen(!isFullscreen)}
                 className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
               >
                 <Maximize2 size={20} />
               </button>
-              
+
               <Button variant="primary" size="sm" className="text-xs">
                 <Plus size={14} className="mr-1" />
                 Pesanan
@@ -555,117 +457,6 @@ export default function Dashboard() {
             </>
           ) : (
             <>
-              <div className="relative">
-                <button 
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <Bell size={20} />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-
-                {/* Desktop Notification Dropdown */}
-                {showNotifications && !isMobile && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowNotifications(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-xl shadow-xl border border-gray-200 z-50">
-                      <div className="p-4 border-b border-gray-200">
-                        <div className="flex justify-between items-center">
-                          <h3 className="font-semibold text-gray-800">Notifikasi</h3>
-                          <div className="flex items-center space-x-2">
-                            <button 
-                              onClick={markAllAsRead}
-                              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                            >
-                              Tandai semua dibaca
-                            </button>
-                            <button 
-                              onClick={() => setShowNotifications(false)}
-                              className="p-1 hover:bg-gray-100 rounded"
-                            >
-                              <X size={16} className="text-gray-500" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="max-h-96 overflow-y-auto">
-                        {notifications.length > 0 ? (
-                          <div className="divide-y divide-gray-100">
-                            {notifications.map(notification => (
-                              <div 
-                                key={notification.id} 
-                                className={`p-4 hover:bg-gray-50 ${!notification.read ? 'bg-blue-50/50' : ''}`}
-                              >
-                                <div className="flex items-start justify-between">
-                                  <div className="flex items-start">
-                                    <div className="mr-3 mt-0.5">
-                                      {getNotificationIcon(notification.type, notification.priority)}
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="flex items-center justify-between">
-                                        <h4 className={`text-sm font-semibold ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
-                                          {notification.title}
-                                        </h4>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full ${getPriorityBadge(notification.priority)}`}>
-                                          {notification.priority}
-                                        </span>
-                                      </div>
-                                      <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
-                                      <div className="flex items-center justify-between mt-2">
-                                        <span className="text-xs text-gray-500">{notification.time}</span>
-                                        <div className="flex items-center space-x-2">
-                                          {!notification.read && (
-                                            <button 
-                                              onClick={() => markAsRead(notification.id)}
-                                              className="text-xs text-blue-600 hover:text-blue-800"
-                                            >
-                                              Tandai dibaca
-                                            </button>
-                                          )}
-                                          <button 
-                                            onClick={() => removeNotification(notification.id)}
-                                            className="text-xs text-gray-400 hover:text-red-600"
-                                          >
-                                            <X size={12} />
-                                          </button>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="p-8 text-center">
-                            <Bell size={32} className="text-gray-300 mx-auto mb-3" />
-                            <p className="text-gray-500 text-sm">Tidak ada notifikasi</p>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="p-4 border-t border-gray-200 bg-gray-50">
-                        <a 
-                          href="/alerts" 
-                          className="flex items-center justify-center text-sm text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          Lihat semua notifikasi
-                          <ChevronRight size={16} className="ml-1" />
-                        </a>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-              
               <Button variant="primary" size="sm">
                 <Plus size={16} className="mr-1.5" />
                 Buat Pesanan Baru
@@ -674,9 +465,6 @@ export default function Dashboard() {
           )}
         </div>
       </div>
-
-      {/* Mobile Notification Drawer */}
-      {showNotifications && isMobile && <MobileNotificationDrawer />}
 
       {/* Alert Summary Cards - Responsive Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
@@ -696,7 +484,7 @@ export default function Dashboard() {
               {stuckItems.length}
             </span>
           </div>
-          
+
           <div className="space-y-1.5 md:space-y-2">
             {stuckItems.slice(0, 2).map((item, index) => (
               <div key={index} className="p-2 bg-red-50 rounded border border-red-100">
@@ -711,8 +499,8 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-          
-          <button 
+
+          <button
             onClick={() => setShowAllAlerts(true)}
             className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-red-600 hover:text-red-800 font-medium"
           >
@@ -736,7 +524,7 @@ export default function Dashboard() {
               {lowStockItems.filter(item => item.status === 'critical').length} kritis
             </span>
           </div>
-          
+
           <div className="space-y-1.5 md:space-y-2">
             {lowStockItems
               .filter(item => item.status === 'critical')
@@ -750,12 +538,9 @@ export default function Dashboard() {
                         <p className="text-xs md:text-sm font-medium text-gray-800 line-clamp-1">{item.material}</p>
                         <p className="text-xs text-gray-600">Sisa: {item.currentStock} {item.unit}</p>
                       </div>
-                      <span className="text-xs font-semibold text-red-600">
-                        {item.estimatedDays} hari
-                      </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-1 md:h-1.5 mt-1">
-                      <div 
+                      <div
                         className="bg-red-500 h-1 md:h-1.5 rounded-full"
                         style={{ width: `${(item.currentStock / item.minStock) * 100}%` }}
                       ></div>
@@ -764,8 +549,8 @@ export default function Dashboard() {
                 );
               })}
           </div>
-          
-          <button 
+
+          <button
             onClick={() => setShowAllAlerts(true)}
             className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-yellow-600 hover:text-yellow-800 font-medium"
           >
@@ -786,10 +571,10 @@ export default function Dashboard() {
               </div>
             </div>
             <span className="bg-blue-100 text-blue-800 text-xs font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-full">
-              Live
+
             </span>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-1.5 md:gap-2">
             <div className="text-center p-1.5 md:p-2 bg-gray-50 rounded">
               <div className="text-sm md:text-lg font-bold text-gray-800">85%</div>
@@ -808,7 +593,7 @@ export default function Dashboard() {
               <div className="text-xs text-gray-600">Stuck</div>
             </div>
           </div>
-          
+
           <button className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-blue-600 hover:text-blue-800 font-medium">
             Refresh data
           </button>
@@ -818,8 +603,8 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
         {stats.map((stat, index) => (
-          <a 
-            key={index} 
+          <a
+            key={index}
             href={stat.link}
             className="block bg-white p-3 md:p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
           >
@@ -839,6 +624,126 @@ export default function Dashboard() {
             </div>
           </a>
         ))}
+      </div>
+
+      {/* Main Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Order Trend Chart */}
+        <Card className="p-4 md:p-6 shadow-sm border-gray-200">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                <BarChart3 size={18} className="mr-2 text-blue-500" />
+                Tren Pesanan (7 Hari)
+              </h3>
+              <p className="text-xs text-gray-500">Jumlah pesanan masuk per hari</p>
+            </div>
+            <select className="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs outline-none">
+              <option>Minggu ini</option>
+              <option>Minggu lalu</option>
+            </select>
+          </div>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={orderHistoryData}>
+                <defs>
+                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#6b7280'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#6b7280'}} />
+                <Tooltip 
+                  contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+                />
+                <Area type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        {/* Production Mix Chart */}
+        <Card className="p-4 md:p-6 shadow-sm border-gray-200">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                <Grid size={18} className="mr-2 text-purple-500" />
+                Distribusi Produksi
+              </h3>
+              <p className="text-xs text-gray-500">Persentase beban kerja tiap tahap</p>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              <span className="text-[10px] text-gray-500 uppercase font-bold">Real-time</span>
+            </div>
+          </div>
+          <div className="h-64 w-full flex flex-col md:flex-row items-center">
+            <div className="w-full md:w-1/2 h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={productionMixData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {productionMixData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="w-full md:w-1/2 mt-4 md:mt-0 grid grid-cols-2 gap-3">
+              {productionMixData.map((entry, index) => (
+                <div key={entry.name} className="flex flex-col p-2 bg-gray-50 rounded-lg">
+                  <div className="flex items-center mb-1">
+                    <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                    <span className="text-xs font-medium text-gray-600">{entry.name}</span>
+                  </div>
+                  <span className="text-sm font-bold text-gray-800 pl-4">{entry.value} item</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        {/* Revenue Performance Chart */}
+        <Card className="p-4 md:p-6 shadow-sm border-gray-200 lg:col-span-2">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                <DollarSign size={18} className="mr-2 text-green-500" />
+                Performa Keuangan (Rp Juta)
+              </h3>
+              <p className="text-xs text-gray-500">Rekapitulasi pendapatan 6 bulan terakhir</p>
+            </div>
+            <div className="flex items-center bg-gray-100 p-1 rounded-lg">
+              <button className="px-3 py-1 bg-white text-[10px] font-bold rounded-md shadow-sm">Revenue</button>
+              <button className="px-3 py-1 text-[10px] font-bold text-gray-500">Margin</button>
+            </div>
+          </div>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#6b7280'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#6b7280'}} />
+                <Tooltip 
+                  cursor={{fill: '#f9fafb'}}
+                  contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+                />
+                <Bar dataKey="revenue" fill="#10b981" radius={[6, 6, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
       </div>
 
       {/* Three Column Layout */}
@@ -874,35 +779,42 @@ export default function Dashboard() {
         </Card>
 
         {/* Production Status */}
-        <Card className="p-2 md:p-3 lg:col-span-1">
-          <CardHeader className="pb-1 md:pb-2">
+        <Card className="p-2 md:p-3 lg:col-span-1 shadow-sm border-gray-200">
+          <CardHeader className="pb-1 md:pb-2 border-b border-gray-50 mb-3">
             <div className="flex justify-between items-center">
-              <h3 className="font-semibold text-gray-800 text-sm md:text-base">Status Produksi</h3>
-              <span className="text-xs text-gray-500 bg-gray-100 px-1.5 md:px-2 py-0.5 md:py-1 rounded-full">
-                Real-time
-              </span>
+              <h3 className="font-bold text-gray-800 text-sm md:text-base">Status Produksi</h3>
+              {/* <span className="text-[10px] uppercase font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                Live
+              </span> */}
             </div>
           </CardHeader>
           <CardBody>
-            <div className="space-y-2 md:space-y-3">
+            <div className="space-y-3 md:space-y-4">
               {['Cutting', 'Sewing', 'Finishing', 'Packing'].map((stage) => (
-                <div key={stage} className="flex items-center justify-between">
+                <div
+                  key={stage}
+                  onClick={() => handleStageClick(stage)}
+                  className="flex items-center justify-between p-2 hover:bg-slate-50 cursor-pointer rounded-xl transition-all duration-200 group border border-transparent hover:border-slate-100 active:scale-[0.98]"
+                >
                   <div className="flex items-center">
-                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-100 flex items-center justify-center mr-1.5 md:mr-2">
-                      <span className="text-sm md:text-base">
-                        {stage === 'Cutting' ? '✂️' : 
-                         stage === 'Sewing' ? '🧵' : 
-                         stage === 'Finishing' ? '✨' : '📦'}
+                    <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-50 flex items-center justify-center mr-3 group-hover:bg-white group-hover:shadow-sm transition-colors border border-slate-100">
+                      <span className="text-lg md:text-xl transform group-hover:scale-110 transition-transform">
+                        {stage === 'Cutting' ? '✂️' :
+                          stage === 'Sewing' ? '🧵' :
+                            stage === 'Finishing' ? '✨' : '📦'}
                       </span>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-800 text-xs md:text-sm">{stage}</p>
-                      <p className="text-xs text-gray-600">Departemen</p>
+                      <p className="font-bold text-gray-800 text-xs md:text-sm group-hover:text-primary-600 transition-colors">{stage}</p>
+                      <p className="text-[10px] text-gray-500 font-medium">Departemen</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-gray-800 text-sm md:text-base">{Math.floor(Math.random() * 50) + 10}</p>
-                    <p className="text-xs text-gray-600">item</p>
+                  <div className="text-right flex items-center space-x-3">
+                    <div>
+                      <p className="font-black text-gray-900 text-sm md:text-lg leading-none">{productionCounts[stage] || 0}</p>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">item</p>
+                    </div>
+                    <ChevronRight size={14} className="text-gray-300 group-hover:text-primary-400 group-hover:translate-x-1 transition-all" />
                   </div>
                 </div>
               ))}
@@ -938,7 +850,7 @@ export default function Dashboard() {
                   <p className="text-sm md:text-lg font-bold text-gray-800 mt-0.5 md:mt-1">122</p>
                 </div>
               </div>
-              
+
               <div className="space-y-1.5 md:space-y-2">
                 {departmentPerformance.slice(0, 3).map((dept) => (
                   <div key={dept.name} className="p-1.5 md:p-2 hover:bg-gray-50 rounded-lg">
@@ -949,16 +861,15 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center">
                         {getTrendIcon(dept.trend)}
-                        <span className={`ml-0.5 md:ml-1 text-xs font-bold ${
-                          dept.trend === 'up' ? 'text-green-600' : 
+                        <span className={`ml-0.5 md:ml-1 text-xs font-bold ${dept.trend === 'up' ? 'text-green-600' :
                           dept.trend === 'down' ? 'text-red-600' : 'text-gray-600'
-                        }`}>
+                          }`}>
                           {dept.efficiency}%
                         </span>
                       </div>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-1 md:h-1.5">
-                      <div 
+                      <div
                         className={`h-1 md:h-1.5 rounded-full ${getProgressColor(dept.efficiency)}`}
                         style={{ width: `${dept.efficiency}%` }}
                       ></div>
@@ -978,133 +889,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Department Performance Full Chart - Responsive */}
-      <Card className="p-2 md:p-3">
-        <CardHeader className="pb-1 md:pb-2">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
-            <div>
-              <h3 className="font-semibold text-gray-800 text-sm md:text-base lg:text-lg">Analisis Kinerja per Departemen</h3>
-              <p className="text-xs text-gray-600 mt-0.5">Efisiensi dan produktivitas bulan ini</p>
-            </div>
-            <div className="flex space-x-1 md:space-x-2">
-              <button className="text-xs md:text-sm text-gray-600 hover:text-gray-800 font-medium px-2 py-1 bg-gray-100 rounded-lg">
-                Bulan ini
-              </button>
-              <button className="text-xs md:text-sm text-gray-400 hover:text-gray-600 font-medium px-2 py-1">
-                Minggu ini
-              </button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardBody>
-          {/* Mobile View: Vertical List */}
-          {isMobile ? (
-            <div className="space-y-3">
-              {departmentPerformance.map((dept) => (
-                <MobileDepartmentCard key={dept.name} dept={dept} />
-              ))}
-            </div>
-          ) : (
-            // Desktop View: Grid
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 md:gap-3">
-              {departmentPerformance.map((dept) => (
-                <div key={dept.name} className="bg-white border border-gray-200 rounded-xl p-3 md:p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-2 md:mb-3">
-                    <div className="flex items-center">
-                      <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center ${getColorClass(dept.color)}`}>
-                        <span className="text-base md:text-lg">{dept.icon}</span>
-                      </div>
-                      <div className="ml-2 md:ml-3">
-                        <h4 className="font-semibold text-gray-800 text-sm">{dept.name}</h4>
-                        <div className="flex items-center text-xs text-gray-500">
-                          <Users size={10} className="mr-1" />
-                          {dept.employees} orang
-                        </div>
-                      </div>
-                    </div>
-                    {getTrendIcon(dept.trend)}
-                  </div>
-
-                  {/* Mini Bar Chart */}
-                  <div className="mb-2 md:mb-3">
-                    <div className="flex justify-between text-xs text-gray-600 mb-0.5 md:mb-1">
-                      <span>Progress</span>
-                      <span className="font-bold">{dept.efficiency}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
-                      <div 
-                        className={`h-1.5 md:h-2 rounded-full ${getProgressColor(dept.efficiency)}`}
-                        style={{ width: `${dept.efficiency}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-1.5 md:gap-2 text-center">
-                    <div className="bg-blue-50 p-1.5 md:p-2 rounded">
-                      <div className="text-xs text-blue-700">Selesai</div>
-                      <div className="font-bold text-blue-800 text-sm md:text-base">{dept.completed}</div>
-                    </div>
-                    <div className="bg-yellow-50 p-1.5 md:p-2 rounded">
-                      <div className="text-xs text-yellow-700">Pending</div>
-                      <div className="font-bold text-yellow-800 text-sm md:text-base">{dept.pending}</div>
-                    </div>
-                  </div>
-
-                  {/* Performance Details */}
-                  <div className="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-gray-100">
-                    <div className="flex justify-between items-center text-xs">
-                      <div className="text-gray-600">Rata-rata waktu:</div>
-                      <div className="font-semibold text-gray-800">{dept.avgTime}</div>
-                    </div>
-                    <div className="flex justify-between items-center text-xs mt-0.5 md:mt-1">
-                      <div className="text-gray-600">Total pekerjaan:</div>
-                      <div className="font-semibold text-gray-800">{dept.totalJobs}</div>
-                    </div>
-                  </div>
-
-                  {/* Action Button */}
-                  <button className="w-full mt-2 md:mt-3 py-1 md:py-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors">
-                    Lihat detail
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Summary Stats */}
-          <div className="mt-3 md:mt-6 pt-3 md:pt-4 border-t border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4">
-              <div className="p-2 md:p-3 bg-gray-50 rounded-lg">
-                <div className="text-xs md:text-sm text-gray-600 mb-0.5 md:mb-1">Rata-rata Efisiensi</div>
-                <div className="flex items-center">
-                  <div className="text-base md:text-xl font-bold text-gray-800 mr-1 md:mr-2">
-                    {Math.round(departmentPerformance.reduce((sum, dept) => sum + dept.efficiency, 0) / departmentPerformance.length)}%
-                  </div>
-                  <TrendingUp size={14} className="text-green-500" />
-                  <span className="text-xs text-green-600 ml-0.5 md:ml-1">+2.4%</span>
-                </div>
-              </div>
-              <div className="p-2 md:p-3 bg-gray-50 rounded-lg">
-                <div className="text-xs md:text-sm text-gray-600 mb-0.5 md:mb-1">Total Pekerjaan Selesai</div>
-                <div className="text-base md:text-xl font-bold text-gray-800">
-                  {departmentPerformance.reduce((sum, dept) => sum + dept.completed, 0)}
-                </div>
-              </div>
-              <div className="p-2 md:p-3 bg-gray-50 rounded-lg">
-                <div className="text-xs md:text-sm text-gray-600 mb-0.5 md:mb-1">Departemen Terbaik</div>
-                <div className="flex items-center">
-                  <span className="mr-1 md:mr-2 text-base md:text-lg">📦</span>
-                  <div>
-                    <div className="font-medium text-gray-800 text-sm">Packing</div>
-                    <div className="text-xs text-gray-600">95% efisiensi</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
+      {/* Department Performance Full Chart - Hidden */}
 
       {/* Modal untuk Alerts Lengkap - Responsive */}
       {showAllAlerts && (
@@ -1116,7 +901,7 @@ export default function Dashboard() {
                   <h3 className="text-lg md:text-xl font-bold text-gray-800">Semua Alert & Notifikasi</h3>
                   <p className="text-xs md:text-sm text-gray-600 mt-0.5 md:mt-1">Monitoring item stuck dan stok bahan</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowAllAlerts(false)}
                   className="p-1.5 hover:bg-gray-100 rounded-full"
                 >
@@ -1135,7 +920,7 @@ export default function Dashboard() {
                     {stuckItems.length} item
                   </span>
                 </div>
-                
+
                 <div className="space-y-2 md:space-y-3">
                   {stuckItems.map((item, index) => (
                     <div key={index} className="p-3 md:p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -1181,7 +966,7 @@ export default function Dashboard() {
                     {lowStockItems.filter(item => item.status === 'critical').length} kritis
                   </span>
                 </div>
-                
+
                 <div className="space-y-2 md:space-y-3">
                   {lowStockItems.map((item, index) => {
                     const stockStatus = getStockStatus(item.currentStock, item.minStock);
@@ -1205,10 +990,6 @@ export default function Dashboard() {
                                 <div className="text-xs text-gray-600">Stok Minimal</div>
                                 <div className="font-bold text-gray-800 text-sm">{item.minStock} {item.unit}</div>
                               </div>
-                              <div className="col-span-2 md:col-span-1">
-                                <div className="text-xs text-gray-600">Estimasi Habis</div>
-                                <div className="font-bold text-red-600 text-sm">{item.estimatedDays} hari</div>
-                              </div>
                             </div>
                             <div className="mt-2 md:mt-3">
                               <div className="flex justify-between text-xs mb-0.5">
@@ -1216,7 +997,7 @@ export default function Dashboard() {
                                 <span className="font-bold">{Math.round((item.currentStock / item.minStock) * 100)}%</span>
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                <div 
+                                <div
                                   className={`h-1.5 rounded-full ${stockStatus.status === 'critical' ? 'bg-red-500' : 'bg-yellow-500'}`}
                                   style={{ width: `${(item.currentStock / item.minStock) * 100}%` }}
                                 ></div>
@@ -1242,7 +1023,7 @@ export default function Dashboard() {
                   Terakhir diperbarui: {new Date().toLocaleTimeString('id-ID')}
                 </div>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                  <button 
+                  <button
                     onClick={() => setShowAllAlerts(false)}
                     className="px-3 md:px-4 py-1.5 md:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm w-full sm:w-auto"
                   >
@@ -1253,6 +1034,92 @@ export default function Dashboard() {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Stage Detail */}
+      {selectedStage && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col scale-in">
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-slate-50/50">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-xl">
+                  {selectedStage === 'Cutting' ? '✂️' :
+                    selectedStage === 'Sewing' ? '🧵' :
+                      selectedStage === 'Finishing' ? '✨' : '📦'}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">Daftar Pesanan - {selectedStage}</h3>
+                  <p className="text-xs text-gray-500">Menampilkan pesanan yang sedang diproses di departemen ini</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedStage(null)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+              {stageOrders.length > 0 ? (
+                <div className="space-y-3">
+                  {stageOrders.map((order) => (
+                    <div key={order.id} className="p-4 bg-white border border-gray-100 rounded-xl hover:border-primary-200 hover:shadow-md transition-all group">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="font-black text-primary-600 text-sm">{order.id}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${getPriorityBadge(order.priority)}`}>
+                              {order.priority}
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-gray-800">{order.customer}</h4>
+                          <p className="text-sm text-gray-600 mt-0.5">{order.product}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-black text-gray-900 leading-tight">{order.qty}</p>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase">item</p>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-gray-50 flex items-center justify-between">
+                        <div className="flex items-center text-xs text-gray-500">
+                          <Clock size={12} className="mr-1 text-primary-400" />
+                          Deadline: <span className="ml-1 font-semibold text-gray-700">{order.deadline}</span>
+                        </div>
+                        <a
+                          href={`/orders/${order.id}`}
+                          className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center group-hover:translate-x-1 transition-transform"
+                        >
+                          Lihat Detail <ChevronRight size={14} className="ml-0.5" />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                    <Package size={32} className="text-slate-300" />
+                  </div>
+                  <h4 className="text-gray-800 font-bold">Tidak ada pesanan</h4>
+                  <p className="text-sm text-gray-500 max-w-[240px] mt-1">
+                    Saat ini tidak ada pesanan aktif yang sedang diproses di departemen {selectedStage}.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-5 border-t border-gray-100 bg-slate-50/30 flex justify-end">
+              <button
+                onClick={() => setSelectedStage(null)}
+                className="px-6 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors text-sm shadow-sm"
+              >
+                Tutup
+              </button>
             </div>
           </div>
         </div>

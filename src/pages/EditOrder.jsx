@@ -85,6 +85,11 @@ export default function EditOrder() {
     { value: 'draft', label: 'Draft' },
     { value: 'processing', label: 'Diproses' },
     { value: 'production', label: 'Produksi' },
+    { value: 'cutting', label: 'Potong' },
+    { value: 'sewing', label: 'Jahit' },
+    { value: 'finishing', label: 'Finishing' },
+    { value: 'packing', label: 'Packing' },
+    { value: 'qc', label: 'QC' },
     { value: 'completed', label: 'Selesai' },
     { value: 'delivered', label: 'Terkirim' },
     { value: 'cancelled', label: 'Dibatalkan' },
@@ -464,9 +469,10 @@ export default function EditOrder() {
   const handleJobUpdates = (order, oldStatus) => {
     const newStatus = order.status;
     
+    const activeStatuses = ['processing', 'production', 'cutting', 'sewing', 'finishing', 'packing', 'qc', 'completed', 'delivered'];
+    
     // Jika status berubah dari draft/cancelled ke active status
-    if ((oldStatus === 'draft' || oldStatus === 'cancelled') && 
-        (newStatus === 'processing' || newStatus === 'production' || newStatus === 'completed')) {
+    if ((oldStatus === 'draft' || oldStatus === 'cancelled') && activeStatuses.includes(newStatus)) {
       // Generate new jobs
       syncOrderWithJobs(order);
       console.log('✅ New jobs generated for order:', order.id);

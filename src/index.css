@@ -7,16 +7,20 @@
 /* BASE & GLOBAL STYLES */
 /* ==================== */
 :root {
-  font-size: 80%;
+  font-size: 100%;
 }
 
 html {
-  font-size: 80%;
+  font-size: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  transform-origin: 0 0;
-  overflow: auto !important;
+  margin: 0;
+  padding: 0;
+  overflow: hidden !important;
+  background-color: #f1f5f9; /* slate-100 */
 }
 
 * {
@@ -223,8 +227,7 @@ body {
 }
 
 header {
-  min-height: 3.5rem;
-  max-height: 4rem;
+  min-height: 4rem; /* 64px */
 }
 
 @media (max-width: 640px) {
@@ -794,7 +797,32 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ==================== */
-/* FIX UNTUK ERROR DI BARIS 214 */
+/* PREMIUM FORM ELEMENTS */
+/* ==================== */
+.form-select-premium {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem !important;
+}
+
+.qty-control-btn {
+  @apply w-8 h-8 flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors border-gray-200;
+}
+
+.qty-input-minimal {
+  @apply w-10 text-center text-sm font-semibold text-gray-800 bg-white border-x border-gray-200 focus:outline-none;
+}
+
+.item-row-grid {
+  @apply grid grid-cols-12 gap-4 items-center px-6 py-4 transition-all duration-200;
+}
+
+.item-header-grid {
+  @apply grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50/50 border-b border-gray-200;
+}
 /* ==================== */
 /* Hapus kode berikut jika ada di baris 214: */
 /* .truncate-text {

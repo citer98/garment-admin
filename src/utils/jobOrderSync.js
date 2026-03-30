@@ -37,7 +37,7 @@ export const generateJobsFromOrder = (order) => {
     // Tentukan status order yang memerlukan step ini
     const shouldGenerate = 
       (order.status === 'processing' && index === 0) ||
-      (order.status === 'production' && index <= 2) ||
+      (['production', 'cutting', 'sewing', 'finishing', 'packing', 'qc'].includes(order.status)) ||
       (order.status === 'completed' && index <= 3) ||
       (order.status === 'delivered' && index <= 4);
 

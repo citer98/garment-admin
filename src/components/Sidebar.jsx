@@ -131,36 +131,19 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      {/* User Profile */}
-      <div className="p-4 border-t border-slate-700">
-        <div className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
-          <div className={`${collapsed ? 'w-12 h-12' : 'w-10 h-10'} rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center shadow-md`}>
-            <span className="font-bold text-white">
-              {user?.name?.charAt(0) || 'U'}
-            </span>
-          </div>
-          
-          {!collapsed && (
-            <div className="ml-3 flex-1 min-w-0">
-              <p className="font-medium truncate">{user?.name || 'User'}</p>
-              <p className="text-xs text-slate-400 truncate">
-                {isAdmin ? 'Administrator' : 'Karyawan'}
-              </p>
-            </div>
-          )}
-        </div>
-        
+      {/* Footer Info */}
+      <div className="p-4 border-t border-slate-700 mt-auto">
         <button 
           onClick={() => {
             localStorage.removeItem('user');
             window.location.href = '/';
           }}
-          className={`flex items-center ${collapsed ? 'justify-center px-3' : 'px-4'} w-full mt-4 py-3 text-red-300 hover:bg-slate-700 rounded-lg transition-colors duration-200 group`}
+          className={`flex items-center ${collapsed ? 'justify-center px-3' : 'px-4'} w-full py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition-all duration-200 group border border-transparent hover:border-red-500/20`}
         >
           <LogOut size={22} />
           {!collapsed && (
             <>
-              <span className="ml-4 font-medium">Keluar</span>
+              <span className="ml-4 font-medium italic">Keluar</span>
               <ChevronRight className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200" size={16} />
             </>
           )}

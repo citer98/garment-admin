@@ -10,7 +10,9 @@ import {
   LogOut,
   ChevronRight,
   ChevronLeft,
-  X
+  X,
+  Warehouse,        // TAMBAHKAN: Icon untuk Stok Material
+  ShoppingCart      // TAMBAHKAN: Icon alternatif (opsional)
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -42,7 +44,8 @@ export default function Sidebar() {
   const adminMenu = [
     { to: '/dashboard', label: 'Dashboard', icon: <Home size={22} /> },
     { to: '/orders', label: 'Daftar Pesanan', icon: <Package size={22} /> },
-    { to: '/tracking', label: 'Pelacakan', icon: <Search size={22} /> },
+    //{ to: '/tracking', label: 'Pelacakan', icon: <Search size={22} /> },
+    { to: '/stock', label: 'Stok Material', icon: <Warehouse size={22} /> },      // TAMBAHKAN: Menu Stok Material
     { to: '/finance', label: 'Keuangan', icon: <FileText size={22} /> },
     { to: '/users', label: 'Manajemen User', icon: <Users size={22} /> },
   ];

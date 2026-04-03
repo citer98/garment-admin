@@ -1,3 +1,4 @@
+// src/pages/EditOrder.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -21,7 +22,13 @@ import {
   ChevronRight,
   Expand,
   Maximize2,
-  FileImage
+  FileImage,
+  Clock,
+  Edit2,
+  Trash,
+  Image,
+  MessageSquare,
+  PlusCircle
 } from 'lucide-react';
 import { syncOrderWithJobs } from '../utils/jobOrderSync';
 
@@ -31,16 +38,29 @@ export default function EditOrder() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [originalStatus, setOriginalStatus] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+  const [expandedPhotoSection, setExpandedPhotoSection] = useState(false);
   
-  // Photo Preview State
+  // ================== STATE UNTUK PRODUK CUSTOM ==================
+  const [products, setProducts] = useState([]);
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
+  
+  // State untuk form produk - DIPISAHKAN
+  const [productNameInput, setProductNameInput] = useState('');
+  const [productBasePriceInput, setProductBasePriceInput] = useState('');
+  
+  // State untuk variasi - DIPISAHKAN
+  const [variationSizeInput, setVariationSizeInput] = useState('');
+  const [variationColorInput, setVariationColorInput] = useState('');
+  const [variationPriceInput, setVariationPriceInput] = useState('');
+  const [tempVariationsList, setTempVariationsList] = useState([]);
+  
+  // Photo State
   const [showPhotoPreview, setShowPhotoPreview] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoZoom, setPhotoZoom] = useState(1);
   const [photoRotation, setPhotoRotation] = useState(0);
-  
-  // Order photos state
   const [orderPhotos, setOrderPhotos] = useState([]);
-  const [expandedPhotoSection, setExpandedPhotoSection] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -57,48 +77,237 @@ export default function EditOrder() {
     customerEmail: '',
     orderDate: new Date().toISOString().split('T')[0],
     dueDate: '',
-    status: 'draft',
+    status: 'cutting',
     notes: '',
-    items: [{ product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: '' }]
+    items: [{ 
+      product: '', 
+      qty: 1, 
+      price: 0, 
+      productName: '', 
+      size: '', 
+      color: '', 
+      variantId: ''
+    }]
   });
 
-  // Data produk
-  const products = [
-    { 
-      id: 1, 
-      name: 'Kemeja Pria Slimfit', 
-      basePrice: 150000, 
-      category: 'Kemeja',
-      variations: [
-        { id: '1-s-m', size: 'S', color: 'Putih', price: 150000, stock: 50 },
-        { id: '1-m-m', size: 'M', color: 'Putih', price: 150000, stock: 30 },
-        { id: '1-l-m', size: 'L', color: 'Putih', price: 155000, stock: 20 },
-        { id: '1-s-b', size: 'S', color: 'Biru', price: 155000, stock: 25 },
-        { id: '1-m-b', size: 'M', color: 'Biru', price: 155000, stock: 15 },
-      ]
-    },
-    // ... (produk lainnya sama)
-  ];
+  // Load products dari localStorage
+  useEffect(() => {
+    const savedProducts = localStorage.getItem('products');
+    if (savedProducts) {
+      setProducts(JSON.parse(savedProducts));
+    } else {
+      const defaultProducts = [
+        { 
+          id: 1, 
+          name: 'Kemeja Pria Slimfit', 
+          basePrice: 150000, 
+          category: 'Kemeja',
+          variations: [
+            { id: '1-s-m', size: 'S', color: 'Putih', price: 150000, stock: 50 },
+            { id: '1-m-m', size: 'M', color: 'Putih', price: 150000, stock: 30 },
+            { id: '1-l-m', size: 'L', color: 'Putih', price: 155000, stock: 20 },
+            { id: '1-s-b', size: 'S', color: 'Biru', price: 155000, stock: 25 },
+            { id: '1-m-b', size: 'M', color: 'Biru', price: 155000, stock: 15 },
+          ]
+        },
+        { 
+          id: 2, 
+          name: 'Celana Jeans Denim', 
+          basePrice: 250000, 
+          category: 'Celana',
+          variations: [
+            { id: '2-28-b', size: '28', color: 'Blue Denim', price: 250000, stock: 40 },
+            { id: '2-30-b', size: '30', color: 'Blue Denim', price: 250000, stock: 35 },
+            { id: '2-32-b', size: '32', color: 'Blue Denim', price: 255000, stock: 25 },
+            { id: '2-30-bk', size: '30', color: 'Black Denim', price: 260000, stock: 20 },
+          ]
+        },
+        { 
+          id: 3, 
+          name: 'Jaket Hoodie', 
+          basePrice: 300000, 
+          category: 'Jaket',
+          variations: [
+            { id: '3-s-h', size: 'S', color: 'Hitam', price: 300000, stock: 30 },
+            { id: '3-m-h', size: 'M', color: 'Hitam', price: 300000, stock: 25 },
+            { id: '3-l-h', size: 'L', color: 'Hitam', price: 310000, stock: 15 },
+            { id: '3-m-ab', size: 'M', color: 'Abu-abu', price: 305000, stock: 20 },
+          ]
+        },
+        { 
+          id: 4, 
+          name: 'Kemeja Wanita Formal', 
+          basePrice: 180000, 
+          category: 'Kemeja',
+          variations: [
+            { id: '4-s-p', size: 'S', color: 'Pink', price: 180000, stock: 35 },
+            { id: '4-m-p', size: 'M', color: 'Pink', price: 180000, stock: 30 },
+            { id: '4-l-p', size: 'L', color: 'Pink', price: 185000, stock: 15 },
+            { id: '4-s-w', size: 'S', color: 'Putih', price: 180000, stock: 40 },
+          ]
+        },
+        { 
+          id: 5, 
+          name: 'Blouse Wanita', 
+          basePrice: 120000, 
+          category: 'Blouse',
+          variations: [
+            { id: '5-s-r', size: 'S', color: 'Merah', price: 120000, stock: 45 },
+            { id: '5-m-r', size: 'M', color: 'Merah', price: 120000, stock: 35 },
+            { id: '5-s-b', size: 'S', color: 'Biru', price: 125000, stock: 25 },
+          ]
+        },
+        { 
+          id: 6, 
+          name: 'Celana Chino', 
+          basePrice: 200000, 
+          category: 'Celana',
+          variations: [
+            { id: '6-30-k', size: '30', color: 'Khaki', price: 200000, stock: 30 },
+            { id: '6-32-k', size: '32', color: 'Khaki', price: 200000, stock: 25 },
+            { id: '6-30-n', size: '30', color: 'Navy', price: 205000, stock: 20 },
+            { id: '6-32-n', size: '32', color: 'Navy', price: 205000, stock: 15 },
+          ]
+        },
+      ];
+      setProducts(defaultProducts);
+      localStorage.setItem('products', JSON.stringify(defaultProducts));
+    }
+  }, []);
 
   // Status options
   const statusOptions = [
-    { value: 'draft', label: 'Draft' },
-    { value: 'processing', label: 'Diproses' },
-    { value: 'production', label: 'Produksi' },
-    { value: 'cutting', label: 'Potong' },
-    { value: 'sewing', label: 'Jahit' },
-    { value: 'finishing', label: 'Finishing' },
-    { value: 'packing', label: 'Packing' },
-    { value: 'qc', label: 'QC' },
-    { value: 'completed', label: 'Selesai' },
-    { value: 'delivered', label: 'Terkirim' },
-    { value: 'cancelled', label: 'Dibatalkan' },
+    { value: 'cutting', label: 'Potong', icon: '✂️', color: 'bg-amber-100 text-amber-800' },
+    { value: 'sewing', label: 'Jahit', icon: '🧵', color: 'bg-orange-100 text-orange-800' },
+    { value: 'finishing', label: 'Finishing', icon: '✨', color: 'bg-lime-100 text-lime-800' },
+    { value: 'packing', label: 'Packing', icon: '📦', color: 'bg-emerald-100 text-emerald-800' },
+    { value: 'qc', label: 'QC', icon: '✅', color: 'bg-teal-100 text-teal-800' },
+    { value: 'completed', label: 'Selesai', icon: '🎉', color: 'bg-green-100 text-green-800' },
+    { value: 'delivered', label: 'Terkirim', icon: '🚚', color: 'bg-purple-100 text-purple-800' },
+    { value: 'cancelled', label: 'Dibatalkan', icon: '❌', color: 'bg-red-100 text-red-800' },
   ];
 
-  // Format currency helper
+  // Helper functions
   const formatCurrency = (value) => {
     const num = Number(value) || 0;
     return num.toLocaleString('id-ID');
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      return new Date(dateString).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatPriceDisplay = (price) => {
+    if (!price) return '';
+    const num = typeof price === 'string' ? parseInt(price.replace(/[^0-9]/g, '')) : price;
+    if (!num) return '';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  const isDeadlineOverdue = (deadline) => {
+    if (!deadline) return false;
+    const today = new Date().toISOString().split('T')[0];
+    return deadline < today;
+  };
+
+  const getRemainingDays = (deadline) => {
+    if (!deadline) return 0;
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffTime = deadlineDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  // ================== FUNGSI TAMBAH PRODUK BARU ==================
+  const handleAddVariationSimple = () => {
+    if (!variationSizeInput.trim()) {
+      alert('Mohon isi ukuran!');
+      return;
+    }
+    if (!variationColorInput.trim()) {
+      alert('Mohon isi warna!');
+      return;
+    }
+    if (!variationPriceInput) {
+      alert('Mohon isi harga!');
+      return;
+    }
+    
+    const priceNum = parseInt(variationPriceInput.replace(/[^0-9]/g, '')) || 0;
+    
+    setTempVariationsList([...tempVariationsList, {
+      id: Date.now(),
+      size: variationSizeInput,
+      color: variationColorInput,
+      price: priceNum
+    }]);
+    
+    // Reset input variasi
+    setVariationSizeInput('');
+    setVariationColorInput('');
+    setVariationPriceInput('');
+  };
+
+  const handleRemoveVariationSimple = (id) => {
+    setTempVariationsList(tempVariationsList.filter(v => v.id !== id));
+  };
+
+  const handleSaveNewProductSimple = () => {
+    if (!productNameInput.trim()) {
+      alert('Mohon isi nama produk!');
+      return;
+    }
+    
+    const basePriceNum = parseInt(productBasePriceInput.replace(/[^0-9]/g, '')) || 0;
+    if (basePriceNum === 0) {
+      alert('Mohon isi harga dasar yang valid!');
+      return;
+    }
+    
+    if (tempVariationsList.length === 0) {
+      alert('Mohon tambahkan minimal satu variasi (ukuran & warna)!');
+      return;
+    }
+    
+    const newId = Math.max(...products.map(p => p.id), 0) + 1;
+    const productToAdd = {
+      id: newId,
+      name: productNameInput,
+      basePrice: basePriceNum,
+      category: 'Custom',
+      variations: tempVariationsList.map((v, idx) => ({
+        id: `${newId}-${v.size}-${v.color}`,
+        size: v.size,
+        color: v.color,
+        price: v.price,
+        stock: 100
+      }))
+    };
+    
+    const updatedProducts = [...products, productToAdd];
+    setProducts(updatedProducts);
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    
+    // Reset semua state
+    setProductNameInput('');
+    setProductBasePriceInput('');
+    setTempVariationsList([]);
+    setVariationSizeInput('');
+    setVariationColorInput('');
+    setVariationPriceInput('');
+    setShowAddProductModal(false);
+    
+    alert(`✅ Produk "${productToAdd.name}" berhasil ditambahkan!`);
   };
 
   // ================== PHOTO FUNCTIONS ==================
@@ -240,16 +449,18 @@ export default function EditOrder() {
     setShowPhotoPreview(true);
   };
 
-  // ================== END PHOTO FUNCTIONS ==================
-
+  // ================== LOAD ORDER DATA ==================
   useEffect(() => {
-    // Load order data
     setTimeout(() => {
-      // Cari order dari localStorage
       const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
       const foundOrder = savedOrders.find(o => o.id === id);
       
       if (foundOrder) {
+        let mappedStatus = foundOrder.status;
+        if (mappedStatus === 'draft' || mappedStatus === 'processing' || mappedStatus === 'production') {
+          mappedStatus = 'cutting';
+        }
+        
         setFormData({
           customerName: foundOrder.customerName || '',
           customerPhone: foundOrder.customerPhone || '',
@@ -257,41 +468,30 @@ export default function EditOrder() {
           customerEmail: foundOrder.customerEmail || '',
           orderDate: foundOrder.orderDate || new Date().toISOString().split('T')[0],
           dueDate: foundOrder.dueDate || '',
-          status: foundOrder.status || 'draft',
+          status: mappedStatus,
           notes: foundOrder.notes || '',
           items: foundOrder.itemsDetail?.map(item => ({
             product: products.find(p => p.name === item.product)?.id?.toString() || '',
             qty: item.qty || 1,
             price: item.price || 0,
-            productName: item.product || ''
-          })) || [{ product: '', qty: 1, price: 0, productName: '' }]
+            productName: item.product || '',
+            size: item.size || '',
+            color: item.color || '',
+            variantId: item.variantId || ''
+          })) || [{ 
+            product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: ''
+          }]
         });
         
-        // Simpan status original
-        setOriginalStatus(foundOrder.status || 'draft');
-      } else {
-        // Jika order tidak ditemukan
-        setFormData({
-          customerName: '',
-          customerPhone: '',
-          customerAddress: '',
-          customerEmail: '',
-          orderDate: new Date().toISOString().split('T')[0],
-          dueDate: '',
-          status: 'draft',
-          notes: '',
-          items: [{ product: '', qty: 1, price: 0, productName: '' }]
-        });
-        setOriginalStatus('draft');
+        setOriginalStatus(mappedStatus);
       }
       
-      // Load photos
       loadOrderPhotos();
-      
       setLoading(false);
     }, 500);
   }, [id]);
 
+  // ================== HANDLE INPUT ==================
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -303,16 +503,19 @@ export default function EditOrder() {
   const handleAddItem = () => {
     setFormData(prev => ({
       ...prev,
-      items: [...prev.items, { product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: '' }]
+      items: [...prev.items, { 
+        product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: ''
+      }]
     }));
   };
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...formData.items];
     
-    // Pastikan item di index tersebut ada
     if (!newItems[index]) {
-      newItems[index] = { product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: '' };
+      newItems[index] = { 
+        product: '', qty: 1, price: 0, productName: '', size: '', color: '', variantId: ''
+      };
     }
     
     newItems[index][field] = value;
@@ -322,13 +525,11 @@ export default function EditOrder() {
       if (selectedProduct) {
         newItems[index].price = selectedProduct.basePrice || 0;
         newItems[index].productName = selectedProduct.name || '';
-        // Reset size and color when product changes
         newItems[index].size = '';
         newItems[index].color = '';
         newItems[index].variantId = '';
       }
     } else if (field === 'product' && !value) {
-      // Reset jika produk dihapus
       newItems[index].price = 0;
       newItems[index].productName = '';
       newItems[index].size = '';
@@ -342,18 +543,54 @@ export default function EditOrder() {
     }));
   };
 
-  const handleVariantChange = (index, variantId) => {
+  const handleSizeChange = (index, size) => {
     const newItems = [...formData.items];
     const selectedProduct = products.find(p => p.id === parseInt(newItems[index].product));
     
-    if (selectedProduct && variantId) {
-      const variant = selectedProduct.variations.find(v => v.id === variantId);
+    newItems[index].size = size;
+    newItems[index].color = '';
+    newItems[index].variantId = '';
+    
+    if (selectedProduct && size) {
+      const availableColors = selectedProduct.variations
+        .filter(v => v.size === size)
+        .map(v => v.color);
+      
+      const uniqueColors = [...new Set(availableColors)];
+      if (uniqueColors.length === 1) {
+        const color = uniqueColors[0];
+        const variant = selectedProduct.variations.find(v => v.size === size && v.color === color);
+        if (variant) {
+          newItems[index].color = color;
+          newItems[index].variantId = variant.id;
+          newItems[index].price = variant.price;
+        }
+      }
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      items: newItems
+    }));
+  };
+
+  const handleColorChange = (index, color) => {
+    const newItems = [...formData.items];
+    const selectedProduct = products.find(p => p.id === parseInt(newItems[index].product));
+    
+    if (selectedProduct && newItems[index].size && color) {
+      const variant = selectedProduct.variations.find(
+        v => v.size === newItems[index].size && v.color === color
+      );
+      
       if (variant) {
-        newItems[index].variantId = variantId;
-        newItems[index].size = variant.size;
-        newItems[index].color = variant.color;
+        newItems[index].color = color;
+        newItems[index].variantId = variant.id;
         newItems[index].price = variant.price;
       }
+    } else {
+      newItems[index].color = color;
+      newItems[index].variantId = '';
     }
     
     setFormData(prev => ({
@@ -365,11 +602,6 @@ export default function EditOrder() {
   const selectedProduct = (itemIndex) => {
     const productId = formData.items[itemIndex]?.product;
     return products.find(p => p.id === parseInt(productId));
-  };
-
-  const getAvailableVariations = (itemIndex) => {
-    const product = selectedProduct(itemIndex);
-    return product ? product.variations : [];
   };
 
   const handleRemoveItem = (index) => {
@@ -394,16 +626,34 @@ export default function EditOrder() {
     return quantity * itemPrice;
   };
 
+  const handleJobUpdates = (order, oldStatus) => {
+    const newStatus = order.status;
+    const activeStatuses = ['cutting', 'sewing', 'finishing', 'packing', 'qc', 'completed', 'delivered'];
+    
+    if (newStatus === 'cancelled' && oldStatus !== 'cancelled') {
+      const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
+      const filteredJobs = availableJobs.filter(job => job.order_id !== order.id);
+      localStorage.setItem('availableJobs', JSON.stringify(filteredJobs));
+      
+      const users = JSON.parse(localStorage.getItem('userData') || '[]');
+      users.forEach(user => {
+        const userJobs = JSON.parse(localStorage.getItem(`myJobs_${user.id}`) || '[]');
+        const filteredUserJobs = userJobs.filter(job => job.order_id !== order.id);
+        localStorage.setItem(`myJobs_${user.id}`, JSON.stringify(filteredUserJobs));
+      });
+    } else if (activeStatuses.includes(newStatus) && newStatus !== 'cancelled') {
+      syncOrderWithJobs(order);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validasi
     if (!formData.customerName || formData.customerName.trim() === '') {
       alert('Nama pelanggan harus diisi!');
       return;
     }
 
-    // Validasi items
     const invalidItems = formData.items.filter(item => {
       return !item.product || !item.product.trim() || 
              !item.qty || item.qty < 1 ||
@@ -411,18 +661,20 @@ export default function EditOrder() {
     });
 
     if (invalidItems.length > 0) {
-      alert('Periksa kembali item pesanan! Pastikan semua item sudah dipilih dengan kuantitas dan harga yang valid.');
+      alert('Periksa kembali item pesanan!');
       return;
     }
 
     setIsSubmitting(true);
 
-    // Bersihkan data sebelum disimpan
     const cleanedItems = formData.items.map(item => ({
       product: item.product || '',
       qty: item.qty || 1,
       price: item.price || 0,
       productName: item.productName || '',
+      size: item.size || '',
+      color: item.color || '',
+      variantId: item.variantId || '',
       subtotal: (item.qty || 0) * (item.price || 0)
     }));
 
@@ -436,72 +688,36 @@ export default function EditOrder() {
       dueDate: formData.dueDate || '',
       items: cleanedItems.length,
       totalAmount: calculateTotal(),
-      status: formData.status || 'draft',
+      status: formData.status || 'cutting',
       notes: formData.notes.trim(),
       itemsDetail: cleanedItems,
-      timeline: formData.timeline || [], // Preserve existing timeline
-      priority: 'sedang', // Add priority field
-      updated_at: new Date().toISOString() // Add update timestamp
+      timeline: formData.timeline || [],
+      priority: 'sedang',
+      updated_at: new Date().toISOString()
     };
 
-    // Simulasi API call
     setTimeout(() => {
-      // Update di localStorage
       const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
       const updatedOrders = savedOrders.map(order => 
         order.id === id ? updatedOrder : order
       );
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
       
-      // Handle job updates berdasarkan perubahan status
       handleJobUpdates(updatedOrder, originalStatus);
       
       setIsSubmitting(false);
-      
-      // Show success message
-      alert('✅ Pesanan berhasil diperbarui! Jobs telah diupdate.');
-      
-      // Redirect ke view page
+      alert('✅ Pesanan berhasil diperbarui!');
       navigate(`/orders/${id}`);
     }, 1500);
   };
 
-  const handleJobUpdates = (order, oldStatus) => {
-    const newStatus = order.status;
-    
-    const activeStatuses = ['processing', 'production', 'cutting', 'sewing', 'finishing', 'packing', 'qc', 'completed', 'delivered'];
-    
-    // Jika status berubah dari draft/cancelled ke active status
-    if ((oldStatus === 'draft' || oldStatus === 'cancelled') && activeStatuses.includes(newStatus)) {
-      // Generate new jobs
-      syncOrderWithJobs(order);
-      console.log('✅ New jobs generated for order:', order.id);
-    }
-    // Jika status berubah dari active ke cancelled
-    else if (oldStatus !== 'cancelled' && newStatus === 'cancelled') {
-      // Hapus semua jobs terkait
-      const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
-      const filteredJobs = availableJobs.filter(job => job.order_id !== order.id);
-      localStorage.setItem('availableJobs', JSON.stringify(filteredJobs));
-      console.log('❌ Jobs removed for cancelled order:', order.id);
-    }
-    // Jika status berubah antar active states
-    else if (oldStatus !== newStatus && 
-             oldStatus !== 'draft' && oldStatus !== 'cancelled' &&
-             newStatus !== 'draft' && newStatus !== 'cancelled') {
-      // Update existing jobs
-      syncOrderWithJobs(order);
-      console.log('🔄 Jobs updated for order:', order.id);
-    }
-  };
-
   const handleCancel = () => {
-    if (window.confirm('Batalkan perubahan? Semua perubahan yang belum disimpan akan hilang.')) {
+    if (window.confirm('Batalkan perubahan?')) {
       navigate(`/orders/${id}`);
     }
   };
 
-  // ================== PHOTO PREVIEW MODAL ==================
+  // Photo Preview Modal Component
   const PhotoPreviewModal = () => {
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
     const [allPhotos, setAllPhotos] = useState([]);
@@ -530,18 +746,9 @@ export default function EditOrder() {
       setPhotoRotation(0);
     };
 
-    const handleZoomIn = () => {
-      setPhotoZoom(prev => Math.min(prev + 0.25, 3));
-    };
-
-    const handleZoomOut = () => {
-      setPhotoZoom(prev => Math.max(prev - 0.25, 0.5));
-    };
-
-    const handleRotate = () => {
-      setPhotoRotation(prev => (prev + 90) % 360);
-    };
-
+    const handleZoomIn = () => setPhotoZoom(prev => Math.min(prev + 0.25, 3));
+    const handleZoomOut = () => setPhotoZoom(prev => Math.max(prev - 0.25, 0.5));
+    const handleRotate = () => setPhotoRotation(prev => (prev + 90) % 360);
     const handleDownload = () => {
       const link = document.createElement('a');
       link.href = currentPhoto.url;
@@ -552,29 +759,20 @@ export default function EditOrder() {
     return (
       <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
         <div className="w-full max-w-6xl max-h-[90vh] flex flex-col">
-          <div className="flex justify-between items-center text-white mb-4 px-2">
+          <div className="flex justify-between items-center text-white mb-4">
             <div>
-              <h3 className="text-lg font-semibold">Photo Preview</h3>
+              <h3 className="text-lg font-semibold">Preview Foto</h3>
               <p className="text-sm text-gray-300">
-                Order {id} • {currentPhotoIndex + 1} dari {allPhotos.length} • 
-                {formatDateTime(currentPhoto.timestamp)}
+                {currentPhotoIndex + 1} dari {allPhotos.length} • {formatDateTime(currentPhoto.timestamp)}
               </p>
             </div>
-            <button
-              onClick={() => {
-                setShowPhotoPreview(false);
-                setSelectedPhoto(null);
-                setPhotoZoom(1);
-                setPhotoRotation(0);
-              }}
-              className="p-2 hover:bg-white/10 rounded-full"
-            >
+            <button onClick={() => setShowPhotoPreview(false)} className="p-2 hover:bg-white/10 rounded-full">
               <X size={24} />
             </button>
           </div>
 
-          <div className="flex-1 flex flex-col md:flex-row gap-4 md:gap-6">
-            <div className="flex-1 relative bg-gray-900 rounded-xl overflow-hidden">
+          <div className="flex-1 flex flex-col md:flex-row gap-6">
+            <div className="flex-1 relative bg-gray-900 rounded-xl overflow-hidden min-h-[400px]">
               <img
                 src={currentPhoto.url}
                 alt="Preview"
@@ -585,45 +783,25 @@ export default function EditOrder() {
                 }}
               />
               
-              <button
-                onClick={handlePrev}
-                className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70"
-              >
-                <ChevronLeft size={20} />
+              <button onClick={handlePrev} className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70">
+                <ChevronLeft size={24} />
               </button>
-              <button
-                onClick={handleNext}
-                className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70"
-              >
-                <ChevronRight size={20} />
+              <button onClick={handleNext} className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70">
+                <ChevronRight size={24} />
               </button>
 
-              <div className="absolute bottom-2 md:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 md:space-x-4">
-                <button
-                  onClick={handleZoomIn}
-                  className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70"
-                  disabled={photoZoom >= 3}
-                >
-                  <ZoomIn size={16} />
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
+                <button onClick={handleZoomIn} className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70" disabled={photoZoom >= 3}>
+                  <ZoomIn size={20} />
                 </button>
-                <button
-                  onClick={handleZoomOut}
-                  className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70"
-                  disabled={photoZoom <= 0.5}
-                >
-                  <ZoomIn size={16} className="rotate-45" />
+                <button onClick={handleZoomOut} className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70" disabled={photoZoom <= 0.5}>
+                  <ZoomOut size={20} />
                 </button>
-                <button
-                  onClick={handleRotate}
-                  className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70"
-                >
-                  <RotateCw size={16} />
+                <button onClick={handleRotate} className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70">
+                  <RotateCw size={20} />
                 </button>
-                <button
-                  onClick={handleDownload}
-                  className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700"
-                >
-                  <Download size={16} />
+                <button onClick={handleDownload} className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700">
+                  <Download size={20} />
                 </button>
               </div>
             </div>
@@ -632,646 +810,214 @@ export default function EditOrder() {
               <div className="mb-6">
                 <h4 className="text-white font-medium mb-2">Info Foto</h4>
                 <div className="space-y-2 text-sm text-gray-300">
-                  <div>
-                    <span className="text-gray-400">Order ID:</span>
-                    <p className="font-medium">{id}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-400">Upload oleh:</span>
-                    <p>{currentPhoto.uploadedBy}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-400">Tipe:</span>
-                    <p>{currentPhoto.type || 'General'}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-400">Waktu:</span>
-                    <p>{formatDateTime(currentPhoto.timestamp)}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-400">Ukuran:</span>
-                    <p>{formatFileSize(currentPhoto.size)}</p>
-                  </div>
+                  <div><span className="text-gray-400">Upload oleh:</span> {currentPhoto.uploadedBy}</div>
+                  <div><span className="text-gray-400">Waktu:</span> {formatDateTime(currentPhoto.timestamp)}</div>
+                  <div><span className="text-gray-400">Ukuran:</span> {formatFileSize(currentPhoto.size)}</div>
                 </div>
               </div>
-
               {currentPhoto.description && (
                 <div className="mb-6">
                   <h4 className="text-white font-medium mb-2">Deskripsi</h4>
-                  <p className="text-sm text-gray-300 bg-gray-700/50 p-3 rounded">
-                    {currentPhoto.description}
-                  </p>
+                  <p className="text-sm text-gray-300 bg-gray-700/50 p-3 rounded">{currentPhoto.description}</p>
                 </div>
               )}
-
-              <div className="mt-4">
-                <h4 className="text-white font-medium mb-2">Navigasi Foto</h4>
-                <div className="flex space-x-2 overflow-x-auto py-2">
-                  {allPhotos.map((photo, index) => (
-                    <button
-                      key={photo.id}
-                      onClick={() => {
-                        setCurrentPhotoIndex(index);
-                        setPhotoZoom(1);
-                        setPhotoRotation(0);
-                      }}
-                      className={`flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden border-2 ${
-                        index === currentPhotoIndex 
-                          ? 'border-blue-500' 
-                          : 'border-gray-700 hover:border-gray-500'
-                      }`}
-                    >
-                      <img
-                        src={photo.url}
-                        alt={`Thumb ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         </div>
-      </div>
-    );
-  };
-
-  // ================== PHOTO UPLOAD COMPONENT ==================
-  const PhotoUploadSection = () => {
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-8">
-        {/* Header */}
-        <div className="px-4 md:px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Camera className="text-blue-600 mr-3" size={20} />
-              <div>
-                <h3 className="font-bold text-base md:text-lg text-gray-800">Photo Progress Tracking</h3>
-                <p className="text-xs md:text-sm text-gray-600">Upload dan kelola foto dokumentasi order</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setExpandedPhotoSection(!expandedPhotoSection)}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              {expandedPhotoSection ? <X size={20} /> : <Expand size={20} />}
-            </button>
-          </div>
-        </div>
-
-        {expandedPhotoSection && (
-          <div className="p-4 md:p-6">
-            {/* Upload Stats */}
-            <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <div className="bg-blue-50 p-3 md:p-4 rounded-xl border border-blue-100">
-                <div className="text-blue-600 text-lg md:text-2xl font-bold mb-1">{orderPhotos.length}</div>
-                <div className="text-xs md:text-sm text-blue-800">Total Foto</div>
-                <div className="text-xs text-blue-600 mt-1">Max: 20 foto</div>
-              </div>
-              <div className="bg-green-50 p-3 md:p-4 rounded-xl border border-green-100">
-                <div className="text-green-600 text-lg md:text-2xl font-bold mb-1">
-                  {orderPhotos.filter(p => p.description).length}
-                </div>
-                <div className="text-xs md:text-sm text-green-800">Dengan Deskripsi</div>
-                <div className="text-xs text-green-600 mt-1">Ter-dokumentasi</div>
-              </div>
-              <div className="bg-purple-50 p-3 md:p-4 rounded-xl border border-purple-100">
-                <div className="text-purple-600 text-lg md:text-2xl font-bold mb-1">
-                  {orderPhotos.length > 0 ? formatDateTime(orderPhotos[orderPhotos.length-1].timestamp) : '-'}
-                </div>
-                <div className="text-xs md:text-sm text-purple-800">Upload Terakhir</div>
-                <div className="text-xs text-purple-600 mt-1">Waktu terakhir</div>
-              </div>
-              <div className="bg-yellow-50 p-3 md:p-4 rounded-xl border border-yellow-100">
-                <div className="text-yellow-600 text-lg md:text-2xl font-bold mb-1">
-                  {orderPhotos.filter(p => p.type === 'progress').length}
-                </div>
-                <div className="text-xs md:text-sm text-yellow-800">Progress Photos</div>
-                <div className="text-xs text-yellow-600 mt-1">Update produksi</div>
-              </div>
-            </div>
-
-            {/* Upload Area */}
-            <div className="mb-6 md:mb-8 border-2 border-dashed border-gray-300 rounded-2xl p-4 md:p-6 hover:border-blue-400 transition-colors">
-              <div className="text-center">
-                <div className="mx-auto w-12 h-12 md:w-16 md:h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                  <Upload className="text-blue-600" size={20} />
-                </div>
-                
-                <h4 className="font-medium text-gray-800 mb-2 text-sm md:text-base">
-                  Upload Foto Dokumentasi Order
-                </h4>
-                
-                <p className="text-xs md:text-sm text-gray-600 mb-4 md:mb-6 max-w-md mx-auto">
-                  Unggah foto dokumentasi produksi atau progress. Format: JPG, PNG (maks. 5MB per file)
-                </p>
-                
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileSelect}
-                  accept="image/*"
-                  className="hidden"
-                />
-                
-                <button
-                  onClick={triggerFileInput}
-                  className="px-4 md:px-6 py-2 md:py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center mx-auto text-sm"
-                  disabled={uploading || orderPhotos.length >= 20}
-                >
-                  <Camera size={16} className="mr-2" />
-                  {uploading ? 'Uploading...' : 'Pilih Foto'}
-                </button>
-                
-                <p className="text-xs text-gray-500 mt-2 md:mt-3">
-                  Klik untuk memilih foto dari komputer Anda
-                </p>
-              </div>
-            </div>
-
-            {/* Preview Section */}
-            {photoPreview && (
-              <div className="mb-6 md:mb-8 bg-white rounded-xl border border-gray-200 p-4 md:p-5 shadow-lg">
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="font-medium text-gray-800 text-sm md:text-base">Preview Foto</h4>
-                  <button
-                    onClick={() => setPhotoPreview(null)}
-                    className="p-2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-                
-                <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
-                  <div className="lg:w-1/2">
-                    <div className="rounded-lg overflow-hidden border border-gray-200">
-                      <img
-                        ref={previewRef}
-                        src={photoPreview.url}
-                        alt="Preview"
-                        className="w-full h-48 md:h-64 object-contain bg-gray-50"
-                      />
-                    </div>
-                    
-                    <div className="mt-3 flex flex-wrap justify-center gap-2">
-                      <button
-                        onClick={() => {
-                          if (previewRef.current) {
-                            previewRef.current.requestFullscreen();
-                          }
-                        }}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs hover:bg-gray-50"
-                        title="Zoom"
-                      >
-                        <ZoomIn size={14} className="inline mr-1" />
-                        Fullscreen
-                      </button>
-                      <button
-                        onClick={() => {
-                          setPhotoPreview(null);
-                          triggerFileInput();
-                        }}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs hover:bg-gray-50"
-                        title="Ganti Foto"
-                      >
-                        <RotateCw size={14} className="inline mr-1" />
-                        Ganti Foto
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="lg:w-1/2">
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
-                          Tipe Foto
-                        </label>
-                        <select
-                          className="w-full p-2 md:p-3 border border-gray-300 rounded-lg text-sm"
-                          value={photoPreview.type || 'general'}
-                          onChange={(e) => setPhotoPreview({...photoPreview, type: e.target.value})}
-                        >
-                          <option value="general">Dokumentasi Umum</option>
-                          <option value="progress">Progress Produksi</option>
-                          <option value="quality">Quality Control</option>
-                          <option value="delivery">Pengiriman</option>
-                          <option value="reference">Referensi Desain</option>
-                        </select>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2 md:gap-3">
-                        <div>
-                          <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
-                            Ukuran
-                          </label>
-                          <div className="p-2 md:p-3 border border-gray-300 rounded-lg bg-gray-50 text-xs md:text-sm">
-                            {formatFileSize(photoPreview.size)}
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
-                            Format
-                          </label>
-                          <div className="p-2 md:p-3 border border-gray-300 rounded-lg bg-gray-50 text-xs md:text-sm">
-                            {photoPreview.type.split('/')[1].toUpperCase()}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
-                          Deskripsi (Opsional)
-                        </label>
-                        <textarea
-                          className="w-full p-2 md:p-3 border border-gray-300 rounded-lg text-sm"
-                          rows="3"
-                          placeholder="Tambahkan deskripsi foto..."
-                          value={newPhotoDescription}
-                          onChange={(e) => {
-                            setNewPhotoDescription(e.target.value);
-                            setPhotoPreview(prev => ({...prev, description: e.target.value}));
-                          }}
-                        />
-                      </div>
-                      
-                      {/* Upload Progress */}
-                      {uploading && (
-                        <div className="mt-4">
-                          <div className="flex justify-between text-xs md:text-sm text-gray-700 mb-1">
-                            <span>Mengupload...</span>
-                            <span className="font-medium">{uploadProgress}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${uploadProgress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Upload Button */}
-                      <button
-                        onClick={handleUpload}
-                        disabled={uploading}
-                        className={`w-full py-2 md:py-3 rounded-lg font-semibold transition-colors flex items-center justify-center text-sm ${
-                          uploading
-                            ? 'bg-blue-400 cursor-not-allowed'
-                            : 'bg-green-600 hover:bg-green-700'
-                        } text-white`}
-                      >
-                        {uploading ? (
-                          <>
-                            <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            Uploading... {uploadProgress}%
-                          </>
-                        ) : (
-                          <>
-                            <Upload size={16} className="mr-2" />
-                            Upload Foto
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Photo Gallery */}
-            {orderPhotos.length > 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-2">
-                  <h4 className="font-semibold text-gray-800 text-base md:text-lg">
-                    Gallery Foto ({orderPhotos.length})
-                  </h4>
-                  <div className="flex items-center text-xs md:text-sm text-gray-600">
-                    <CheckCircle size={14} className="text-green-500 mr-1" />
-                    Tersimpan di browser
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                  {orderPhotos.map((photo) => (
-                    <div key={photo.id} className="border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-                      {/* Photo */}
-                      <div className="relative h-40 md:h-48 bg-gray-100 cursor-pointer group" onClick={() => openPhotoPreview(photo)}>
-                        <img
-                          src={photo.url}
-                          alt={photo.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity duration-300"></div>
-                        <div className="absolute top-2 left-2">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            photo.type === 'progress' ? 'bg-yellow-500 text-white' :
-                            photo.type === 'quality' ? 'bg-green-500 text-white' :
-                            photo.type === 'delivery' ? 'bg-blue-500 text-white' :
-                            'bg-gray-500 text-white'
-                          }`}>
-                            {photo.type === 'progress' ? 'Progress' :
-                             photo.type === 'quality' ? 'QC' :
-                             photo.type === 'delivery' ? 'Delivery' :
-                             photo.type === 'reference' ? 'Reference' : 'General'}
-                          </span>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemovePhoto(photo.id);
-                          }}
-                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Hapus foto"
-                        >
-                          <X size={12} />
-                        </button>
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 md:p-3">
-                          <p className="text-white text-xs font-medium truncate">
-                            {formatDateTime(photo.timestamp)}
-                          </p>
-                          <p className="text-white/80 text-xs truncate">
-                            {photo.uploadedBy}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Photo Info */}
-                      <div className="p-2 md:p-3">
-                        <div className="mb-2">
-                          <label className="block text-xs text-gray-500 mb-1">
-                            Deskripsi:
-                          </label>
-                          <textarea
-                            className="w-full p-2 text-sm border border-gray-200 rounded resize-none text-xs"
-                            rows="2"
-                            placeholder="Tambahkan deskripsi..."
-                            value={photo.description || ''}
-                            onChange={(e) => handleAddDescription(photo.id, e.target.value)}
-                          />
-                        </div>
-                        
-                        <div className="flex justify-between items-center text-xs text-gray-500">
-                          <div className="flex items-center">
-                            <Camera size={10} className="mr-1" />
-                            {photo.type || 'General'}
-                          </div>
-                          <button
-                            onClick={() => openPhotoPreview(photo)}
-                            className="text-blue-600 hover:text-blue-800 text-xs flex items-center"
-                          >
-                            <Expand size={10} className="mr-1" />
-                            Preview
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-xl">
-                <FileImage size={40} className="text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium text-sm md:text-base">Belum ada foto</p>
-                <p className="text-gray-400 text-xs md:text-sm mt-2">
-                  Upload foto pertama Anda untuk dokumentasi order
-                </p>
-              </div>
-            )}
-
-            {/* Guidelines */}
-            <div className="mt-4 md:mt-6 bg-blue-50 border border-blue-200 rounded-xl p-3 md:p-4">
-              <h5 className="font-medium text-blue-800 mb-2 flex items-center text-sm md:text-base">
-                <Camera size={14} className="mr-2" />
-                Tips Foto Dokumentasi
-              </h5>
-              <ul className="text-xs md:text-sm text-blue-700 space-y-1 list-disc pl-4 md:pl-5">
-                <li>Gunakan foto dengan pencahayaan yang baik untuk detail yang jelas</li>
-                <li>Foto progress produksi membantu tracking timeline</li>
-                <li>Foto quality control penting untuk standar kualitas</li>
-                <li>Tambahkan deskripsi untuk konteks yang lebih baik</li>
-                <li>Foto akan tersimpan di browser secara otomatis</li>
-                <li>Maksimal 20 foto per order</li>
-              </ul>
-            </div>
-          </div>
-        )}
       </div>
     );
   };
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 md:py-8">
-        <div className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <div className="w-12 h-12 md:w-16 md:h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600 text-sm md:text-base">Memuat data pesanan...</p>
-          </div>
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat data pesanan...</p>
         </div>
       </div>
     );
   }
 
+  const currentStatus = statusOptions.find(s => s.value === formData.status) || statusOptions[0];
+  const originalStatusObj = statusOptions.find(s => s.value === originalStatus) || statusOptions[0];
+  const isOrderOverdue = isDeadlineOverdue(formData.dueDate);
+
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Header */}
-      <div className="mb-4 md:mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
+      <div className="mb-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center space-x-4">
             <button 
               onClick={() => navigate(`/orders/${id}`)}
-              className="mr-2 md:mr-4 p-1 md:p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <ArrowLeft size={20} className="text-gray-600" />
             </button>
             <div>
-              <h2 className="text-lg md:text-2xl font-bold text-gray-800">Edit Pesanan</h2>
-              <p className="text-xs md:text-sm text-gray-600">ID: {id}</p>
+              <h1 className="text-2xl font-bold text-gray-900">Edit Pesanan</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm text-gray-500">ID: {id}</p>
+                <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${currentStatus.color}`}>
+                  <span>{currentStatus.icon}</span>
+                  {currentStatus.label}
+                </span>
+                {formData.dueDate && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${isOrderOverdue ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'}`}>
+                    <Clock size={12} />
+                    Jatuh Tempo: {formatDate(formData.dueDate)}
+                    {isOrderOverdue && ' ⚠️ Terlambat!'}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="flex flex-col lg:flex-row gap-4 md:gap-8">
-          {/* Left Column: Customer & Order Details */}
-          <div className="lg:w-1/3 space-y-4 md:space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* 2 Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Customer Info */}
+          <div className="lg:col-span-1 space-y-6">
             {/* Customer Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-              <div className="flex items-center mb-3 md:mb-4">
-                <div className="p-1 md:p-2 bg-blue-100 text-blue-600 rounded-lg mr-2 md:mr-3">
-                  <User size={16} />
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+              <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+                <div className="flex items-center gap-2">
+                  <User size={18} className="text-blue-600" />
+                  <h3 className="font-semibold text-gray-800">Data Pelanggan</h3>
                 </div>
-                <h3 className="font-semibold text-gray-800 text-sm md:text-base">Data Pelanggan</h3>
               </div>
-              
-              <div className="space-y-3 md:space-y-4">
+              <div className="p-5 space-y-4">
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
-                    Nama Pelanggan <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Nama Pelanggan *</label>
                   <input
                     type="text"
                     name="customerName"
-                    className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     value={formData.customerName}
                     onChange={handleInputChange}
                     required
                   />
                 </div>
-
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
-                    Telepon
-                  </label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Telepon</label>
                   <input
                     type="text"
                     name="customerPhone"
-                    className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     value={formData.customerPhone}
                     onChange={handleInputChange}
                   />
                 </div>
-
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
-                    Alamat
-                  </label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Alamat</label>
                   <textarea
                     name="customerAddress"
                     rows="2"
-                    className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
                     value={formData.customerAddress}
                     onChange={handleInputChange}
                   />
                 </div>
-
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
-                    Email
-                  </label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
                   <input
                     type="email"
                     name="customerEmail"
-                    className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     value={formData.customerEmail}
                     onChange={handleInputChange}
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-2 md:gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
-                      <div className="flex items-center">
-                        <Calendar size={14} className="mr-1" />
-                        <span className="text-xs md:text-sm">Tanggal Pesanan</span>
-                      </div>
-                    </label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Tanggal Pesanan</label>
                     <input 
                       type="date" 
                       name="orderDate"
-                      className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       value={formData.orderDate}
                       onChange={handleInputChange}
                     />
                   </div>
-                  
                   <div>
-                    <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
-                      Tanggal Jatuh Tempo
-                    </label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Jatuh Tempo</label>
                     <input 
                       type="date" 
                       name="dueDate"
-                      className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${isOrderOverdue ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
                       value={formData.dueDate}
                       onChange={handleInputChange}
                     />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
-                    Status Pesanan
-                  </label>
-                  <select 
-                    name="status"
-                    className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                  >
-                    {statusOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200 text-xs">
-                    <p className="text-gray-600">
-                      Status sebelumnya: <span className="font-semibold">{originalStatus}</span>
-                    </p>
-                    {formData.status !== originalStatus && (
-                      <span className={`text-xs mt-1 block ${
-                        (originalStatus === 'draft' || originalStatus === 'cancelled') && 
-                        (formData.status === 'processing' || formData.status === 'production') 
-                          ? 'text-green-600' 
-                          : formData.status === 'cancelled' 
-                            ? 'text-red-600' 
-                            : 'text-yellow-600'
-                      }`}>
-                        {(() => {
-                          if ((originalStatus === 'draft' || originalStatus === 'cancelled') && 
-                              (formData.status === 'processing' || formData.status === 'production')) {
-                            return '✅ Jobs akan digenerate otomatis';
-                          } else if (formData.status === 'cancelled') {
-                            return '❌ Semua jobs akan dihapus';
-                          } else if (formData.status !== originalStatus) {
-                            return '🔄 Jobs akan diupdate';
-                          }
-                          return '';
-                        })()}
-                      </span>
+                    {formData.dueDate && isOrderOverdue && (
+                      <p className="text-xs text-red-500 mt-1">⚠️ Telah melewati jatuh tempo!</p>
                     )}
                   </div>
                 </div>
-
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
-                    Catatan
-                  </label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Status Pesanan</label>
+                  <select 
+                    name="status"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                  >
+                    <optgroup label="Status Produksi">
+                      <option value="cutting">✂️ Potong</option>
+                      <option value="sewing">🧵 Jahit</option>
+                      <option value="finishing">✨ Finishing</option>
+                      <option value="packing">📦 Packing</option>
+                      <option value="qc">✅ QC</option>
+                    </optgroup>
+                    <optgroup label="Status Akhir">
+                      <option value="completed">🎉 Selesai</option>
+                      <option value="delivered">🚚 Terkirim</option>
+                      <option value="cancelled">❌ Dibatalkan</option>
+                    </optgroup>
+                  </select>
+                  {formData.status !== originalStatus && (
+                    <p className={`text-xs mt-1 ${formData.status === 'cancelled' ? 'text-red-500' : 'text-green-500'}`}>
+                      {formData.status === 'cancelled' ? '⚠️ Jobs akan dihapus' : '✅ Jobs akan diupdate'}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Catatan</label>
                   <textarea
                     name="notes"
                     rows="2"
-                    className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
                     value={formData.notes}
                     onChange={handleInputChange}
-                    placeholder="Catatan tambahan untuk pesanan ini..."
+                    placeholder="Catatan tambahan..."
                   />
                 </div>
               </div>
             </div>
 
-            {/* Order Summary Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-              <h3 className="font-semibold text-gray-800 mb-3 md:mb-4 text-sm md:text-base">Ringkasan Pesanan</h3>
-              
-              <div className="space-y-2 md:space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-xs md:text-sm text-gray-600">Jumlah Item:</span>
-                  <span className="font-medium text-sm">{formData.items.length}</span>
+            {/* Summary Card */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+              <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+                <h3 className="font-semibold text-gray-800">Ringkasan Pesanan</h3>
+              </div>
+              <div className="p-5 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Jumlah Item</span>
+                  <span className="font-medium text-gray-800">{formData.items.length}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-xs md:text-sm text-gray-600">Total Kuantitas:</span>
-                  <span className="font-medium text-sm">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Total Kuantitas</span>
+                  <span className="font-medium text-gray-800">
                     {formData.items.reduce((total, item) => total + (item.qty || 0), 0)} pcs
                   </span>
                 </div>
-                <div className="border-t pt-2 md:pt-3">
+                <div className="border-t pt-3">
                   <div className="flex justify-between">
-                    <span className="text-xs md:text-sm text-gray-600">Total Harga:</span>
-                    <span className="text-base md:text-lg font-bold text-blue-600">
+                    <span className="text-gray-600">Total Pembayaran</span>
+                    <span className="text-xl font-bold text-blue-600">
                       Rp {formatCurrency(calculateTotal())}
                     </span>
                   </div>
@@ -1280,76 +1026,117 @@ export default function EditOrder() {
             </div>
           </div>
 
-          {/* Right Column: Order Items */}
-          <div className="lg:w-2/3">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* Right Column - Order Items */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
               {/* Header */}
-              <div className="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                <div className="flex items-center">
-                  <div className="p-1 md:p-2 bg-green-100 text-green-600 rounded-lg mr-2 md:mr-3">
-                    <Package size={16} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800 text-sm md:text-base">Item Pesanan</h3>
-                    <p className="text-xs text-gray-600">Edit produk yang dipesan</p>
-                  </div>
+              <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center flex-wrap gap-3">
+                <div className="flex items-center gap-2">
+                  <Package size={18} className="text-green-600" />
+                  <h3 className="font-semibold text-gray-800">Item Pesanan</h3>
                 </div>
-                
-                <button 
-                  type="button"
-                  onClick={handleAddItem}
-                  className="flex items-center bg-blue-600 text-white px-3 md:px-4 py-1.5 md:py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-xs md:text-sm"
-                >
-                  <Plus size={14} className="mr-1 md:mr-2" />
-                  Tambah Item
-                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setShowAddProductModal(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                  >
+                    <PlusCircle size={16} /> Produk Baru
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={handleAddItem}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus size={16} />
+                    Tambah Item
+                  </button>
+                </div>
               </div>
 
-              {/* Table Header - Mobile Hidden */}
-              <div className="hidden md:grid md:grid-cols-12 gap-4 bg-gray-50 px-6 py-3 border-b border-gray-200">
-                <div className="col-span-5 text-xs font-semibold text-gray-700">PRODUK</div>
-                <div className="col-span-2 text-xs font-semibold text-gray-700">QTY</div>
-                <div className="col-span-2 text-xs font-semibold text-gray-700">HARGA</div>
-                <div className="col-span-2 text-xs font-semibold text-gray-700">SUBTOTAL</div>
-                <div className="col-span-1"></div>
-              </div>
-
-              {/* Order Items */}
+              {/* Items List */}
               <div className="divide-y divide-gray-100">
-                {formData.items.map((item, index) => (
-                  <div key={index} className="px-4 md:px-6 py-3 md:py-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4">
-                      {/* Product Select */}
-                      <div className="md:col-span-5">
-                        <label className="block text-xs text-gray-600 mb-1 md:hidden">
-                          Produk <span className="text-red-500">*</span>
-                        </label>
-                        <select 
-                          className="w-full border border-gray-300 rounded-lg p-2 md:p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                          value={item.product}
-                          onChange={(e) => handleItemChange(index, 'product', e.target.value)}
-                          required
-                        >
-                          <option value="">-- Pilih Produk --</option>
-                          {products.map(product => (
-                            <option key={product.id} value={product.id}>
-                              {product.name} • Rp {formatCurrency(product.basePrice)}
-                            </option>
-                          ))}
-                        </select>
-                        {item.productName && (
-                          <p className="text-xs text-gray-500 mt-1">{item.productName}</p>
+                {formData.items.map((item, index) => {
+                  const product = selectedProduct(index);
+                  
+                  return (
+                    <div key={index} className="p-5 hover:bg-gray-50/50 transition-colors">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <select 
+                              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]"
+                              value={item.product}
+                              onChange={(e) => handleItemChange(index, 'product', e.target.value)}
+                              required
+                            >
+                              <option value="">Pilih Produk</option>
+                              {products.map(p => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name} • Rp {formatCurrency(p.basePrice)}
+                                </option>
+                              ))}
+                            </select>
+                            {item.productName && (
+                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                {item.productName}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {formData.items.length > 1 && (
+                          <button 
+                            type="button"
+                            onClick={() => handleRemoveItem(index)}
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         )}
                       </div>
 
-                      {/* Quantity - Mobile View */}
-                      <div className="flex items-center justify-between md:hidden">
-                        <div className="flex-1">
-                          <label className="block text-xs text-gray-600 mb-1">Qty</label>
-                          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden w-32">
+                      {/* Size & Color */}
+                      {product && (
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Ukuran</label>
+                            <select 
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                              value={item.size}
+                              onChange={(e) => handleSizeChange(index, e.target.value)}
+                            >
+                              <option value="">Pilih Ukuran</option>
+                              {[...new Set(product.variations.map(v => v.size))].map(size => (
+                                <option key={size} value={size}>{size}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Warna</label>
+                            <select 
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                              value={item.color}
+                              onChange={(e) => handleColorChange(index, e.target.value)}
+                              disabled={!item.size}
+                            >
+                              <option value="">Pilih Warna</option>
+                              {product.variations
+                                .filter(v => v.size === item.size)
+                                .map(v => (
+                                  <option key={v.color} value={v.color}>{v.color}</option>
+                                ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Quantity, Price, Subtotal */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Kuantitas</label>
+                          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden w-fit">
                             <button 
                               type="button"
-                              className="px-2 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50 text-xs"
+                              className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50"
                               onClick={() => handleItemChange(index, 'qty', Math.max(1, (item.qty || 1) - 1))}
                               disabled={(item.qty || 1) <= 1}
                             >
@@ -1358,135 +1145,56 @@ export default function EditOrder() {
                             <input 
                               type="number" 
                               min="1"
-                              className="w-full p-1.5 text-center border-x border-gray-300 focus:outline-none text-sm"
+                              className="w-16 text-center py-2 border-x border-gray-300 focus:outline-none text-sm"
                               value={item.qty || 1}
                               onChange={(e) => handleItemChange(index, 'qty', parseInt(e.target.value) || 1)}
                             />
                             <button 
                               type="button"
-                              className="px-2 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs"
+                              className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700"
                               onClick={() => handleItemChange(index, 'qty', (item.qty || 1) + 1)}
                             >
                               +
                             </button>
                           </div>
                         </div>
-                        
-                        {/* Price & Subtotal Mobile */}
-                        <div className="text-right">
-                          <div className="mb-1">
-                            <label className="block text-xs text-gray-600">Harga</label>
-                            <p className="font-medium text-gray-800 text-sm">
-                              Rp {formatCurrency(item.price)}
-                            </p>
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600">Subtotal</label>
-                            <p className="font-bold text-blue-700 text-sm">
-                              Rp {formatCurrency(calculateSubtotal(item.qty, item.price))}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Desktop Quantity */}
-                      <div className="hidden md:block md:col-span-2">
-                        <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                          <button 
-                            type="button"
-                            className="px-2 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50 text-xs"
-                            onClick={() => handleItemChange(index, 'qty', Math.max(1, (item.qty || 1) - 1))}
-                            disabled={(item.qty || 1) <= 1}
-                          >
-                            −
-                          </button>
-                          <input 
-                            type="number" 
-                            min="1"
-                            className="w-full p-2 text-center border-x border-gray-300 focus:outline-none text-sm"
-                            value={item.qty || 1}
-                            onChange={(e) => handleItemChange(index, 'qty', parseInt(e.target.value) || 1)}
-                          />
-                          <button 
-                            type="button"
-                            className="px-2 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs"
-                            onClick={() => handleItemChange(index, 'qty', (item.qty || 1) + 1)}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Desktop Price */}
-                      <div className="hidden md:block md:col-span-2">
-                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                          <p className="font-medium text-gray-800 text-sm">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Harga Satuan</label>
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium">
                             Rp {formatCurrency(item.price)}
-                          </p>
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Desktop Subtotal */}
-                      <div className="hidden md:block md:col-span-2">
-                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                          <p className="font-bold text-blue-700 text-sm">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Subtotal</label>
+                          <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-sm font-bold text-blue-700 text-right">
                             Rp {formatCurrency(calculateSubtotal(item.qty, item.price))}
-                          </p>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Delete Button */}
-                      <div className="flex justify-between items-center md:col-span-1 md:justify-center">
-                        {/* Size & Color on Mobile */}
-                        <div className="flex gap-2 md:hidden">
-                          {item.size && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                              {item.size}
-                            </span>
-                          )}
-                          {item.color && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                              {item.color}
-                            </span>
-                          )}
-                        </div>
-                        
-                        {formData.items.length > 1 && (
-                          <button 
-                            type="button"
-                            onClick={() => handleRemoveItem(index)}
-                            className="p-1 md:p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                      {/* Variant & Notes Info */}
+                      <div className="flex flex-wrap gap-3 mt-2">
+                        {item.variantId && product && (
+                          <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            <Package size={12} />
+                            {product.name} - {item.size} / {item.color}
+                          </span>
                         )}
                       </div>
                     </div>
-                    
-                    {/* Variant Info on Mobile */}
-                    {(item.size || item.color) && (
-                      <div className="mt-2 pl-2 border-l-2 border-green-400 md:hidden">
-                        <div className="flex items-center text-xs text-gray-600">
-                          <Package size={12} className="mr-1" />
-                          <span className="font-medium mr-1">Varian:</span>
-                          {item.size && <span className="mr-2">Size: {item.size}</span>}
-                          {item.color && <span>Warna: {item.color}</span>}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Total Section */}
-              <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 bg-gray-50">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
-                  <div className="text-xs md:text-sm text-gray-600">
+              <div className="px-5 py-4 border-t border-gray-200 bg-gray-50/50">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-500">
                     Total {formData.items.length} item • {formData.items.reduce((total, item) => total + (item.qty || 0), 0)} pcs
                   </div>
                   <div className="text-right">
-                    <p className="text-xs md:text-sm text-gray-600">Total Pembayaran</p>
-                    <p className="text-lg md:text-2xl font-bold text-blue-600">
+                    <p className="text-xs text-gray-500">Total Pembayaran</p>
+                    <p className="text-2xl font-bold text-blue-600">
                       Rp {formatCurrency(calculateTotal())}
                     </p>
                   </div>
@@ -1494,28 +1202,27 @@ export default function EditOrder() {
               </div>
 
               {/* Action Buttons */}
-              <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-2">
+              <div className="px-5 py-4 border-t border-gray-200 bg-white flex justify-end gap-3">
                 <button 
                   type="button"
                   onClick={handleCancel}
-                  className="px-4 md:px-6 py-2 md:py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors text-sm"
+                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                 >
                   Batalkan
                 </button>
-                
                 <button 
                   type="submit"
-                  disabled={isSubmitting || !formData.customerName.trim() || formData.items.some(item => !item.product)}
-                  className="px-4 md:px-6 py-2 md:py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-sm"
+                  disabled={isSubmitting}
+                  className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Menyimpan...
                     </>
                   ) : (
                     <>
-                      <Save size={16} className="mr-2" />
+                      <Save size={18} />
                       Simpan Perubahan
                     </>
                   )}
@@ -1524,14 +1231,13 @@ export default function EditOrder() {
             </div>
 
             {/* Help Text */}
-            <div className="mt-3 md:mt-4 p-3 md:p-4 bg-blue-50 border border-blue-100 rounded-lg">
-              <p className="text-xs md:text-sm text-blue-800">
-                💡 <strong>Info Integrasi JobList:</strong><br className="hidden sm:block"/>
-                1. Perubahan status akan mempengaruhi jobs otomatis<br className="hidden sm:block"/>
-                2. Status <strong>"Diproses"</strong> dan <strong>"Produksi"</strong> akan generate jobs<br className="hidden sm:block"/>
-                3. Status <strong>"Dibatalkan"</strong> akan menghapus semua jobs<br className="hidden sm:block"/>
-                4. Progress jobs akan update timeline order secara real-time<br className="hidden sm:block"/>
-                5. Lihat jobs terkait di halaman <strong>JobList</strong>
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+              <p className="text-xs text-blue-800">
+                💡 <span className="font-medium">Info Integrasi JobList & Deadline:</span><br/>
+                • Jatuh tempo pesanan akan digunakan sebagai deadline utama<br/>
+                • Pesanan yang melewati jatuh tempo akan terdeteksi di Dashboard sebagai item stuck<br/>
+                • Status akan mempengaruhi jobs yang digenerate<br/>
+                • Lihat jobs terkait di halaman <strong>JobList</strong>
               </p>
             </div>
           </div>
@@ -1539,7 +1245,177 @@ export default function EditOrder() {
       </form>
 
       {/* Photo Upload Section */}
-      <PhotoUploadSection />
+      <div className="mt-8">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <button
+            onClick={() => setExpandedPhotoSection(!expandedPhotoSection)}
+            className="w-full px-5 py-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Camera size={18} className="text-blue-600" />
+              <h3 className="font-semibold text-gray-800">Dokumentasi Foto</h3>
+              <span className="text-xs text-gray-500">({orderPhotos.length} foto)</span>
+            </div>
+            {expandedPhotoSection ? <ChevronRight size={18} className="rotate-90" /> : <ChevronRight size={18} />}
+          </button>
+
+          {expandedPhotoSection && (
+            <div className="p-5 border-t border-gray-100">
+              {/* Upload Area */}
+              <div className="mb-6 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                  <Upload className="text-blue-600" size={20} />
+                </div>
+                <h4 className="font-medium text-gray-800 mb-1">Upload Foto Dokumentasi</h4>
+                <p className="text-xs text-gray-500 mb-4">Format: JPG, PNG (maks. 5MB)</p>
+                <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*" className="hidden" />
+                <button onClick={triggerFileInput} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                  Pilih Foto
+                </button>
+              </div>
+
+              {/* Photo Gallery */}
+              {orderPhotos.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {orderPhotos.map((photo) => (
+                    <div key={photo.id} className="relative group">
+                      <img
+                        src={photo.url}
+                        alt=""
+                        className="w-full h-32 object-cover rounded-lg cursor-pointer"
+                        onClick={() => openPhotoPreview(photo)}
+                      />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRemovePhoto(photo.id); }}
+                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={12} />
+                      </button>
+                      <div className="absolute bottom-1 left-1 right-1 bg-black/50 text-white text-xs p-1 rounded truncate">
+                        {formatDateTime(photo.timestamp)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ================== MODAL TAMBAH PRODUK - INLINE RENDERING ================== */}
+      {/* ✅ PERBAIKAN: Modal di-render langsung di sini, bukan sebagai komponen terpisah */}
+      {showAddProductModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-green-50 to-white">
+              <div className="flex items-center gap-2">
+                <PlusCircle size={20} className="text-green-600" />
+                <h3 className="font-bold text-lg text-gray-800">Tambah Produk Baru</h3>
+              </div>
+              <button onClick={() => setShowAddProductModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* Informasi Dasar Produk */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Nama Produk *</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                    value={productNameInput}
+                    onChange={(e) => setProductNameInput(e.target.value)}
+                    placeholder="Contoh: Kemeja Batik Pria"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Harga Dasar (Rp) *</label>
+                  <input 
+                    type="text"
+                    inputMode="numeric"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                    value={productBasePriceInput}
+                    onChange={(e) => setProductBasePriceInput(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="Contoh: 150000"
+                  />
+                </div>
+              </div>
+              
+              {/* Tambah Variasi */}
+              <div className="border-t pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Variasi Produk (Ukuran & Warna)</label>
+                
+                {/* Form Tambah Variasi */}
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div>
+                    <input 
+                      type="text" 
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                      placeholder="Ukuran (S, M, L, XL)"
+                      value={variationSizeInput}
+                      onChange={(e) => setVariationSizeInput(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <input 
+                      type="text" 
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                      placeholder="Warna (Merah, Biru, Hitam)"
+                      value={variationColorInput}
+                      onChange={(e) => setVariationColorInput(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex gap-1">
+                    <input 
+                      type="text"
+                      inputMode="numeric"
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                      placeholder="Harga"
+                      value={variationPriceInput}
+                      onChange={(e) => setVariationPriceInput(e.target.value.replace(/[^0-9]/g, ''))}
+                    />
+                    <button 
+                      onClick={handleAddVariationSimple}
+                      className="px-2 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Daftar Variasi yang Sudah Ditambahkan */}
+                {tempVariationsList.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs text-gray-500">Variasi yang sudah ditambahkan:</p>
+                    {tempVariationsList.map((v) => (
+                      <div key={v.id} className="flex justify-between items-center bg-gray-50 p-2 rounded-lg">
+                        <div className="flex gap-3 text-sm">
+                          <span className="font-medium">{v.size}</span>
+                          <span className="text-gray-500">•</span>
+                          <span>{v.color}</span>
+                          <span className="text-blue-600">Rp {formatPriceDisplay(v.price)}</span>
+                        </div>
+                        <button onClick={() => handleRemoveVariationSimple(v.id)} className="text-red-500 hover:text-red-700">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+              <button onClick={() => setShowAddProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
+              <button onClick={handleSaveNewProductSimple} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium">Simpan Produk</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Photo Preview Modal */}
       <PhotoPreviewModal />

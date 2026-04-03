@@ -13,6 +13,7 @@ import Layout from './components/Layout'
 import ErrorBoundary from './components/ErrorBoundary'
 import EditUser from './pages/EditUser'
 import ProtectedRoute from './components/ProtectedRoute'
+import Stock from './pages/Stock';
 // HAPUS import App.css karena menggunakan Tailwind
 // import './App.css'
 
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/orders/edit/:id" element={<EditOrder />} />
             <Route path="/tracking" element={<Tracking />} />
             <Route path="/joblist" element={<JobList />} />
+            <Route path="/stock" element={<Stock />} />
           </Route>
         </Routes>
       </ErrorBoundary>

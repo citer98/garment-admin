@@ -9,7 +9,7 @@ const syncJobsForOrder = (orderId) => {
   const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
   const order = savedOrders.find(o => o.id === orderId);
   
-  if (order && order.status !== 'draft' && order.status !== 'cancelled') {
+  if (order && order.status !== 'cancelled') {
     syncOrderWithJobs(order);
   }
 };
@@ -20,19 +20,16 @@ export default function Orders() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   
-  // Status options
+  // Status options - DISEDERHANAKAN (tanpa Draft, tanpa Diproses, tanpa Produksi)
   const statusOptions = [
-    { value: 'draft', label: 'Draft', color: 'bg-gray-100 text-gray-800' },
-    { value: 'processing', label: 'Diproses', color: 'bg-blue-100 text-blue-800' },
-    { value: 'production', label: 'Produksi', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'cutting', label: 'Potong', color: 'bg-amber-100 text-amber-800' },
-    { value: 'sewing', label: 'Jahit', color: 'bg-orange-100 text-orange-800' },
-    { value: 'finishing', label: 'Finishing', color: 'bg-lime-100 text-lime-800' },
-    { value: 'packing', label: 'Packing', color: 'bg-emerald-100 text-emerald-800' },
-    { value: 'qc', label: 'QC', color: 'bg-teal-100 text-teal-800' },
-    { value: 'completed', label: 'Selesai', color: 'bg-green-100 text-green-800' },
-    { value: 'delivered', label: 'Terkirim', color: 'bg-purple-100 text-purple-800' },
-    { value: 'cancelled', label: 'Dibatalkan', color: 'bg-red-100 text-red-800' },
+    { value: 'cutting', label: '✂️ Potong', color: 'bg-amber-100 text-amber-800' },
+    { value: 'sewing', label: '🧵 Jahit', color: 'bg-orange-100 text-orange-800' },
+    { value: 'finishing', label: '✨ Finishing', color: 'bg-lime-100 text-lime-800' },
+    { value: 'packing', label: '📦 Packing', color: 'bg-emerald-100 text-emerald-800' },
+    { value: 'qc', label: '✅ QC', color: 'bg-teal-100 text-teal-800' },
+    { value: 'completed', label: '🎉 Selesai', color: 'bg-green-100 text-green-800' },
+    { value: 'delivered', label: '🚚 Terkirim', color: 'bg-purple-100 text-purple-800' },
+    { value: 'cancelled', label: '❌ Dibatalkan', color: 'bg-red-100 text-red-800' },
   ];
 
   // Load orders from localStorage
@@ -42,18 +39,22 @@ export default function Orders() {
 
   const loadOrders = () => {
     try {
-      // Coba ambil dari localStorage dulu
       const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
       
-      // Validasi setiap order
       const validatedOrders = savedOrders.map(order => {
+        // Mapping status lama ke status baru
+        let mappedStatus = order.status;
+        if (mappedStatus === 'draft' || mappedStatus === 'processing' || mappedStatus === 'production') {
+          mappedStatus = 'cutting';
+        }
+        
         return {
           id: safeString(order.id),
           customerName: safeString(order.customerName),
           orderDate: safeString(order.orderDate),
           items: safeNumber(order.items),
           totalAmount: safeNumber(order.totalAmount),
-          status: safeString(order.status),
+          status: mappedStatus,
           itemsDetail: Array.isArray(order.itemsDetail) ? order.itemsDetail : [],
           customerPhone: safeString(order.customerPhone),
           customerAddress: safeString(order.customerAddress),
@@ -63,7 +64,6 @@ export default function Orders() {
         };
       });
       
-      // Jika tidak ada di localStorage, gunakan data mock
       if (validatedOrders.length === 0) {
         const mockOrders = [
           {
@@ -84,7 +84,7 @@ export default function Orders() {
             orderDate: '2024-01-16',
             items: 5,
             totalAmount: 1200000,
-            status: 'production',
+            status: 'cutting',
             itemsDetail: [
               { product: 'Blouse Wanita', qty: 3, price: 120000 },
               { product: 'Kemeja Wanita Formal', qty: 2, price: 180000 }
@@ -96,7 +96,7 @@ export default function Orders() {
             orderDate: '2024-01-17',
             items: 2,
             totalAmount: 600000,
-            status: 'processing',
+            status: 'sewing',
             itemsDetail: [
               { product: 'Jaket Hoodie', qty: 2, price: 300000 }
             ]
@@ -107,7 +107,7 @@ export default function Orders() {
             orderDate: '2024-01-18',
             items: 4,
             totalAmount: 950000,
-            status: 'draft',
+            status: 'delivered',
             itemsDetail: [
               { product: 'Celana Chino', qty: 2, price: 200000 },
               { product: 'Kemeja Pria Slimfit', qty: 2, price: 150000 }
@@ -117,14 +117,12 @@ export default function Orders() {
         setOrders(mockOrders);
         localStorage.setItem('orders', JSON.stringify(mockOrders));
         
-        // Generate jobs untuk orders yang sudah ada
         mockOrders.forEach(order => {
           syncJobsForOrder(order.id);
         });
       } else {
         setOrders(validatedOrders);
         
-        // Generate jobs untuk orders yang sudah ada
         validatedOrders.forEach(order => {
           syncJobsForOrder(order.id);
         });
@@ -160,7 +158,6 @@ export default function Orders() {
       setOrders(updatedOrders);
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
       
-      // Hapus jobs terkait
       const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
       const filteredJobs = availableJobs.filter(job => job.order_id !== orderId);
       localStorage.setItem('availableJobs', JSON.stringify(filteredJobs));
@@ -179,8 +176,8 @@ export default function Orders() {
 
   // Hitung statistik
   const totalOrders = orders.length;
-  const inProcessOrders = orders.filter(o => ['processing', 'production'].includes(safeString(o.status))).length;
-  const completedOrders = orders.filter(o => safeString(o.status) === 'completed').length;
+  const inProcessOrders = orders.filter(o => ['cutting', 'sewing', 'finishing', 'packing', 'qc'].includes(safeString(o.status))).length;
+  const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(safeString(o.status))).length;
   const totalOrderValue = orders.reduce((sum, order) => sum + safeNumber(order.totalAmount), 0);
 
   return (
@@ -279,7 +276,7 @@ export default function Orders() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredOrders.map((order) => {
-                const status = statusOptions.find(s => s.value === order.status);
+                const status = statusOptions.find(s => s.value === order.status) || statusOptions[0];
                 return (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
@@ -303,8 +300,8 @@ export default function Orders() {
                       Rp {formatCurrency(order.totalAmount)}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${status?.color || 'bg-gray-100 text-gray-800'}`}>
-                        {status?.label || order.status || 'Unknown'}
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${status.color}`}>
+                        {status.label}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -374,12 +371,6 @@ export default function Orders() {
             Menampilkan <span className="font-semibold">{filteredOrders.length}</span> dari{' '}
             <span className="font-semibold">{totalOrders}</span> pesanan
           </p>
-          <Link 
-            to="/joblist"
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-          >
-            ↗ Lihat Pekerjaan Terkait
-          </Link>
         </div>
       </div>
     </div>

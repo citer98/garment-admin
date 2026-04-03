@@ -93,7 +93,7 @@ export default function Login() {
             fontSize: '1.875rem',
             fontWeight: 'bold',
             color: 'white'
-          }}>GarmentTrackPro v.0.06</h1>
+          }}>Garment V.0.08.2</h1>
           <p style={{
             color: '#cbd5e1',
             fontSize: '0.875rem',

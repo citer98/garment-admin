@@ -28,7 +28,13 @@ import {
   Trash,
   Image,
   MessageSquare,
-  PlusCircle
+  PlusCircle,
+  Tag,
+  Edit,
+  Users,
+  Phone,
+  MapPin,
+  Mail
 } from 'lucide-react';
 import { syncOrderWithJobs } from '../utils/jobOrderSync';
 
@@ -41,6 +47,19 @@ export default function EditOrder() {
   const [isMobile, setIsMobile] = useState(false);
   const [expandedPhotoSection, setExpandedPhotoSection] = useState(false);
   
+  // ================== STATE UNTUK PELANGGAN (CUSTOMER) ==================
+  const [customers, setCustomers] = useState([]);
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [showManageCustomersModal, setShowManageCustomersModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [customerFormData, setCustomerFormData] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    email: '',
+    joinDate: new Date().toISOString().split('T')[0]
+  });
+  
   // ================== STATE UNTUK PRODUK CUSTOM ==================
   const [products, setProducts] = useState([]);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
@@ -48,12 +67,21 @@ export default function EditOrder() {
   // State untuk form produk - DIPISAHKAN
   const [productNameInput, setProductNameInput] = useState('');
   const [productBasePriceInput, setProductBasePriceInput] = useState('');
+  const [productCategoryInput, setProductCategoryInput] = useState('');
   
   // State untuk variasi - DIPISAHKAN
   const [variationSizeInput, setVariationSizeInput] = useState('');
   const [variationColorInput, setVariationColorInput] = useState('');
   const [variationPriceInput, setVariationPriceInput] = useState('');
   const [tempVariationsList, setTempVariationsList] = useState([]);
+  
+  // ================== STATE UNTUK KATEGORI PRODUK ==================
+  const [productCategories, setProductCategories] = useState(['Kemeja', 'Celana', 'Jaket', 'Blouse', 'Aksesoris', 'Lainnya']);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showManageCategoriesModal, setShowManageCategoriesModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editCategoryName, setEditCategoryName] = useState('');
   
   // Photo State
   const [showPhotoPreview, setShowPhotoPreview] = useState(false);
@@ -89,6 +117,244 @@ export default function EditOrder() {
       variantId: ''
     }]
   });
+
+  // ================== FUNGSI UNTUK PELANGGAN (CUSTOMER) ==================
+  const loadCustomers = () => {
+    const savedCustomers = localStorage.getItem('customers');
+    if (savedCustomers) {
+      setCustomers(JSON.parse(savedCustomers));
+    } else {
+      const mockCustomers = [
+        { id: 1, name: 'Toko Baju Maju Jaya', address: 'Jl. Sudirman No. 123', phone: '0812-3456-7890', email: 'maju@jaya.com', joinDate: '2023-01-15' },
+        { id: 2, name: 'Butik Modern', address: 'Jl. Thamrin No. 45', phone: '0813-4567-8901', email: 'modern@butik.com', joinDate: '2023-02-20' },
+        { id: 3, name: 'Konveksi Sejahtera', address: 'Jl. Gatot Subroto No. 67', phone: '0814-5678-9012', email: 'sejahtera@konveksi.com', joinDate: '2023-03-10' },
+        { id: 4, name: 'Distro Urban', address: 'Jl. Malioboro No. 89', phone: '0815-6789-0123', email: 'urban@distro.com', joinDate: '2023-04-05' },
+      ];
+      setCustomers(mockCustomers);
+      localStorage.setItem('customers', JSON.stringify(mockCustomers));
+    }
+  };
+
+  const handleAddCustomer = () => {
+    if (!customerFormData.name.trim()) {
+      alert('Mohon isi nama pelanggan!');
+      return;
+    }
+
+    const newId = customers.length > 0 ? Math.max(...customers.map(c => c.id)) + 1 : 1;
+    const customerToAdd = {
+      id: newId,
+      ...customerFormData,
+      joinDate: customerFormData.joinDate || new Date().toISOString().split('T')[0]
+    };
+
+    const updatedCustomers = [...customers, customerToAdd];
+    setCustomers(updatedCustomers);
+    localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+
+    // Update formData dengan pelanggan baru
+    setFormData(prev => ({
+      ...prev,
+      customerName: customerToAdd.name,
+      customerPhone: customerToAdd.phone || '',
+      customerAddress: customerToAdd.address || '',
+      customerEmail: customerToAdd.email || ''
+    }));
+    
+    setCustomerFormData({ name: '', phone: '', address: '', email: '', joinDate: new Date().toISOString().split('T')[0] });
+    setShowAddCustomerModal(false);
+    
+    alert(`✅ Pelanggan "${customerToAdd.name}" berhasil ditambahkan!`);
+  };
+
+  const handleEditCustomer = () => {
+    if (!editingCustomer) return;
+    
+    if (!customerFormData.name.trim()) {
+      alert('Mohon isi nama pelanggan!');
+      return;
+    }
+    
+    const updatedCustomers = customers.map(customer => 
+      customer.id === editingCustomer.id 
+        ? { ...customer, ...customerFormData, joinDate: customerFormData.joinDate || customer.joinDate }
+        : customer
+    );
+    
+    setCustomers(updatedCustomers);
+    localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+    
+    // Jika pelanggan yang diedit sedang dipilih, update formData
+    if (formData.customerName === editingCustomer.name) {
+      setFormData(prev => ({
+        ...prev,
+        customerName: customerFormData.name,
+        customerPhone: customerFormData.phone || '',
+        customerAddress: customerFormData.address || '',
+        customerEmail: customerFormData.email || ''
+      }));
+    }
+    
+    setEditingCustomer(null);
+    setCustomerFormData({ name: '', phone: '', address: '', email: '', joinDate: new Date().toISOString().split('T')[0] });
+    setShowManageCustomersModal(false);
+    
+    alert(`✅ Pelanggan berhasil diperbarui!`);
+  };
+
+  const handleDeleteCustomer = (customerToDelete) => {
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const hasOrders = orders.some(order => order.customerName === customerToDelete.name);
+    
+    if (hasOrders) {
+      alert(`⚠️ Pelanggan "${customerToDelete.name}" memiliki riwayat pesanan. Hapus pesanan terlebih dahulu!`);
+      return;
+    }
+    
+    if (window.confirm(`Apakah Anda yakin ingin menghapus pelanggan "${customerToDelete.name}"?`)) {
+      const updatedCustomers = customers.filter(c => c.id !== customerToDelete.id);
+      setCustomers(updatedCustomers);
+      localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+      
+      alert(`✅ Pelanggan "${customerToDelete.name}" berhasil dihapus!`);
+    }
+  };
+
+  const openEditCustomerModal = (customer) => {
+    setEditingCustomer(customer);
+    setCustomerFormData({
+      name: customer.name,
+      phone: customer.phone || '',
+      address: customer.address || '',
+      email: customer.email || '',
+      joinDate: customer.joinDate || new Date().toISOString().split('T')[0]
+    });
+    setShowManageCustomersModal(true);
+  };
+
+  // ================== FUNGSI UNTUK MEMBUKA MODAL TAMBAH PELANGGAN DARI MODAL KELOLA ==================
+  const openAddCustomerFromManage = () => {
+    setShowManageCustomersModal(false);
+    setEditingCustomer(null);
+    setShowAddCustomerModal(true);
+    setCustomerFormData({
+      name: '',
+      phone: '',
+      address: '',
+      email: '',
+      joinDate: new Date().toISOString().split('T')[0]
+    });
+  };
+
+  const handleSelectCustomer = (customerId) => {
+    const selectedCustomer = customers.find(c => c.id === parseInt(customerId));
+    if (selectedCustomer) {
+      setFormData(prev => ({
+        ...prev,
+        customerName: selectedCustomer.name,
+        customerPhone: selectedCustomer.phone || '',
+        customerAddress: selectedCustomer.address || '',
+        customerEmail: selectedCustomer.email || ''
+      }));
+    }
+  };
+
+  // ================== FUNGSI UNTUK KATEGORI PRODUK ==================
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) {
+      alert('Mohon isi nama kategori!');
+      return;
+    }
+    
+    if (productCategories.includes(newCategoryName.trim())) {
+      alert('Kategori sudah ada!');
+      return;
+    }
+    
+    const updatedCategories = [...productCategories, newCategoryName.trim()];
+    setProductCategories(updatedCategories);
+    localStorage.setItem('productCategories', JSON.stringify(updatedCategories));
+    
+    setNewCategoryName('');
+    setShowCategoryModal(false);
+    
+    alert(`✅ Kategori "${newCategoryName}" berhasil ditambahkan!`);
+  };
+
+  const handleEditCategory = () => {
+    if (!editCategoryName.trim()) {
+      alert('Mohon isi nama kategori!');
+      return;
+    }
+    
+    if (productCategories.includes(editCategoryName.trim()) && editCategoryName.trim() !== editingCategory) {
+      alert('Kategori sudah ada!');
+      return;
+    }
+    
+    const updatedCategories = productCategories.map(cat => 
+      cat === editingCategory ? editCategoryName.trim() : cat
+    );
+    setProductCategories(updatedCategories);
+    localStorage.setItem('productCategories', JSON.stringify(updatedCategories));
+    
+    const updatedProducts = products.map(product => 
+      product.category === editingCategory 
+        ? { ...product, category: editCategoryName.trim() }
+        : product
+    );
+    setProducts(updatedProducts);
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    
+    setEditingCategory(null);
+    setEditCategoryName('');
+    setShowManageCategoriesModal(false);
+    
+    alert(`✅ Kategori berhasil diubah menjadi "${editCategoryName}"!`);
+  };
+
+  const handleDeleteCategory = (categoryToDelete) => {
+    const productsWithCategory = products.filter(product => product.category === categoryToDelete);
+    
+    if (productsWithCategory.length > 0) {
+      alert(`⚠️ Kategori "${categoryToDelete}" sedang digunakan oleh ${productsWithCategory.length} produk. Hapus atau ubah kategori produk tersebut terlebih dahulu!`);
+      return;
+    }
+    
+    if (window.confirm(`Apakah Anda yakin ingin menghapus kategori "${categoryToDelete}"?`)) {
+      const updatedCategories = productCategories.filter(cat => cat !== categoryToDelete);
+      setProductCategories(updatedCategories);
+      localStorage.setItem('productCategories', JSON.stringify(updatedCategories));
+      
+      if (productCategoryInput === categoryToDelete) {
+        setProductCategoryInput(updatedCategories[0] || 'Lainnya');
+      }
+      
+      alert(`✅ Kategori "${categoryToDelete}" berhasil dihapus!`);
+    }
+  };
+
+  const openEditCategoryModal = (category) => {
+    setEditingCategory(category);
+    setEditCategoryName(category);
+    setShowManageCategoriesModal(true);
+  };
+
+  const openAddCategoryFromManage = () => {
+    setShowManageCategoriesModal(false);
+    setEditingCategory(null);
+    setShowCategoryModal(true);
+    setNewCategoryName('');
+  };
+
+  // Load categories dari localStorage
+  useEffect(() => {
+    const savedCategories = localStorage.getItem('productCategories');
+    if (savedCategories) {
+      setProductCategories(JSON.parse(savedCategories));
+    }
+    loadCustomers();
+  }, []);
 
   // Load products dari localStorage
   useEffect(() => {
@@ -252,7 +518,6 @@ export default function EditOrder() {
       price: priceNum
     }]);
     
-    // Reset input variasi
     setVariationSizeInput('');
     setVariationColorInput('');
     setVariationPriceInput('');
@@ -284,7 +549,7 @@ export default function EditOrder() {
       id: newId,
       name: productNameInput,
       basePrice: basePriceNum,
-      category: 'Custom',
+      category: productCategoryInput || 'Lainnya',
       variations: tempVariationsList.map((v, idx) => ({
         id: `${newId}-${v.size}-${v.color}`,
         size: v.size,
@@ -298,9 +563,9 @@ export default function EditOrder() {
     setProducts(updatedProducts);
     localStorage.setItem('products', JSON.stringify(updatedProducts));
     
-    // Reset semua state
     setProductNameInput('');
     setProductBasePriceInput('');
+    setProductCategoryInput('');
     setTempVariationsList([]);
     setVariationSizeInput('');
     setVariationColorInput('');
@@ -717,6 +982,360 @@ export default function EditOrder() {
     }
   };
 
+  // ================== MODAL KOMPONEN ==================
+  
+  // Modal Tambah Pelanggan
+  const AddCustomerModal = () => {
+    if (!showAddCustomerModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
+            <div className="flex items-center gap-2">
+              <Users size={20} className="text-blue-600" />
+              <h3 className="font-bold text-lg text-gray-800">Tambah Pelanggan Baru</h3>
+            </div>
+            <button onClick={() => setShowAddCustomerModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="p-5 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan *</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                value={customerFormData.name}
+                onChange={(e) => setCustomerFormData({...customerFormData, name: e.target.value})}
+                placeholder="Contoh: Toko Maju Jaya"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
+              <div className="relative">
+                <Phone size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  value={customerFormData.phone}
+                  onChange={(e) => setCustomerFormData({...customerFormData, phone: e.target.value})}
+                  placeholder="08123456789"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+              <div className="relative">
+                <MapPin size={16} className="absolute left-3 top-3 text-gray-400" />
+                <textarea 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  rows="2"
+                  value={customerFormData.address}
+                  onChange={(e) => setCustomerFormData({...customerFormData, address: e.target.value})}
+                  placeholder="Jl. Contoh No. 123"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="email" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  value={customerFormData.email}
+                  onChange={(e) => setCustomerFormData({...customerFormData, email: e.target.value})}
+                  placeholder="email@example.com"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <button onClick={() => setShowAddCustomerModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
+            <button onClick={handleAddCustomer} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+              Simpan Pelanggan
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Kelola Pelanggan
+  const ManageCustomersModal = () => {
+    if (!showManageCustomersModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
+            <div className="flex items-center gap-2">
+              <Users size={20} className="text-blue-600" />
+              <h3 className="font-bold text-lg text-gray-800">Kelola Pelanggan</h3>
+            </div>
+            <button onClick={() => { setShowManageCustomersModal(false); setEditingCustomer(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {editingCustomer ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan *</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  value={customerFormData.name}
+                  onChange={(e) => setCustomerFormData({...customerFormData, name: e.target.value})}
+                />
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    value={customerFormData.phone}
+                    onChange={(e) => setCustomerFormData({...customerFormData, phone: e.target.value})}
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                  <textarea 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    rows="2"
+                    value={customerFormData.address}
+                    onChange={(e) => setCustomerFormData({...customerFormData, address: e.target.value})}
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    value={customerFormData.email}
+                    onChange={(e) => setCustomerFormData({...customerFormData, email: e.target.value})}
+                  />
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => { setEditingCustomer(null); setCustomerFormData({ name: '', phone: '', address: '', email: '', joinDate: new Date().toISOString().split('T')[0] }); }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleEditCustomer}
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                  >
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <p className="text-sm text-gray-600">Daftar semua pelanggan yang tersedia</p>
+                  <button
+                    onClick={openAddCustomerFromManage}
+                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
+                  >
+                    <Plus size={12} /> Tambah
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {customers.map((customer) => {
+                    const orderCount = JSON.parse(localStorage.getItem('orders') || '[]').filter(o => o.customerName === customer.name).length;
+                    return (
+                      <div key={customer.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-800">{customer.name}</p>
+                          <p className="text-xs text-gray-500">{orderCount} pesanan</p>
+                          {customer.phone && (
+                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                              <Phone size={10} /> {customer.phone}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openEditCustomerModal(customer)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="Edit Pelanggan"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCustomer(customer)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Hapus Pelanggan"
+                            disabled={orderCount > 0}
+                          >
+                            <Trash size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+            <button onClick={() => { setShowManageCustomersModal(false); setEditingCustomer(null); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Tambah Kategori
+  const AddCategoryModal = () => {
+    if (!showCategoryModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
+            <div className="flex items-center gap-2">
+              <Tag size={20} className="text-purple-600" />
+              <h3 className="font-bold text-lg text-gray-800">Tambah Kategori Produk</h3>
+            </div>
+            <button onClick={() => setShowCategoryModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="p-5 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kategori *</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Contoh: Baju Atasan, Bawahan, Outer, dll"
+                autoFocus
+              />
+              <p className="text-xs text-gray-500 mt-1">Kategori akan muncul di dropdown pilihan produk</p>
+            </div>
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <button onClick={() => setShowCategoryModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
+            <button onClick={handleAddCategory} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700">
+              Simpan Kategori
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Kelola Kategori
+  const ManageCategoriesModal = () => {
+    if (!showManageCategoriesModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
+            <div className="flex items-center gap-2">
+              <Tag size={20} className="text-purple-600" />
+              <h3 className="font-bold text-lg text-gray-800">Kelola Kategori Produk</h3>
+            </div>
+            <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {editingCategory ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Edit Kategori</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                  value={editCategoryName}
+                  onChange={(e) => setEditCategoryName(e.target.value)}
+                  placeholder="Nama kategori"
+                  autoFocus
+                />
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => { setEditingCategory(null); setEditCategoryName(''); }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleEditCategory}
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                  >
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <p className="text-sm text-gray-600">Daftar semua kategori produk yang tersedia</p>
+                  <button
+                    onClick={openAddCategoryFromManage}
+                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
+                  >
+                    <Plus size={12} /> Tambah
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {productCategories.map((category) => {
+                    const productCount = products.filter(p => p.category === category).length;
+                    return (
+                      <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-800">{category}</p>
+                          <p className="text-xs text-gray-500">{productCount} produk</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openEditCategoryModal(category)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="Edit Kategori"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCategory(category)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Hapus Kategori"
+                            disabled={productCount > 0}
+                          >
+                            <Trash size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+            <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Photo Preview Modal Component
   const PhotoPreviewModal = () => {
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -840,7 +1459,6 @@ export default function EditOrder() {
   }
 
   const currentStatus = statusOptions.find(s => s.value === formData.status) || statusOptions[0];
-  const originalStatusObj = statusOptions.find(s => s.value === originalStatus) || statusOptions[0];
   const isOrderOverdue = isDeadlineOverdue(formData.dueDate);
 
   return (
@@ -882,7 +1500,7 @@ export default function EditOrder() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Customer Info */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Customer Card */}
+            {/* Customer Card - DIPERBAIKI dengan tampilan seperti CreateOrder */}
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
               <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
                 <div className="flex items-center gap-2">
@@ -892,49 +1510,47 @@ export default function EditOrder() {
               </div>
               <div className="p-5 space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Nama Pelanggan *</label>
-                  <input
-                    type="text"
-                    name="customerName"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    value={formData.customerName}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Pilih Pelanggan</label>
+                  <div className="flex gap-2">
+                    <select 
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      value={customers.find(c => c.name === formData.customerName)?.id || ''}
+                      onChange={(e) => handleSelectCustomer(e.target.value)}
+                    >
+                      <option value="">-- Pilih Pelanggan --</option>
+                      {customers.map(customer => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name} • {customer.phone}
+                        </option>
+                      ))}
+                    </select>
+
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <button 
+                      onClick={() => setShowManageCustomersModal(true)} 
+                      className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700"
+                    >
+                      <Users size={12} /> Kelola
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Telepon</label>
-                  <input
-                    type="text"
-                    name="customerPhone"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    value={formData.customerPhone}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Alamat</label>
-                  <textarea
-                    name="customerAddress"
-                    rows="2"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
-                    value={formData.customerAddress}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
-                  <input
-                    type="email"
-                    name="customerEmail"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    value={formData.customerEmail}
-                    onChange={handleInputChange}
-                  />
-                </div>
+
+                {/* Menampilkan data pelanggan yang dipilih */}
+                {formData.customerName && (
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <p className="font-medium text-blue-800 text-sm">{formData.customerName}</p>
+                    <p className="text-xs text-blue-600 mt-0.5">{formData.customerAddress}</p>
+                    <p className="text-xs text-blue-600">{formData.customerPhone}</p>
+                    {formData.customerEmail && <p className="text-xs text-blue-600">{formData.customerEmail}</p>}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Tanggal Pesanan</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      <div className="flex items-center gap-1"><Calendar size={12} /> Tanggal Pesanan</div>
+                    </label>
                     <input 
                       type="date" 
                       name="orderDate"
@@ -944,7 +1560,9 @@ export default function EditOrder() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Jatuh Tempo</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      <div className="flex items-center gap-1"><Clock size={12} /> Jatuh Tempo</div>
+                    </label>
                     <input 
                       type="date" 
                       name="dueDate"
@@ -957,6 +1575,7 @@ export default function EditOrder() {
                     )}
                   </div>
                 </div>
+
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Status Pesanan</label>
                   <select 
@@ -984,6 +1603,7 @@ export default function EditOrder() {
                     </p>
                   )}
                 </div>
+
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Catatan</label>
                   <textarea
@@ -998,7 +1618,7 @@ export default function EditOrder() {
               </div>
             </div>
 
-            {/* Summary Card */}
+            {/* Summary Card - Sama seperti sebelumnya */}
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
               <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
                 <h3 className="font-semibold text-gray-800">Ringkasan Pesanan</h3>
@@ -1026,7 +1646,7 @@ export default function EditOrder() {
             </div>
           </div>
 
-          {/* Right Column - Order Items */}
+          {/* Right Column - Order Items (Sama seperti sebelumnya) */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
               {/* Header */}
@@ -1095,7 +1715,7 @@ export default function EditOrder() {
                       </div>
 
                       {/* Size & Color */}
-                      {product && (
+                      {product && product.variations && (
                         <div className="grid grid-cols-2 gap-3 mb-4">
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Ukuran</label>
@@ -1303,8 +1923,7 @@ export default function EditOrder() {
         </div>
       </div>
 
-      {/* ================== MODAL TAMBAH PRODUK - INLINE RENDERING ================== */}
-      {/* ✅ PERBAIKAN: Modal di-render langsung di sini, bukan sebagai komponen terpisah */}
+      {/* ================== MODAL TAMBAH PRODUK ================== */}
       {showAddProductModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
@@ -1319,7 +1938,6 @@ export default function EditOrder() {
             </div>
             
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {/* Informasi Dasar Produk */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Nama Produk *</label>
@@ -1345,11 +1963,33 @@ export default function EditOrder() {
                 </div>
               </div>
               
-              {/* Tambah Variasi */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Kategori</label>
+                <div className="flex gap-2">
+                  <select 
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                    value={productCategoryInput}
+                    onChange={(e) => setProductCategoryInput(e.target.value)}
+                  >
+                    <option value="">Pilih Kategori</option>
+                    {productCategories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowManageCategoriesModal(true)}
+                    className="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-1 whitespace-nowrap"
+                    title="Kelola Kategori"
+                  >
+                    <Tag size={14} /> Kelola
+                  </button>
+                </div>
+              </div>
+              
               <div className="border-t pt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Variasi Produk (Ukuran & Warna)</label>
                 
-                {/* Form Tambah Variasi */}
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   <div>
                     <input 
@@ -1387,7 +2027,6 @@ export default function EditOrder() {
                   </div>
                 </div>
                 
-                {/* Daftar Variasi yang Sudah Ditambahkan */}
                 {tempVariationsList.length > 0 && (
                   <div className="mt-3 space-y-2">
                     <p className="text-xs text-gray-500">Variasi yang sudah ditambahkan:</p>
@@ -1416,6 +2055,18 @@ export default function EditOrder() {
           </div>
         </div>
       )}
+
+      {/* Modal Tambah Kategori */}
+      <AddCategoryModal />
+      
+      {/* Modal Kelola Kategori */}
+      <ManageCategoriesModal />
+
+      {/* Modal Tambah Pelanggan */}
+      <AddCustomerModal />
+
+      {/* Modal Kelola Pelanggan */}
+      <ManageCustomersModal />
 
       {/* Photo Preview Modal */}
       <PhotoPreviewModal />

@@ -25,12 +25,24 @@ import {
   Calendar,
   DollarSign,
   ShoppingCart,
-  Warehouse
+  Warehouse,
+  PlusCircle,
+  Tag,
+  Edit,
+  Trash,
+  Ruler,
+  Truck,
+  Building2,
+  Phone,
+  Mail,
+  FileText
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/formatters';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
-// Data stok awal dengan perhitungan status yang benar
+// Data stok awal
 const initialStockItems = [
   {
     id: 'MAT-001',
@@ -154,18 +166,8 @@ const initialStockItems = [
   }
 ];
 
-// Kategori options
-const categories = ['Semua', 'Kain', 'Benang', 'Aksesoris', 'Bahan Pelapis', 'Lainnya'];
-
-// Supplier options
-const suppliers = [
-  'PT. Sandang Textile',
-  'CV. Benang Nusantara',
-  'UD. Kancing Jaya',
-  'CV. Resleting Prima',
-  'PT. Label Indonesia',
-  'PT. Textile Makmur'
-];
+// Default units
+const defaultUnits = ['meter', 'roll', 'pcs', 'kg', 'yard'];
 
 export default function Stock() {
   const navigate = useNavigate();
@@ -180,6 +182,48 @@ export default function Stock() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  
+  // ================== STATE UNTUK KATEGORI ==================
+  const [categories, setCategories] = useState(['Kain', 'Benang', 'Aksesoris', 'Bahan Pelapis', 'Lainnya']);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [showManageCategoriesModal, setShowManageCategoriesModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editCategoryName, setEditCategoryName] = useState('');
+  
+  // ================== STATE UNTUK SATUAN ==================
+  const [units, setUnits] = useState([...defaultUnits]);
+  const [showAddUnitModal, setShowAddUnitModal] = useState(false);
+  const [showManageUnitsModal, setShowManageUnitsModal] = useState(false);
+  const [newUnitName, setNewUnitName] = useState('');
+  const [editingUnit, setEditingUnit] = useState(null);
+  const [editUnitName, setEditUnitName] = useState('');
+  
+  // ================== STATE UNTUK SUPPLIER ==================
+  const [suppliers, setSuppliers] = useState([
+    'PT. Sandang Textile',
+    'CV. Benang Nusantara',
+    'UD. Kancing Jaya',
+    'CV. Resleting Prima',
+    'PT. Label Indonesia',
+    'PT. Textile Makmur'
+  ]);
+  const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
+  const [showManageSuppliersModal, setShowManageSuppliersModal] = useState(false);
+  const [newSupplierName, setNewSupplierName] = useState('');
+  const [newSupplierContact, setNewSupplierContact] = useState('');
+  const [newSupplierPhone, setNewSupplierPhone] = useState('');
+  const [newSupplierEmail, setNewSupplierEmail] = useState('');
+  const [newSupplierAddress, setNewSupplierAddress] = useState('');
+  const [editingSupplier, setEditingSupplier] = useState(null);
+  const [editSupplierData, setEditSupplierData] = useState({
+    name: '',
+    contact: '',
+    phone: '',
+    email: '',
+    address: ''
+  });
+  
   const [formData, setFormData] = useState({
     code: '',
     material: '',
@@ -205,19 +249,346 @@ export default function Stock() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // ================== FUNGSI UNTUK KATEGORI ==================
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) {
+      alert('Mohon isi nama kategori!');
+      return;
+    }
+    
+    if (categories.includes(newCategoryName.trim())) {
+      alert('Kategori sudah ada!');
+      return;
+    }
+    
+    const updatedCategories = [...categories, newCategoryName.trim()];
+    setCategories(updatedCategories);
+    localStorage.setItem('materialCategories', JSON.stringify(updatedCategories));
+    
+    setNewCategoryName('');
+    setShowAddCategoryModal(false);
+    
+    alert(`✅ Kategori "${newCategoryName}" berhasil ditambahkan!`);
+  };
+
+  const handleEditCategory = () => {
+    if (!editCategoryName.trim()) {
+      alert('Mohon isi nama kategori!');
+      return;
+    }
+    
+    if (categories.includes(editCategoryName.trim()) && editCategoryName.trim() !== editingCategory) {
+      alert('Kategori sudah ada!');
+      return;
+    }
+    
+    const updatedCategories = categories.map(cat => 
+      cat === editingCategory ? editCategoryName.trim() : cat
+    );
+    setCategories(updatedCategories);
+    localStorage.setItem('materialCategories', JSON.stringify(updatedCategories));
+    
+    const updatedStockItems = stockItems.map(item => 
+      item.category === editingCategory 
+        ? { ...item, category: editCategoryName.trim() }
+        : item
+    );
+    setStockItems(updatedStockItems);
+    localStorage.setItem('stockItems', JSON.stringify(updatedStockItems));
+    
+    if (categoryFilter === editingCategory) {
+      setCategoryFilter(editCategoryName.trim());
+    }
+    
+    if (formData.category === editingCategory) {
+      setFormData(prev => ({ ...prev, category: editCategoryName.trim() }));
+    }
+    
+    setEditingCategory(null);
+    setEditCategoryName('');
+    setShowManageCategoriesModal(false);
+    
+    alert(`✅ Kategori berhasil diubah menjadi "${editCategoryName}"!`);
+  };
+
+  const handleDeleteCategory = (categoryToDelete) => {
+    const itemsWithCategory = stockItems.filter(item => item.category === categoryToDelete);
+    
+    if (itemsWithCategory.length > 0) {
+      alert(`⚠️ Kategori "${categoryToDelete}" sedang digunakan oleh ${itemsWithCategory.length} material. Hapus atau ubah kategori material tersebut terlebih dahulu!`);
+      return;
+    }
+    
+    if (window.confirm(`Apakah Anda yakin ingin menghapus kategori "${categoryToDelete}"?`)) {
+      const updatedCategories = categories.filter(cat => cat !== categoryToDelete);
+      setCategories(updatedCategories);
+      localStorage.setItem('materialCategories', JSON.stringify(updatedCategories));
+      
+      if (categoryFilter === categoryToDelete) {
+        setCategoryFilter('Semua');
+      }
+      
+      if (formData.category === categoryToDelete) {
+        setFormData(prev => ({ ...prev, category: categories[0] || 'Lainnya' }));
+      }
+      
+      alert(`✅ Kategori "${categoryToDelete}" berhasil dihapus!`);
+    }
+  };
+
+  const openEditCategoryModal = (category) => {
+    setEditingCategory(category);
+    setEditCategoryName(category);
+    setShowManageCategoriesModal(true);
+  };
+
+  // ================== FUNGSI UNTUK SATUAN ==================
+  const handleAddUnit = () => {
+    if (!newUnitName.trim()) {
+      alert('Mohon isi nama satuan!');
+      return;
+    }
+    
+    if (units.includes(newUnitName.trim().toLowerCase())) {
+      alert('Satuan sudah ada!');
+      return;
+    }
+    
+    const updatedUnits = [...units, newUnitName.trim().toLowerCase()];
+    setUnits(updatedUnits);
+    localStorage.setItem('materialUnits', JSON.stringify(updatedUnits));
+    
+    setNewUnitName('');
+    setShowAddUnitModal(false);
+    
+    alert(`✅ Satuan "${newUnitName}" berhasil ditambahkan!`);
+  };
+
+  const handleEditUnit = () => {
+    if (!editUnitName.trim()) {
+      alert('Mohon isi nama satuan!');
+      return;
+    }
+    
+    if (units.includes(editUnitName.trim().toLowerCase()) && editUnitName.trim().toLowerCase() !== editingUnit) {
+      alert('Satuan sudah ada!');
+      return;
+    }
+    
+    const updatedUnits = units.map(unit => 
+      unit === editingUnit ? editUnitName.trim().toLowerCase() : unit
+    );
+    setUnits(updatedUnits);
+    localStorage.setItem('materialUnits', JSON.stringify(updatedUnits));
+    
+    const updatedStockItems = stockItems.map(item => 
+      item.unit === editingUnit 
+        ? { ...item, unit: editUnitName.trim().toLowerCase() }
+        : item
+    );
+    setStockItems(updatedStockItems);
+    localStorage.setItem('stockItems', JSON.stringify(updatedStockItems));
+    
+    if (formData.unit === editingUnit) {
+      setFormData(prev => ({ ...prev, unit: editUnitName.trim().toLowerCase() }));
+    }
+    
+    setEditingUnit(null);
+    setEditUnitName('');
+    setShowManageUnitsModal(false);
+    
+    alert(`✅ Satuan berhasil diubah menjadi "${editUnitName}"!`);
+  };
+
+  const handleDeleteUnit = (unitToDelete) => {
+    const itemsWithUnit = stockItems.filter(item => item.unit === unitToDelete);
+    
+    if (itemsWithUnit.length > 0) {
+      alert(`⚠️ Satuan "${unitToDelete}" sedang digunakan oleh ${itemsWithUnit.length} material. Hapus atau ubah satuan material tersebut terlebih dahulu!`);
+      return;
+    }
+    
+    if (window.confirm(`Apakah Anda yakin ingin menghapus satuan "${unitToDelete}"?`)) {
+      const updatedUnits = units.filter(unit => unit !== unitToDelete);
+      setUnits(updatedUnits);
+      localStorage.setItem('materialUnits', JSON.stringify(updatedUnits));
+      
+      if (formData.unit === unitToDelete) {
+        setFormData(prev => ({ ...prev, unit: units[0] || 'pcs' }));
+      }
+      
+      alert(`✅ Satuan "${unitToDelete}" berhasil dihapus!`);
+    }
+  };
+
+  const openEditUnitModal = (unit) => {
+    setEditingUnit(unit);
+    setEditUnitName(unit);
+    setShowManageUnitsModal(true);
+  };
+
+  // ================== FUNGSI UNTUK SUPPLIER ==================
+  const handleAddSupplier = () => {
+    if (!newSupplierName.trim()) {
+      alert('Mohon isi nama supplier!');
+      return;
+    }
+    
+    if (suppliers.includes(newSupplierName.trim())) {
+      alert('Supplier sudah ada!');
+      return;
+    }
+    
+    const updatedSuppliers = [...suppliers, newSupplierName.trim()];
+    setSuppliers(updatedSuppliers);
+    localStorage.setItem('suppliers', JSON.stringify(updatedSuppliers));
+    localStorage.setItem(`supplier_detail_${newSupplierName.trim()}`, JSON.stringify({
+      name: newSupplierName.trim(),
+      contact: newSupplierContact,
+      phone: newSupplierPhone,
+      email: newSupplierEmail,
+      address: newSupplierAddress
+    }));
+    
+    setNewSupplierName('');
+    setNewSupplierContact('');
+    setNewSupplierPhone('');
+    setNewSupplierEmail('');
+    setNewSupplierAddress('');
+    setShowAddSupplierModal(false);
+    
+    alert(`✅ Supplier "${newSupplierName}" berhasil ditambahkan!`);
+  };
+
+  const handleEditSupplier = () => {
+    if (!editSupplierData.name.trim()) {
+      alert('Mohon isi nama supplier!');
+      return;
+    }
+    
+    if (suppliers.includes(editSupplierData.name.trim()) && editSupplierData.name.trim() !== editingSupplier) {
+      alert('Supplier sudah ada!');
+      return;
+    }
+    
+    const updatedSuppliers = suppliers.map(sup => 
+      sup === editingSupplier ? editSupplierData.name.trim() : sup
+    );
+    setSuppliers(updatedSuppliers);
+    localStorage.setItem('suppliers', JSON.stringify(updatedSuppliers));
+    
+    localStorage.setItem(`supplier_detail_${editSupplierData.name.trim()}`, JSON.stringify(editSupplierData));
+    if (editingSupplier !== editSupplierData.name.trim()) {
+      localStorage.removeItem(`supplier_detail_${editingSupplier}`);
+    }
+    
+    const updatedStockItems = stockItems.map(item => 
+      item.supplier === editingSupplier 
+        ? { ...item, supplier: editSupplierData.name.trim() }
+        : item
+    );
+    setStockItems(updatedStockItems);
+    localStorage.setItem('stockItems', JSON.stringify(updatedStockItems));
+    
+    if (formData.supplier === editingSupplier) {
+      setFormData(prev => ({ ...prev, supplier: editSupplierData.name.trim() }));
+    }
+    
+    setEditingSupplier(null);
+    setEditSupplierData({ name: '', contact: '', phone: '', email: '', address: '' });
+    setShowManageSuppliersModal(false);
+    
+    alert(`✅ Supplier berhasil diubah menjadi "${editSupplierData.name}"!`);
+  };
+
+  const handleDeleteSupplier = (supplierToDelete) => {
+    const itemsWithSupplier = stockItems.filter(item => item.supplier === supplierToDelete);
+    
+    if (itemsWithSupplier.length > 0) {
+      alert(`⚠️ Supplier "${supplierToDelete}" sedang digunakan oleh ${itemsWithSupplier.length} material. Hapus atau ubah supplier material tersebut terlebih dahulu!`);
+      return;
+    }
+    
+    if (window.confirm(`Apakah Anda yakin ingin menghapus supplier "${supplierToDelete}"?`)) {
+      const updatedSuppliers = suppliers.filter(sup => sup !== supplierToDelete);
+      setSuppliers(updatedSuppliers);
+      localStorage.setItem('suppliers', JSON.stringify(updatedSuppliers));
+      localStorage.removeItem(`supplier_detail_${supplierToDelete}`);
+      
+      if (formData.supplier === supplierToDelete) {
+        setFormData(prev => ({ ...prev, supplier: '' }));
+      }
+      
+      alert(`✅ Supplier "${supplierToDelete}" berhasil dihapus!`);
+    }
+  };
+
+  const openEditSupplierModal = (supplier) => {
+    const savedDetail = localStorage.getItem(`supplier_detail_${supplier}`);
+    let detail = { name: supplier, contact: '', phone: '', email: '', address: '' };
+    if (savedDetail) {
+      detail = JSON.parse(savedDetail);
+    }
+    setEditingSupplier(supplier);
+    setEditSupplierData(detail);
+    setShowManageSuppliersModal(true);
+  };
+
+  // ================== FUNGSI UNTUK MEMBUKA MODAL TAMBAH DARI MODAL KELOLA ==================
+  const openAddCategoryFromManage = () => {
+    setShowManageCategoriesModal(false);
+    setEditingCategory(null);
+    setShowAddCategoryModal(true);
+    setNewCategoryName('');
+  };
+
+  const openAddUnitFromManage = () => {
+    setShowManageUnitsModal(false);
+    setEditingUnit(null);
+    setShowAddUnitModal(true);
+    setNewUnitName('');
+  };
+
+  const openAddSupplierFromManage = () => {
+    setShowManageSuppliersModal(false);
+    setEditingSupplier(null);
+    setShowAddSupplierModal(true);
+    setNewSupplierName('');
+    setNewSupplierContact('');
+    setNewSupplierPhone('');
+    setNewSupplierEmail('');
+    setNewSupplierAddress('');
+  };
+
+  // Load data dari localStorage
+  useEffect(() => {
+    const savedCategories = localStorage.getItem('materialCategories');
+    if (savedCategories) {
+      setCategories(JSON.parse(savedCategories));
+    }
+    
+    const savedUnits = localStorage.getItem('materialUnits');
+    if (savedUnits) {
+      setUnits(JSON.parse(savedUnits));
+    }
+    
+    const savedSuppliers = localStorage.getItem('suppliers');
+    if (savedSuppliers) {
+      setSuppliers(JSON.parse(savedSuppliers));
+    }
+  }, []);
+
   // ================== FUNGSI STATUS STOK ==================
-  // Update status berdasarkan persentase dari minStock
   const updateItemStatus = (item) => {
     if (!item.minStock || item.minStock === 0) return 'normal';
     
     const percentage = (item.currentStock / item.minStock) * 100;
     
-    if (percentage >= 50) return 'normal';      // Normal: >= 50% dari stok minimal
-    if (percentage >= 25) return 'warning';     // Menipis: 25% - 49% dari stok minimal
-    return 'critical';                          // Kritis: < 25% dari stok minimal
+    if (percentage >= 50) return 'normal';
+    if (percentage >= 25) return 'warning';
+    return 'critical';
   };
 
-  // Get status badge untuk tampilan
   const getStatusBadge = (status) => {
     switch(status) {
       case 'critical':
@@ -234,13 +605,6 @@ export default function Stock() {
           icon: <AlertCircle size={12} className="mr-1" />,
           description: 'Stok 25% - 49% dari kebutuhan minimal'
         };
-      case 'low':
-        return { 
-          label: 'Menipis', 
-          color: 'bg-yellow-100 text-yellow-800', 
-          icon: <AlertCircle size={12} className="mr-1" />,
-          description: 'Stok 25% - 49% dari kebutuhan minimal'
-        };
       default:
         return { 
           label: 'Normal', 
@@ -251,34 +615,28 @@ export default function Stock() {
     }
   };
 
-  // Get warna teks untuk status
   const getStatusColor = (status) => {
     switch(status) {
       case 'critical': return 'text-red-600';
       case 'warning': return 'text-yellow-600';
-      case 'low': return 'text-yellow-600';
       default: return 'text-green-600';
     }
   };
 
-  // Get warna progress bar
   const getProgressBarColor = (status) => {
     switch(status) {
       case 'critical': return 'bg-red-500';
       case 'warning': return 'bg-yellow-500';
-      case 'low': return 'bg-yellow-500';
       default: return 'bg-green-500';
     }
   };
 
-  // Get lebar progress bar (maksimal 100%)
   const getProgressBarWidth = (currentStock, minStock) => {
     if (!minStock || minStock === 0) return 100;
     const percentage = (currentStock / minStock) * 100;
     return Math.min(100, percentage);
   };
 
-  // Get persentase stok
   const getStockPercentage = (currentStock, minStock) => {
     if (!minStock || minStock === 0) return 0;
     return Math.min(100, Math.round((currentStock / minStock) * 100));
@@ -297,7 +655,6 @@ export default function Stock() {
         items = initialStockItems;
       }
       
-      // Auto-update status berdasarkan currentStock dan minStock
       const updatedItems = items.map(item => ({
         ...item,
         status: updateItemStatus(item)
@@ -332,7 +689,6 @@ export default function Stock() {
     setFilteredItems(filtered);
   }, [searchQuery, categoryFilter, statusFilter, stockItems]);
 
-  // Load data saat pertama kali
   useEffect(() => {
     loadStockData();
   }, []);
@@ -340,7 +696,7 @@ export default function Stock() {
   // Hitung statistik
   const totalItems = stockItems.length;
   const criticalItems = stockItems.filter(i => i.status === 'critical').length;
-  const lowStockItems = stockItems.filter(i => i.status === 'warning' || i.status === 'low').length;
+  const lowStockItems = stockItems.filter(i => i.status === 'warning').length;
   const normalStock = stockItems.filter(i => i.status === 'normal').length;
   const totalValue = stockItems.reduce((sum, item) => sum + (item.currentStock * item.price), 0);
 
@@ -364,7 +720,6 @@ export default function Stock() {
       notes: formData.notes || ''
     };
     
-    // Update status
     newItem.status = updateItemStatus(newItem);
     
     const updatedItems = [...stockItems, newItem];
@@ -388,7 +743,6 @@ export default function Stock() {
       price: Number(formData.price)
     };
     
-    // Update status
     updatedItem.status = updateItemStatus(updatedItem);
     
     const updatedItems = stockItems.map(item => 
@@ -480,6 +834,82 @@ export default function Stock() {
     setShowDetailModal(true);
   };
 
+  // ================== EXPORT FUNCTIONS ==================
+  const formatCurrencyIDR = (value) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
+  };
+
+  const formatPriceDisplay = (price) => {
+    if (!price) return '';
+    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  // Export to Excel
+  const exportToExcel = () => {
+    const exportData = filteredItems.map(item => {
+      const percentage = getStockPercentage(item.currentStock, item.minStock);
+      const statusBadge = getStatusBadge(item.status);
+      const totalValue = item.currentStock * item.price;
+      
+      return {
+        'Kode Material': item.code,
+        'Nama Material': item.material,
+        'Kategori': item.category,
+        'Stok Saat Ini': item.currentStock,
+        'Satuan': item.unit,
+        'Stok Minimal': item.minStock,
+        'Stok Maksimal': item.maxStock,
+        'Persentase Stok': `${percentage}%`,
+        'Status': statusBadge.label,
+        'Harga Satuan (Rp)': item.price,
+        'Total Nilai (Rp)': totalValue,
+        'Supplier': item.supplier || '-',
+        'Lokasi': item.location || '-',
+        'Terakhir Restock': item.lastRestock || '-',
+        'Catatan': item.notes || '-'
+      };
+    });
+    
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    
+    const colWidths = [
+      { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 10 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 },
+      { wch: 18 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 30 }
+    ];
+    ws['!cols'] = colWidths;
+    
+    const summaryData = [
+      { 'Ringkasan Laporan Stok Material': '' },
+      { 'Tanggal Laporan': new Date().toLocaleDateString('id-ID') },
+      { 'Waktu Laporan': new Date().toLocaleTimeString('id-ID') },
+      { 'Total Material': stockItems.length },
+      { 'Total Material (Filtered)': filteredItems.length },
+      { 'Total Nilai Inventaris': formatCurrencyIDR(totalValue) },
+      { 'Status Stok': '' },
+      { 'Kritis (<25%)': criticalItems },
+      { 'Menipis (25%-49%)': lowStockItems },
+      { 'Normal (≥50%)': normalStock },
+      { 'Kategori': '' },
+      ...categories.map(cat => {
+        const count = stockItems.filter(item => item.category === cat).length;
+        return { [cat]: `${count} material` };
+      })
+    ];
+    
+    const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+    wsSummary['!cols'] = [{ wch: 30 }, { wch: 25 }];
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Laporan Stok Material');
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan');
+    
+    const fileName = `Laporan_Stok_Material_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    
+    alert(`✅ Berhasil mengekspor ${filteredItems.length} material ke file Excel!`);
+  };
+
   // Export to CSV
   const exportToCSV = () => {
     const headers = ['Kode', 'Material', 'Kategori', 'Stok Saat Ini', 'Stok Minimal', 'Persentase', 'Satuan', 'Harga', 'Supplier', 'Lokasi', 'Status', 'Terakhir Restock'];
@@ -503,18 +933,11 @@ export default function Stock() {
     });
     
     const csvContent = [headers.join(','), ...csvData.map(row => row.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `stok-material-${new Date().toISOString().split('T')[0]}.csv`);
-    link.click();
-    URL.revokeObjectURL(url);
-    alert('✅ Data berhasil diexport!');
-  };
-
-  const formatCurrencyIDR = (value) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const fileName = `Laporan_Stok_Material_${new Date().toISOString().split('T')[0]}.csv`;
+    saveAs(blob, fileName);
+    
+    alert(`✅ Berhasil mengekspor ${filteredItems.length} material ke file CSV!`);
   };
 
   // Stat Cards Component
@@ -572,40 +995,554 @@ export default function Stock() {
     </div>
   );
 
-  // Add/Edit Modal
-  const StockFormModal = ({ isOpen, onClose, onSubmit, title }) => {
-    if (!isOpen) return null;
+  // Modal Tambah Kategori
+  const AddCategoryModal = () => {
+    if (!showAddCategoryModal) return null;
     
     return (
       <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
+        <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
             <div className="flex items-center gap-2">
-              <Warehouse size={20} className="text-blue-600" />
-              <h3 className="font-bold text-lg text-gray-800">{title}</h3>
+              <Tag size={20} className="text-purple-600" />
+              <h3 className="font-bold text-lg text-gray-800">Tambah Kategori Baru</h3>
             </div>
-            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
+            <button onClick={() => setShowAddCategoryModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="p-5 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kategori *</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Contoh: Kemasan, Perlengkapan, dll"
+                autoFocus
+              />
+              <p className="text-xs text-gray-500 mt-1">Kategori akan muncul di dropdown pilihan</p>
+            </div>
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <button onClick={() => setShowAddCategoryModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
+            <button onClick={handleAddCategory} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700">
+              Simpan Kategori
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Kelola Kategori
+  const ManageCategoriesModal = () => {
+    if (!showManageCategoriesModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
+            <div className="flex items-center gap-2">
+              <Tag size={20} className="text-purple-600" />
+              <h3 className="font-bold text-lg text-gray-800">Kelola Kategori</h3>
+            </div>
+            <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
               <X size={20} />
             </button>
           </div>
           
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            {editingCategory ? (
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Kode Material *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Edit Kategori</label>
                 <input 
                   type="text" 
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                  value={editCategoryName}
+                  onChange={(e) => setEditCategoryName(e.target.value)}
+                  placeholder="Nama kategori"
+                  autoFocus
+                />
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => { setEditingCategory(null); setEditCategoryName(''); }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleEditCategory}
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                  >
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <p className="text-sm text-gray-600">Daftar semua kategori yang tersedia</p>
+                  <button
+                    onClick={openAddCategoryFromManage}
+                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
+                  >
+                    <Plus size={12} /> Tambah
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {categories.map((category) => {
+                    const itemCount = stockItems.filter(item => item.category === category).length;
+                    return (
+                      <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-800">{category}</p>
+                          <p className="text-xs text-gray-500">{itemCount} material</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openEditCategoryModal(category)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="Edit Kategori"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCategory(category)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Hapus Kategori"
+                            disabled={itemCount > 0}
+                          >
+                            <Trash size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+            <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Tambah Satuan
+  const AddUnitModal = () => {
+    if (!showAddUnitModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-cyan-50 to-white">
+            <div className="flex items-center gap-2">
+              <Ruler size={20} className="text-cyan-600" />
+              <h3 className="font-bold text-lg text-gray-800">Tambah Satuan Baru</h3>
+            </div>
+            <button onClick={() => setShowAddUnitModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="p-5 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Satuan *</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent" 
+                value={newUnitName}
+                onChange={(e) => setNewUnitName(e.target.value)}
+                placeholder="Contoh: cm, box, pack, dll"
+                autoFocus
+              />
+              <p className="text-xs text-gray-500 mt-1">Satuan akan muncul di dropdown pilihan</p>
+            </div>
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <button onClick={() => setShowAddUnitModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
+            <button onClick={handleAddUnit} className="px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-medium hover:bg-cyan-700">
+              Simpan Satuan
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Kelola Satuan
+  const ManageUnitsModal = () => {
+    if (!showManageUnitsModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-cyan-50 to-white">
+            <div className="flex items-center gap-2">
+              <Ruler size={20} className="text-cyan-600" />
+              <h3 className="font-bold text-lg text-gray-800">Kelola Satuan</h3>
+            </div>
+            <button onClick={() => { setShowManageUnitsModal(false); setEditingUnit(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {editingUnit ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Edit Satuan</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent" 
+                  value={editUnitName}
+                  onChange={(e) => setEditUnitName(e.target.value)}
+                  placeholder="Nama satuan"
+                  autoFocus
+                />
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => { setEditingUnit(null); setEditUnitName(''); }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleEditUnit}
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                  >
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <p className="text-sm text-gray-600">Daftar semua satuan yang tersedia</p>
+                  <button
+                    onClick={openAddUnitFromManage}
+                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
+                  >
+                    <Plus size={12} /> Tambah
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {units.map((unit) => {
+                    const itemCount = stockItems.filter(item => item.unit === unit).length;
+                    return (
+                      <div key={unit} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-800">{unit}</p>
+                          <p className="text-xs text-gray-500">{itemCount} material</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openEditUnitModal(unit)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="Edit Satuan"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUnit(unit)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Hapus Satuan"
+                            disabled={itemCount > 0}
+                          >
+                            <Trash size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+            <button onClick={() => { setShowManageUnitsModal(false); setEditingUnit(null); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Tambah Supplier
+  const AddSupplierModal = () => {
+    if (!showAddSupplierModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-orange-50 to-white">
+            <div className="flex items-center gap-2">
+              <Truck size={20} className="text-orange-600" />
+              <h3 className="font-bold text-lg text-gray-800">Tambah Supplier Baru</h3>
+            </div>
+            <button onClick={() => setShowAddSupplierModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="p-5 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Supplier *</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+                value={newSupplierName}
+                onChange={(e) => setNewSupplierName(e.target.value)}
+                placeholder="Contoh: PT. Supplier Utama"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                value={newSupplierContact}
+                onChange={(e) => setNewSupplierContact(e.target.value)}
+                placeholder="Nama kontak"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Telepon</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                value={newSupplierPhone}
+                onChange={(e) => setNewSupplierPhone(e.target.value)}
+                placeholder="Nomor telepon"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input 
+                type="email" 
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                value={newSupplierEmail}
+                onChange={(e) => setNewSupplierEmail(e.target.value)}
+                placeholder="email@supplier.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+              <textarea 
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                rows="2"
+                value={newSupplierAddress}
+                onChange={(e) => setNewSupplierAddress(e.target.value)}
+                placeholder="Alamat lengkap supplier"
+              />
+            </div>
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <button onClick={() => setShowAddSupplierModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
+            <button onClick={handleAddSupplier} className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700">
+              Simpan Supplier
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Kelola Supplier
+  const ManageSuppliersModal = () => {
+    if (!showManageSuppliersModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-orange-50 to-white">
+            <div className="flex items-center gap-2">
+              <Truck size={20} className="text-orange-600" />
+              <h3 className="font-bold text-lg text-gray-800">Kelola Supplier</h3>
+            </div>
+            <button onClick={() => { setShowManageSuppliersModal(false); setEditingSupplier(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {editingSupplier ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Supplier *</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+                  value={editSupplierData.name}
+                  onChange={(e) => setEditSupplierData({...editSupplierData, name: e.target.value})}
+                  placeholder="Nama supplier"
+                />
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    value={editSupplierData.contact}
+                    onChange={(e) => setEditSupplierData({...editSupplierData, contact: e.target.value})}
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Telepon</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    value={editSupplierData.phone}
+                    onChange={(e) => setEditSupplierData({...editSupplierData, phone: e.target.value})}
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    value={editSupplierData.email}
+                    onChange={(e) => setEditSupplierData({...editSupplierData, email: e.target.value})}
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                  <textarea 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    rows="2"
+                    value={editSupplierData.address}
+                    onChange={(e) => setEditSupplierData({...editSupplierData, address: e.target.value})}
+                  />
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => { setEditingSupplier(null); setEditSupplierData({ name: '', contact: '', phone: '', email: '', address: '' }); }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleEditSupplier}
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                  >
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <p className="text-sm text-gray-600">Daftar semua supplier yang tersedia</p>
+                  <button
+                    onClick={openAddSupplierFromManage}
+                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
+                  >
+                    <Plus size={12} /> Tambah
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {suppliers.map((supplier) => {
+                    const itemCount = stockItems.filter(item => item.supplier === supplier).length;
+                    const savedDetail = localStorage.getItem(`supplier_detail_${supplier}`);
+                    let detail = null;
+                    if (savedDetail) {
+                      detail = JSON.parse(savedDetail);
+                    }
+                    return (
+                      <div key={supplier} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-800">{supplier}</p>
+                          <p className="text-xs text-gray-500">{itemCount} material</p>
+                          {detail && detail.phone && (
+                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                              <Phone size={10} /> {detail.phone}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openEditSupplierModal(supplier)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="Edit Supplier"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSupplier(supplier)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Hapus Supplier"
+                            disabled={itemCount > 0}
+                          >
+                            <Trash size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+            <button onClick={() => { setShowManageSuppliersModal(false); setEditingSupplier(null); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ================== MODAL TAMBAH/EDIT MATERIAL ==================
+  const StockFormModal = ({ isOpen, onClose, onSubmit, title }) => {
+    if (!isOpen) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
+            <div className="flex items-center gap-2">
+              <Warehouse size={22} className="text-blue-600" />
+              <h3 className="font-bold text-xl text-gray-800">{title}</h3>
+            </div>
+            <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+              <X size={22} />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Kode Material <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
                   value={formData.code} 
                   onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})} 
                   placeholder="Contoh: KAT-30S" 
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Nama Material *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Nama Material <span className="text-red-500">*</span>
+                </label>
                 <input 
                   type="text" 
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
                   value={formData.material} 
                   onChange={(e) => setFormData({...formData, material: e.target.value})} 
                   placeholder="Contoh: Kain Katun 30s" 
@@ -613,95 +1550,135 @@ export default function Stock() {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Kategori</label>
-                <select 
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                  value={formData.category} 
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
-                >
-                  {categories.filter(c => c !== 'Semua').map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Kategori</label>
+                <div className="flex gap-2">
+                  <select 
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                    value={formData.category} 
+                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  >
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowManageCategoriesModal(true)}
+                    className="px-3 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-1 whitespace-nowrap transition-colors"
+                    title="Kelola Kategori"
+                  >
+                    <Tag size={16} /> Kelola
+                  </button>
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Satuan</label>
-                <select 
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                  value={formData.unit} 
-                  onChange={(e) => setFormData({...formData, unit: e.target.value})}
-                >
-                  <option value="meter">Meter</option>
-                  <option value="roll">Roll</option>
-                  <option value="pcs">Pcs</option>
-                  <option value="kg">Kg</option>
-                  <option value="yard">Yard</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Satuan</label>
+                <div className="flex gap-2">
+                  <select 
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                    value={formData.unit} 
+                    onChange={(e) => setFormData({...formData, unit: e.target.value})}
+                  >
+                    {units.map(unit => (
+                      <option key={unit} value={unit}>{unit}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowManageUnitsModal(true)}
+                    className="px-3 py-2.5 bg-cyan-600 text-white rounded-lg text-sm font-medium hover:bg-cyan-700 flex items-center gap-1 whitespace-nowrap transition-colors"
+                    title="Kelola Satuan"
+                  >
+                    <Ruler size={16} /> Kelola
+                  </button>
+                </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Stok Saat Ini</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Stok Saat Ini
+                </label>
                 <input 
                   type="number" 
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
                   value={formData.currentStock} 
                   onChange={(e) => setFormData({...formData, currentStock: parseInt(e.target.value) || 0})} 
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Stok Minimal</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Stok Minimal
+                </label>
                 <input 
                   type="number" 
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
                   value={formData.minStock} 
                   onChange={(e) => setFormData({...formData, minStock: parseInt(e.target.value) || 0})} 
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Stok Maksimal</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Stok Maksimal
+                </label>
                 <input 
                   type="number" 
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
                   value={formData.maxStock} 
                   onChange={(e) => setFormData({...formData, maxStock: parseInt(e.target.value) || 0})} 
                 />
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Harga Satuan (Rp)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Harga Satuan (Rp)
+                </label>
                 <input 
-                  type="number" 
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                  value={formData.price} 
-                  onChange={(e) => setFormData({...formData, price: parseInt(e.target.value) || 0})} 
+                  type="text"
+                  inputMode="numeric"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                  value={formatPriceDisplay(formData.price)}
+                  onChange={(e) => setFormData({...formData, price: parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0})} 
+                  placeholder="Contoh: 150000"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Supplier</label>
-                <select 
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                  value={formData.supplier} 
-                  onChange={(e) => setFormData({...formData, supplier: e.target.value})}
-                >
-                  <option value="">Pilih Supplier</option>
-                  {suppliers.map(sup => (
-                    <option key={sup} value={sup}>{sup}</option>
-                  ))}
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Supplier</label>
+                <div className="flex gap-2">
+                  <select 
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                    value={formData.supplier} 
+                    onChange={(e) => setFormData({...formData, supplier: e.target.value})}
+                  >
+                    <option value="">Pilih Supplier</option>
+                    {suppliers.map(sup => (
+                      <option key={sup} value={sup}>{sup}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowManageSuppliersModal(true)}
+                    className="px-3 py-2.5 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 flex items-center gap-1 whitespace-nowrap transition-colors"
+                    title="Kelola Supplier"
+                  >
+                    <Truck size={16} /> Kelola
+                  </button>
+                </div>
               </div>
             </div>
             
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Lokasi Penyimpanan</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Lokasi Penyimpanan
+              </label>
               <input 
                 type="text" 
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
                 value={formData.location} 
                 onChange={(e) => setFormData({...formData, location: e.target.value})} 
                 placeholder="Contoh: Gudang A-01" 
@@ -709,20 +1686,26 @@ export default function Stock() {
             </div>
             
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Catatan</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Catatan
+              </label>
               <textarea 
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                rows="2" 
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-y" 
+                rows="3" 
                 value={formData.notes} 
                 onChange={(e) => setFormData({...formData, notes: e.target.value})} 
-                placeholder="Catatan tambahan..." 
+                placeholder="Catatan tambahan tentang material ini..." 
               />
             </div>
           </div>
           
-          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-            <button onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
-            <button onClick={onSubmit} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Simpan</button>
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl sticky bottom-0">
+            <button onClick={onClose} className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+              Batal
+            </button>
+            <button onClick={onSubmit} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
+              Simpan Material
+            </button>
           </div>
         </div>
       </div>
@@ -736,6 +1719,9 @@ export default function Stock() {
     const statusBadge = getStatusBadge(selectedItem.status);
     const percentage = getStockPercentage(selectedItem.currentStock, selectedItem.minStock);
     const progressWidth = getProgressBarWidth(selectedItem.currentStock, selectedItem.minStock);
+    
+    const supplierDetail = localStorage.getItem(`supplier_detail_${selectedItem.supplier}`);
+    const supplierInfo = supplierDetail ? JSON.parse(supplierDetail) : null;
     
     return (
       <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
@@ -751,7 +1737,6 @@ export default function Stock() {
           </div>
           
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            {/* Header */}
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs text-gray-500">Kode</p>
@@ -778,7 +1763,6 @@ export default function Stock() {
               </div>
             </div>
             
-            {/* Stock Info with Percentage */}
             <div className="bg-gray-50 rounded-lg p-3">
               <div className="flex justify-between mb-1">
                 <span className="text-sm font-medium text-gray-700">Level Stok</span>
@@ -812,9 +1796,22 @@ export default function Stock() {
               </div>
             </div>
             
-            <div>
-              <p className="text-xs text-gray-500">Supplier</p>
-              <p className="font-medium">{selectedItem.supplier || '-'}</p>
+            <div className="border-t pt-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Truck size={16} className="text-orange-600" />
+                <p className="text-sm font-medium text-gray-700">Informasi Supplier</p>
+              </div>
+              <div className="bg-orange-50 rounded-lg p-3">
+                <p className="font-medium text-gray-800">{selectedItem.supplier || '-'}</p>
+                {supplierInfo && (
+                  <div className="mt-2 space-y-1 text-xs text-gray-600">
+                    {supplierInfo.contact && <p>Contact: {supplierInfo.contact}</p>}
+                    {supplierInfo.phone && <p>Telp: {supplierInfo.phone}</p>}
+                    {supplierInfo.email && <p>Email: {supplierInfo.email}</p>}
+                    {supplierInfo.address && <p>Alamat: {supplierInfo.address}</p>}
+                  </div>
+                )}
+              </div>
             </div>
             
             <div>
@@ -834,7 +1831,6 @@ export default function Stock() {
               </div>
             )}
             
-            {/* Restock Section */}
             <div className="border-t pt-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Tambah Stok</label>
               <div className="flex gap-2">
@@ -890,8 +1886,11 @@ export default function Stock() {
             <p className="text-sm text-gray-500 mt-1">Kelola stok bahan baku dan aksesoris produksi</p>
           </div>
           <div className="flex gap-3">
+            <button onClick={exportToExcel} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+              <Download size={16} /> Export Excel
+            </button>
             <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-              <Download size={16} /> Export CSV
+              <FileText size={16} /> Export CSV
             </button>
             <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
               <Plus size={16} /> Tambah Material
@@ -934,6 +1933,7 @@ export default function Stock() {
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
             >
+              <option value="Semua">Semua Kategori</option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
@@ -1013,10 +2013,10 @@ export default function Stock() {
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
                           {statusBadge.icon} {statusBadge.label}
                         </span>
-                       </td>
+                      </td>
                       <td className="px-5 py-4">
                         <p className="text-sm text-gray-600 truncate max-w-[150px]">{item.supplier || '-'}</p>
-                       </td>
+                      </td>
                       <td className="px-5 py-4 text-center">
                         <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <button
@@ -1034,8 +2034,8 @@ export default function Stock() {
                             <Trash2 size={16} />
                           </button>
                         </div>
-                       </td>
-                     </tr>
+                      </td>
+                    </tr>
                   );
                 })
               ) : (
@@ -1047,8 +2047,8 @@ export default function Stock() {
                       <p className="text-gray-400 text-sm mt-1">Coba ubah filter atau tambahkan material baru</p>
                       <button onClick={() => setShowAddModal(true)} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Tambah Material</button>
                     </div>
-                   </td>
-                 </tr>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -1124,6 +2124,13 @@ export default function Stock() {
       />
       
       <DetailModal />
+      
+      <AddCategoryModal />
+      <ManageCategoriesModal />
+      <AddUnitModal />
+      <ManageUnitsModal />
+      <AddSupplierModal />
+      <ManageSuppliersModal />
     </div>
   );
 }

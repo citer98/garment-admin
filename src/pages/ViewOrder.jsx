@@ -248,6 +248,373 @@ export default function ViewOrder() {
     URL.revokeObjectURL(url);
   };
 
+  // ================== PRINT INVOICE FUNCTION ==================
+  const formatCurrencyForPrint = (value) => {
+    const num = Number(value) || 0;
+    return 'Rp ' + num.toLocaleString('id-ID');
+  };
+
+  const handlePrintInvoice = () => {
+    const printWindow = window.open('', '_blank');
+    
+    const status = statusOptions[order.status] || statusOptions.draft;
+    const calculatedTotal = order.itemsDetail?.reduce((sum, item) => sum + ((item.qty || 0) * (item.price || 0)), 0) || 0;
+    
+    const invoiceHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Nota Pesanan - ${order.id}</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          body {
+            font-family: 'Courier New', 'Monaco', monospace;
+            background: #fff;
+            padding: 20px;
+            font-size: 12px;
+            line-height: 1.4;
+          }
+          
+          .invoice-container {
+            max-width: 350px;
+            margin: 0 auto;
+            background: white;
+          }
+          
+          /* Header Toko */
+          .store-header {
+            text-align: center;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+          }
+          
+          .store-name {
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+          }
+          
+          .store-info {
+            font-size: 9px;
+            color: #666;
+            line-height: 1.3;
+          }
+          
+          /* Info Pesanan */
+          .order-info {
+            margin-bottom: 15px;
+            font-size: 10px;
+          }
+          
+          .order-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+          }
+          
+          .order-info-label {
+            font-weight: bold;
+          }
+          
+          /* Divider */
+          .divider {
+            border-top: 1px dashed #000;
+            margin: 10px 0;
+          }
+          
+          .divider-dotted {
+            border-top: 1px dotted #999;
+            margin: 8px 0;
+          }
+          
+          /* Item List */
+          .items-table {
+            width: 100%;
+            margin: 10px 0;
+            border-collapse: collapse;
+          }
+          
+          .items-table th {
+            text-align: left;
+            font-size: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #000;
+          }
+          
+          .items-table td {
+            padding: 5px 0;
+            vertical-align: top;
+          }
+          
+          .item-name {
+            font-size: 11px;
+            font-weight: 500;
+          }
+          
+          .item-variant {
+            font-size: 9px;
+            color: #666;
+          }
+          
+          .item-qty {
+            text-align: center;
+            width: 40px;
+          }
+          
+          .item-price {
+            text-align: right;
+            width: 80px;
+          }
+          
+          .item-subtotal {
+            text-align: right;
+            width: 80px;
+          }
+          
+          /* Total Section */
+          .total-section {
+            margin: 10px 0;
+          }
+          
+          .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 10px;
+          }
+          
+          .grand-total {
+            font-size: 14px;
+            font-weight: bold;
+            border-top: 1px dashed #000;
+            padding-top: 8px;
+            margin-top: 5px;
+          }
+          
+          /* Footer */
+          .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px dashed #000;
+            font-size: 9px;
+            color: #666;
+          }
+          
+          .thankyou {
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 5px;
+          }
+          
+          /* Customer Info */
+          .customer-info {
+            background: #f9f9f9;
+            padding: 8px;
+            margin: 10px 0;
+            font-size: 9px;
+            border-radius: 4px;
+          }
+          
+          .customer-info p {
+            margin-bottom: 3px;
+          }
+          
+          /* Status Badge */
+          .status-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            font-size: 9px;
+            border-radius: 3px;
+            font-weight: bold;
+          }
+          
+          /* Print Styles */
+          @media print {
+            body {
+              padding: 0;
+              margin: 0;
+            }
+            .invoice-container {
+              max-width: 100%;
+            }
+            .no-print {
+              display: none;
+            }
+          }
+          
+          /* Notes Section */
+          .notes-section {
+            margin-top: 10px;
+            padding: 8px;
+            background: #fef3e2;
+            font-size: 9px;
+            border-radius: 4px;
+          }
+          
+          .notes-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+          }
+          
+          /* QR Code Placeholder */
+          .qr-placeholder {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 8px;
+            color: #999;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-container">
+          <!-- Header Toko -->
+          <div class="store-header">
+            <div class="store-name">GARMENT STORE</div>
+            <div class="store-info">
+              Jl. Industri No. 123, Kota Bandung<br>
+              Telp: (022) 1234567 | Email: cs@garment.com<br>
+              IG: @garmentstore | Web: www.garmentstore.com
+            </div>
+          </div>
+          
+          <!-- Info Pesanan -->
+          <div class="order-info">
+            <div class="order-info-row">
+              <span class="order-info-label">No. Pesanan:</span>
+              <span>${order.id}</span>
+            </div>
+            <div class="order-info-row">
+              <span class="order-info-label">Tanggal:</span>
+              <span>${new Date(order.orderDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            </div>
+            <div class="order-info-row">
+              <span class="order-info-label">Status:</span>
+              <span><span class="status-badge">${status.icon} ${status.label}</span></span>
+            </div>
+            ${order.dueDate ? `
+            <div class="order-info-row">
+              <span class="order-info-label">Jatuh Tempo:</span>
+              <span>${new Date(order.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            </div>
+            ` : ''}
+          </div>
+          
+          <div class="divider"></div>
+          
+          <!-- Customer Info -->
+          <div class="customer-info">
+            <strong>DATA PELANGGAN</strong>
+            <p>${order.customerName || '-'}</p>
+            ${order.customerPhone ? `<p>📞 ${order.customerPhone}</p>` : ''}
+            ${order.customerAddress ? `<p>📍 ${order.customerAddress}</p>` : ''}
+            ${order.customerEmail ? `<p>✉️ ${order.customerEmail}</p>` : ''}
+          </div>
+          
+          <div class="divider"></div>
+          
+          <!-- Item Pesanan -->
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th class="item-qty">Qty</th>
+                <th class="item-price">Harga</th>
+                <th class="item-subtotal">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${order.itemsDetail.map(item => `
+                <tr>
+                  <td>
+                    <div class="item-name">${item.productName || item.product}</div>
+                    ${item.size || item.color ? `<div class="item-variant">${item.size ? `Uk: ${item.size}` : ''}${item.size && item.color ? ' | ' : ''}${item.color ? `Wrn: ${item.color}` : ''}</div>` : ''}
+                   </td>
+                  <td class="item-qty">${item.qty}</td>
+                  <td class="item-price">${formatCurrencyForPrint(item.price)}</td>
+                  <td class="item-subtotal">${formatCurrencyForPrint((item.qty || 0) * (item.price || 0))}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div class="divider-dotted"></div>
+          
+          <!-- Total Section -->
+          <div class="total-section">
+            <div class="total-row">
+              <span>Subtotal:</span>
+              <span>${formatCurrencyForPrint(calculatedTotal)}</span>
+            </div>
+            ${order.totalAmount !== calculatedTotal ? `
+            <div class="total-row">
+              <span>Total (record):</span>
+              <span>${formatCurrencyForPrint(order.totalAmount)}</span>
+            </div>
+            ` : ''}
+            <div class="grand-total">
+              <span>TOTAL:</span>
+              <span>${formatCurrencyForPrint(calculatedTotal)}</span>
+            </div>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <!-- Catatan Pesanan -->
+          ${order.notes ? `
+          <div class="notes-section">
+            <div class="notes-title">📝 CATATAN PESANAN:</div>
+            <div>${order.notes.replace(/\n/g, '<br>')}</div>
+          </div>
+          ` : ''}
+          
+          <!-- Catatan Per Item -->
+          ${order.itemsDetail.some(item => item.notes?.length > 0) ? `
+          <div class="notes-section">
+            <div class="notes-title">📝 CATATAN ITEM:</div>
+            ${order.itemsDetail.filter(item => item.notes?.length > 0).map(item => `
+              <div style="margin-bottom: 5px;">
+                <strong>${item.productName || item.product}:</strong><br>
+                ${item.notes.map(note => `• ${note.text}`).join('<br>')}
+              </div>
+            `).join('')}
+          </div>
+          ` : ''}
+          
+          <div class="divider"></div>
+          
+          <!-- Footer -->
+          <div class="footer">
+            <div class="thankyou">TERIMA KASIH</div>
+            <div>Barang yang sudah dibeli tidak dapat dikembalikan</div>
+            <div>Kecuali ada kerusakan dari pihak kami</div>
+            <div class="qr-placeholder">◊◊◊ Simpan nota ini sebagai bukti pesanan ◊◊◊</div>
+            <div>${new Date().toLocaleString('id-ID')}</div>
+          </div>
+        </div>
+        
+        <div class="no-print" style="text-align: center; margin-top: 20px; padding: 10px;">
+          <button onclick="window.print()" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px;">🖨️ Cetak</button>
+          <button onclick="window.close()" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer;">Tutup</button>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    printWindow.document.write(invoiceHTML);
+    printWindow.document.close();
+  };
+
   // ================== NOTES FUNCTIONS ==================
   const openNotesModal = (index, itemName, notes = [], readOnly = true) => {
     setNotesModal({
@@ -470,7 +837,6 @@ export default function ViewOrder() {
       const foundOrder = savedOrders.find(o => o.id === id);
       
       if (foundOrder) {
-        // Pastikan itemsDetail memiliki semua field yang diperlukan
         const itemsDetail = Array.isArray(foundOrder.itemsDetail) 
           ? foundOrder.itemsDetail.map(item => ({
               ...item,
@@ -513,7 +879,6 @@ export default function ViewOrder() {
     navigate(`/orders/edit/${id}`);
   };
 
-  const handlePrint = () => window.print();
   const handleDownload = () => {
     const report = { orderId: order.id, customer: order.customerName, orderData: order };
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
@@ -552,8 +917,6 @@ export default function ViewOrder() {
   const status = statusOptions[order.status] || statusOptions.draft;
   const isOverdue = isDeadlineOverdue(order.dueDate);
   const totalQty = order.itemsDetail?.reduce((sum, item) => sum + (item.qty || 0), 0) || 0;
-
-  // Hitung ulang total amount dari items (untuk memastikan akurasi)
   const calculatedTotal = order.itemsDetail?.reduce((sum, item) => sum + ((item.qty || 0) * (item.price || 0)), 0) || 0;
 
   return (
@@ -589,10 +952,10 @@ export default function ViewOrder() {
             <button onClick={handleEdit} className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 flex items-center gap-2">
               <Edit size={18} /> Edit
             </button>
-            <button onClick={handlePrint} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 flex items-center gap-2">
-              <Printer size={18} /> Print
+            <button onClick={handlePrintInvoice} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2">
+              <Printer size={18} /> Nota
             </button>
-            <button onClick={handleDownload} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2">
+            <button onClick={handleDownload} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 flex items-center gap-2">
               <Download size={18} /> Download
             </button>
           </div>
@@ -617,7 +980,7 @@ export default function ViewOrder() {
           </div>
           
           <Tab.Panels className="p-6">
-            {/* Tab 1: Informasi Pelanggan - LENGKAP */}
+            {/* Tab 1: Informasi Pelanggan */}
             <Tab.Panel>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
@@ -791,7 +1154,7 @@ export default function ViewOrder() {
         </Tab.Group>
       </div>
 
-      {/* Item Pesanan - LENGKAP dengan detail ukuran, warna, catatan */}
+      {/* Item Pesanan */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm mb-6">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
           <div className="flex items-center gap-2">

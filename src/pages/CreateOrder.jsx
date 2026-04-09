@@ -1,6 +1,6 @@
 // src/pages/CreateOrder.jsx
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calendar, User, Package, ArrowLeft, MessageSquare, Eye, Upload, FileText, Check, X, ChevronLeft, ChevronRight, AlertCircle, Clock, Edit2, Save, PlusCircle } from 'lucide-react';
+import { Plus, Trash2, Calendar, User, Package, ArrowLeft, MessageSquare, Eye, Upload, FileText, Check, X, ChevronLeft, ChevronRight, AlertCircle, Clock, Edit2, Save, PlusCircle, Tag, Edit, Trash, Users, Phone, MapPin, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { syncOrderWithJobs } from '../utils/jobOrderSync';
 
@@ -22,6 +22,7 @@ export default function CreateOrder() {
   const [orderDate, setOrderDate] = useState(today);
   const [dueDate, setDueDate] = useState('');
   const [orderStatus, setOrderStatus] = useState('cutting');
+  const [orderNotes, setOrderNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
@@ -29,15 +30,36 @@ export default function CreateOrder() {
   const [products, setProducts] = useState([]);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   
-  // State untuk form produk - DIPISAHKAN
+  // State untuk form produk
   const [productNameInput, setProductNameInput] = useState('');
   const [productBasePriceInput, setProductBasePriceInput] = useState('');
+  const [productCategoryInput, setProductCategoryInput] = useState('');
   
-  // State untuk variasi - DIPISAHKAN
+  // State untuk variasi produk
   const [variationSizeInput, setVariationSizeInput] = useState('');
   const [variationColorInput, setVariationColorInput] = useState('');
   const [variationPriceInput, setVariationPriceInput] = useState('');
   const [tempVariationsList, setTempVariationsList] = useState([]);
+  
+  // ================== STATE UNTUK KATEGORI PRODUK ==================
+  const [productCategories, setProductCategories] = useState(['Kemeja', 'Celana', 'Jaket', 'Blouse', 'Aksesoris', 'Lainnya']);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showManageCategoriesModal, setShowManageCategoriesModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editCategoryName, setEditCategoryName] = useState('');
+  
+  // ================== STATE UNTUK PELANGGAN (CUSTOMER) ==================
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [showManageCustomersModal, setShowManageCustomersModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [customerFormData, setCustomerFormData] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    email: '',
+    joinDate: new Date().toISOString().split('T')[0]
+  });
   
   // State untuk Notes Modal
   const [notesModal, setNotesModal] = useState({
@@ -57,15 +79,6 @@ export default function CreateOrder() {
     step: 'upload'
   });
 
-  // State untuk Customer Modal
-  const [isAddCustomerModalOpen, setIsAddCustomerModalOpen] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    email: ''
-  });
-
   // Deteksi ukuran layar
   useEffect(() => {
     const checkMobile = () => {
@@ -76,135 +89,8 @@ export default function CreateOrder() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load products dari localStorage
-  useEffect(() => {
-    const savedProducts = localStorage.getItem('products');
-    if (savedProducts) {
-      setProducts(JSON.parse(savedProducts));
-    } else {
-      const defaultProducts = [
-        { 
-          id: 1, 
-          name: 'Kemeja Pria Slimfit', 
-          basePrice: 150000, 
-          category: 'Kemeja',
-          variations: [
-            { id: '1-s-m', size: 'S', color: 'Putih', price: 150000, stock: 50 },
-            { id: '1-m-m', size: 'M', color: 'Putih', price: 150000, stock: 30 },
-            { id: '1-l-m', size: 'L', color: 'Putih', price: 155000, stock: 20 },
-            { id: '1-s-b', size: 'S', color: 'Biru', price: 155000, stock: 25 },
-            { id: '1-m-b', size: 'M', color: 'Biru', price: 155000, stock: 15 },
-          ]
-        },
-        { 
-          id: 2, 
-          name: 'Celana Jeans Denim', 
-          basePrice: 250000, 
-          category: 'Celana',
-          variations: [
-            { id: '2-28-b', size: '28', color: 'Blue Denim', price: 250000, stock: 40 },
-            { id: '2-30-b', size: '30', color: 'Blue Denim', price: 250000, stock: 35 },
-            { id: '2-32-b', size: '32', color: 'Blue Denim', price: 255000, stock: 25 },
-            { id: '2-30-bk', size: '30', color: 'Black Denim', price: 260000, stock: 20 },
-          ]
-        },
-        { 
-          id: 3, 
-          name: 'Jaket Hoodie', 
-          basePrice: 300000, 
-          category: 'Jaket',
-          variations: [
-            { id: '3-s-h', size: 'S', color: 'Hitam', price: 300000, stock: 30 },
-            { id: '3-m-h', size: 'M', color: 'Hitam', price: 300000, stock: 25 },
-            { id: '3-l-h', size: 'L', color: 'Hitam', price: 310000, stock: 15 },
-            { id: '3-m-ab', size: 'M', color: 'Abu-abu', price: 305000, stock: 20 },
-          ]
-        },
-        { 
-          id: 4, 
-          name: 'Kemeja Wanita Formal', 
-          basePrice: 180000, 
-          category: 'Kemeja',
-          variations: [
-            { id: '4-s-p', size: 'S', color: 'Pink', price: 180000, stock: 35 },
-            { id: '4-m-p', size: 'M', color: 'Pink', price: 180000, stock: 30 },
-            { id: '4-l-p', size: 'L', color: 'Pink', price: 185000, stock: 15 },
-            { id: '4-s-w', size: 'S', color: 'Putih', price: 180000, stock: 40 },
-          ]
-        },
-        { 
-          id: 5, 
-          name: 'Blouse Wanita', 
-          basePrice: 120000, 
-          category: 'Blouse',
-          variations: [
-            { id: '5-s-r', size: 'S', color: 'Merah', price: 120000, stock: 45 },
-            { id: '5-m-r', size: 'M', color: 'Merah', price: 120000, stock: 35 },
-            { id: '5-s-b', size: 'S', color: 'Biru', price: 125000, stock: 25 },
-          ]
-        },
-        { 
-          id: 6, 
-          name: 'Celana Chino', 
-          basePrice: 200000, 
-          category: 'Celana',
-          variations: [
-            { id: '6-30-k', size: '30', color: 'Khaki', price: 200000, stock: 30 },
-            { id: '6-32-k', size: '32', color: 'Khaki', price: 200000, stock: 25 },
-            { id: '6-30-n', size: '30', color: 'Navy', price: 205000, stock: 20 },
-            { id: '6-32-n', size: '32', color: 'Navy', price: 205000, stock: 15 },
-          ]
-        },
-      ];
-      setProducts(defaultProducts);
-      localStorage.setItem('products', JSON.stringify(defaultProducts));
-    }
-  }, []);
-
-  // Helper function untuk format currency
-  const formatCurrency = (value) => {
-    const num = Number(value) || 0;
-    return num.toLocaleString('id-ID');
-  };
-
-  // Helper function untuk format price display (titik sebagai pemisah ribuan)
-  const formatPriceDisplay = (price) => {
-    if (!price) return '';
-    const num = typeof price === 'string' ? parseInt(price.replace(/[^0-9]/g, '')) : price;
-    if (!num) return '';
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  };
-
-  // Helper function untuk deadline
-  const isDeadlineOverdue = (deadline) => {
-    if (!deadline) return false;
-    const today = new Date().toISOString().split('T')[0];
-    return deadline < today;
-  };
-
-  const getRemainingDays = (deadline) => {
-    if (!deadline) return 0;
-    const today = new Date();
-    const deadlineDate = new Date(deadline);
-    const diffTime = deadlineDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
-  };
-
-  // Status options
-  const statusOptions = [
-    { value: 'cutting', label: '✂️ Potong', color: 'bg-amber-100 text-amber-800' },
-    { value: 'sewing', label: '🧵 Jahit', color: 'bg-orange-100 text-orange-800' },
-    { value: 'finishing', label: '✨ Finishing', color: 'bg-lime-100 text-lime-800' },
-    { value: 'packing', label: '📦 Packing', color: 'bg-emerald-100 text-emerald-800' },
-    { value: 'qc', label: '✅ QC', color: 'bg-teal-100 text-teal-800' },
-    { value: 'completed', label: '🎉 Selesai', color: 'bg-green-100 text-green-800' },
-    { value: 'delivered', label: '🚚 Terkirim', color: 'bg-purple-100 text-purple-800' },
-    { value: 'cancelled', label: '❌ Dibatalkan', color: 'bg-red-100 text-red-800' },
-  ];
-
-  // Simulasi data pelanggan
-  useEffect(() => {
+  // ================== FUNGSI UNTUK PELANGGAN (CUSTOMER) ==================
+  const loadCustomers = () => {
     const savedCustomers = localStorage.getItem('customers');
     if (savedCustomers) {
       setCustomers(JSON.parse(savedCustomers));
@@ -218,9 +104,109 @@ export default function CreateOrder() {
       setCustomers(mockCustomers);
       localStorage.setItem('customers', JSON.stringify(mockCustomers));
     }
-  }, []);
+  };
 
-  // ================== FUNGSI TAMBAH PRODUK BARU ==================
+  const handleAddCustomer = () => {
+    if (!customerFormData.name.trim()) {
+      alert('Mohon isi nama pelanggan!');
+      return;
+    }
+
+    const newId = customers.length > 0 ? Math.max(...customers.map(c => c.id)) + 1 : 1;
+    const customerToAdd = {
+      id: newId,
+      ...customerFormData,
+      joinDate: customerFormData.joinDate || new Date().toISOString().split('T')[0]
+    };
+
+    const updatedCustomers = [...customers, customerToAdd];
+    setCustomers(updatedCustomers);
+    localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+
+    setSelectedCustomer(newId.toString());
+    setCustomerFormData({ name: '', phone: '', address: '', email: '', joinDate: new Date().toISOString().split('T')[0] });
+    setShowAddCustomerModal(false);
+    
+    alert(`✅ Pelanggan "${customerToAdd.name}" berhasil ditambahkan!`);
+  };
+
+  const handleEditCustomer = () => {
+    if (!editingCustomer) return;
+    
+    if (!customerFormData.name.trim()) {
+      alert('Mohon isi nama pelanggan!');
+      return;
+    }
+    
+    const updatedCustomers = customers.map(customer => 
+      customer.id === editingCustomer.id 
+        ? { ...customer, ...customerFormData, joinDate: customerFormData.joinDate || customer.joinDate }
+        : customer
+    );
+    
+    setCustomers(updatedCustomers);
+    localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+    
+    if (selectedCustomer === editingCustomer.id.toString()) {
+      setSelectedCustomer(editingCustomer.id.toString());
+    }
+    
+    setEditingCustomer(null);
+    setCustomerFormData({ name: '', phone: '', address: '', email: '', joinDate: new Date().toISOString().split('T')[0] });
+    setShowManageCustomersModal(false);
+    
+    alert(`✅ Pelanggan berhasil diperbarui!`);
+  };
+
+  const handleDeleteCustomer = (customerToDelete) => {
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const hasOrders = orders.some(order => order.customerName === customerToDelete.name);
+    
+    if (hasOrders) {
+      alert(`⚠️ Pelanggan "${customerToDelete.name}" memiliki riwayat pesanan. Hapus pesanan terlebih dahulu!`);
+      return;
+    }
+    
+    if (window.confirm(`Apakah Anda yakin ingin menghapus pelanggan "${customerToDelete.name}"?`)) {
+      const updatedCustomers = customers.filter(c => c.id !== customerToDelete.id);
+      setCustomers(updatedCustomers);
+      localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+      
+      if (selectedCustomer === customerToDelete.id.toString()) {
+        setSelectedCustomer('');
+      }
+      
+      alert(`✅ Pelanggan "${customerToDelete.name}" berhasil dihapus!`);
+    }
+  };
+
+  const openEditCustomerModal = (customer) => {
+    setEditingCustomer(customer);
+    setCustomerFormData({
+      name: customer.name,
+      phone: customer.phone || '',
+      address: customer.address || '',
+      email: customer.email || '',
+      joinDate: customer.joinDate || new Date().toISOString().split('T')[0]
+    });
+    setShowManageCustomersModal(true);
+  };
+
+  // ================== FUNGSI UNTUK MEMBUKA MODAL TAMBAH PELANGGAN DARI MODAL KELOLA ==================
+  const openAddCustomerFromManage = () => {
+    setShowManageCustomersModal(false);
+    setEditingCustomer(null);
+    setShowAddCustomerModal(true);
+    setCustomerFormData({
+      name: '',
+      phone: '',
+      address: '',
+      email: '',
+      joinDate: new Date().toISOString().split('T')[0]
+    });
+  };
+
+  // ================== FUNGSI UNTUK PRODUK CUSTOM ==================
   const handleAddVariationSimple = () => {
     if (!variationSizeInput.trim()) {
       alert('Mohon isi ukuran!');
@@ -244,7 +230,6 @@ export default function CreateOrder() {
       price: priceNum
     }]);
     
-    // Reset input variasi
     setVariationSizeInput('');
     setVariationColorInput('');
     setVariationPriceInput('');
@@ -276,7 +261,7 @@ export default function CreateOrder() {
       id: newId,
       name: productNameInput,
       basePrice: basePriceNum,
-      category: 'Custom',
+      category: productCategoryInput || 'Lainnya',
       variations: tempVariationsList.map((v, idx) => ({
         id: `${newId}-${v.size}-${v.color}`,
         size: v.size,
@@ -290,9 +275,9 @@ export default function CreateOrder() {
     setProducts(updatedProducts);
     localStorage.setItem('products', JSON.stringify(updatedProducts));
     
-    // Reset semua state
     setProductNameInput('');
     setProductBasePriceInput('');
+    setProductCategoryInput('');
     setTempVariationsList([]);
     setVariationSizeInput('');
     setVariationColorInput('');
@@ -301,6 +286,159 @@ export default function CreateOrder() {
     
     alert(`✅ Produk "${productToAdd.name}" berhasil ditambahkan!`);
   };
+
+  // ================== FUNGSI UNTUK KATEGORI PRODUK ==================
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) {
+      alert('Mohon isi nama kategori!');
+      return;
+    }
+    
+    if (productCategories.includes(newCategoryName.trim())) {
+      alert('Kategori sudah ada!');
+      return;
+    }
+    
+    const updatedCategories = [...productCategories, newCategoryName.trim()];
+    setProductCategories(updatedCategories);
+    localStorage.setItem('productCategories', JSON.stringify(updatedCategories));
+    
+    setNewCategoryName('');
+    setShowCategoryModal(false);
+    
+    alert(`✅ Kategori "${newCategoryName}" berhasil ditambahkan!`);
+  };
+
+  const handleEditCategory = () => {
+    if (!editCategoryName.trim()) {
+      alert('Mohon isi nama kategori!');
+      return;
+    }
+    
+    if (productCategories.includes(editCategoryName.trim()) && editCategoryName.trim() !== editingCategory) {
+      alert('Kategori sudah ada!');
+      return;
+    }
+    
+    const updatedCategories = productCategories.map(cat => 
+      cat === editingCategory ? editCategoryName.trim() : cat
+    );
+    setProductCategories(updatedCategories);
+    localStorage.setItem('productCategories', JSON.stringify(updatedCategories));
+    
+    const updatedProducts = products.map(product => 
+      product.category === editingCategory 
+        ? { ...product, category: editCategoryName.trim() }
+        : product
+    );
+    setProducts(updatedProducts);
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    
+    setEditingCategory(null);
+    setEditCategoryName('');
+    setShowManageCategoriesModal(false);
+    
+    alert(`✅ Kategori berhasil diubah menjadi "${editCategoryName}"!`);
+  };
+
+  const handleDeleteCategory = (categoryToDelete) => {
+    const productsWithCategory = products.filter(product => product.category === categoryToDelete);
+    
+    if (productsWithCategory.length > 0) {
+      alert(`⚠️ Kategori "${categoryToDelete}" sedang digunakan oleh ${productsWithCategory.length} produk. Hapus atau ubah kategori produk tersebut terlebih dahulu!`);
+      return;
+    }
+    
+    if (window.confirm(`Apakah Anda yakin ingin menghapus kategori "${categoryToDelete}"?`)) {
+      const updatedCategories = productCategories.filter(cat => cat !== categoryToDelete);
+      setProductCategories(updatedCategories);
+      localStorage.setItem('productCategories', JSON.stringify(updatedCategories));
+      
+      if (productCategoryInput === categoryToDelete) {
+        setProductCategoryInput(updatedCategories[0] || 'Lainnya');
+      }
+      
+      alert(`✅ Kategori "${categoryToDelete}" berhasil dihapus!`);
+    }
+  };
+
+  const openEditCategoryModal = (category) => {
+    setEditingCategory(category);
+    setEditCategoryName(category);
+    setShowManageCategoriesModal(true);
+  };
+
+  // ================== FUNGSI UNTUK MEMBUKA MODAL TAMBAH KATEGORI DARI MODAL KELOLA ==================
+  const openAddCategoryFromManage = () => {
+    setShowManageCategoriesModal(false);
+    setEditingCategory(null);
+    setShowCategoryModal(true);
+    setNewCategoryName('');
+  };
+
+  // Load data
+  useEffect(() => {
+    loadCustomers();
+    
+    const savedProducts = localStorage.getItem('products');
+    if (savedProducts) {
+      setProducts(JSON.parse(savedProducts));
+    } else {
+      const defaultProducts = [
+        { id: 1, name: 'Kemeja Pria Slimfit', basePrice: 150000, category: 'Kemeja', variations: [] },
+        { id: 2, name: 'Celana Jeans Denim', basePrice: 250000, category: 'Celana', variations: [] },
+        { id: 3, name: 'Jaket Hoodie', basePrice: 300000, category: 'Jaket', variations: [] },
+        { id: 4, name: 'Kemeja Wanita Formal', basePrice: 180000, category: 'Kemeja', variations: [] },
+        { id: 5, name: 'Blouse Wanita', basePrice: 120000, category: 'Blouse', variations: [] },
+        { id: 6, name: 'Celana Chino', basePrice: 200000, category: 'Celana', variations: [] },
+      ];
+      setProducts(defaultProducts);
+      localStorage.setItem('products', JSON.stringify(defaultProducts));
+    }
+    
+    const savedCategories = localStorage.getItem('productCategories');
+    if (savedCategories) {
+      setProductCategories(JSON.parse(savedCategories));
+    }
+  }, []);
+
+  // Helper functions
+  const formatCurrency = (value) => {
+    const num = Number(value) || 0;
+    return num.toLocaleString('id-ID');
+  };
+
+  const formatPriceDisplay = (price) => {
+    if (!price) return '';
+    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  const isDeadlineOverdue = (deadline) => {
+    if (!deadline) return false;
+    const today = new Date().toISOString().split('T')[0];
+    return deadline < today;
+  };
+
+  const getRemainingDays = (deadline) => {
+    if (!deadline) return 0;
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffTime = deadlineDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  // Status options
+  const statusOptions = [
+    { value: 'cutting', label: '✂️ Potong', color: 'bg-amber-100 text-amber-800' },
+    { value: 'sewing', label: '🧵 Jahit', color: 'bg-orange-100 text-orange-800' },
+    { value: 'finishing', label: '✨ Finishing', color: 'bg-lime-100 text-lime-800' },
+    { value: 'packing', label: '📦 Packing', color: 'bg-emerald-100 text-emerald-800' },
+    { value: 'qc', label: '✅ QC', color: 'bg-teal-100 text-teal-800' },
+    { value: 'completed', label: '🎉 Selesai', color: 'bg-green-100 text-green-800' },
+    { value: 'delivered', label: '🚚 Terkirim', color: 'bg-purple-100 text-purple-800' },
+    { value: 'cancelled', label: '❌ Dibatalkan', color: 'bg-red-100 text-red-800' },
+  ];
 
   // ================== CSV IMPORT FUNCTIONS ==================
   const openCsvModal = () => {
@@ -410,34 +548,12 @@ export default function CreateOrder() {
     }
 
     setCustomers(prev => [...prev, ...newCustomers]);
+    localStorage.setItem('customers', JSON.stringify([...customers, ...newCustomers]));
     alert(`✅ ${newCustomers.length} pelanggan berhasil diimport!`);
     closeCsvModal();
   };
-  // ================== END CSV IMPORT FUNCTIONS ==================
 
-  const handleAddCustomer = () => {
-    if (!newCustomer.name.trim()) {
-      alert('Nama pelanggan harus diisi!');
-      return;
-    }
-
-    const newId = customers.length > 0 ? Math.max(...customers.map(c => c.id)) + 1 : 1;
-    const customerToAdd = {
-      id: newId,
-      ...newCustomer,
-      joinDate: new Date().toISOString().split('T')[0]
-    };
-
-    const updatedCustomers = [...customers, customerToAdd];
-    setCustomers(updatedCustomers);
-    localStorage.setItem('customers', JSON.stringify(updatedCustomers));
-
-    setSelectedCustomer(newId.toString());
-    setNewCustomer({ name: '', phone: '', address: '', email: '' });
-    setIsAddCustomerModalOpen(false);
-    alert(`✅ Pelanggan "${customerToAdd.name}" berhasil ditambahkan!`);
-  };
-
+  // ================== ORDER FUNCTIONS ==================
   const handleAddItem = () => {
     setItems([...items, { 
       product: '', 
@@ -485,11 +601,11 @@ export default function CreateOrder() {
     newItems[index].variantId = '';
     
     if (selectedProduct && size) {
-      const availableColors = selectedProduct.variations.filter(v => v.size === size).map(v => v.color);
+      const availableColors = selectedProduct.variations?.filter(v => v.size === size).map(v => v.color) || [];
       const uniqueColors = [...new Set(availableColors)];
       if (uniqueColors.length === 1) {
         const color = uniqueColors[0];
-        const variant = selectedProduct.variations.find(v => v.size === size && v.color === color);
+        const variant = selectedProduct.variations?.find(v => v.size === size && v.color === color);
         if (variant) {
           newItems[index].color = color;
           newItems[index].variantId = variant.id;
@@ -504,7 +620,9 @@ export default function CreateOrder() {
     const newItems = [...items];
     const selectedProduct = products.find(p => p.id === parseInt(newItems[index].product));
     if (selectedProduct && newItems[index].size && color) {
-      const variant = selectedProduct.variations.find(v => v.size === newItems[index].size && v.color === color);
+      const variant = selectedProduct.variations?.find(
+        v => v.size === newItems[index].size && v.color === color
+      );
       if (variant) {
         newItems[index].color = color;
         newItems[index].variantId = variant.id;
@@ -629,7 +747,7 @@ export default function CreateOrder() {
       items: cleanedItems.length,
       totalAmount: calculateTotal(),
       status: orderStatus,
-      notes: '',
+      notes: orderNotes,
       itemsDetail: cleanedItems,
       timeline: [],
       priority: 'sedang',
@@ -665,6 +783,497 @@ export default function CreateOrder() {
 
   const isOrderOverdue = isDeadlineOverdue(dueDate);
 
+  // ================== MODALS ==================
+  
+  // Modal Tambah Pelanggan
+  const AddCustomerModal = () => {
+    if (!showAddCustomerModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
+            <div className="flex items-center gap-2">
+              <Users size={20} className="text-blue-600" />
+              <h3 className="font-bold text-lg text-gray-800">Tambah Pelanggan Baru</h3>
+            </div>
+            <button onClick={() => setShowAddCustomerModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="p-5 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan *</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                value={customerFormData.name}
+                onChange={(e) => setCustomerFormData({...customerFormData, name: e.target.value})}
+                placeholder="Contoh: Toko Maju Jaya"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
+              <div className="relative">
+                <Phone size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  value={customerFormData.phone}
+                  onChange={(e) => setCustomerFormData({...customerFormData, phone: e.target.value})}
+                  placeholder="08123456789"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+              <div className="relative">
+                <MapPin size={16} className="absolute left-3 top-3 text-gray-400" />
+                <textarea 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  rows="2"
+                  value={customerFormData.address}
+                  onChange={(e) => setCustomerFormData({...customerFormData, address: e.target.value})}
+                  placeholder="Jl. Contoh No. 123"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="email" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  value={customerFormData.email}
+                  onChange={(e) => setCustomerFormData({...customerFormData, email: e.target.value})}
+                  placeholder="email@example.com"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <button onClick={() => setShowAddCustomerModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
+            <button onClick={handleAddCustomer} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+              Simpan Pelanggan
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Kelola Pelanggan (Edit & Hapus)
+  const ManageCustomersModal = () => {
+    if (!showManageCustomersModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
+            <div className="flex items-center gap-2">
+              <Users size={20} className="text-blue-600" />
+              <h3 className="font-bold text-lg text-gray-800">Kelola Pelanggan</h3>
+            </div>
+            <button onClick={() => { setShowManageCustomersModal(false); setEditingCustomer(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {editingCustomer ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan *</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  value={customerFormData.name}
+                  onChange={(e) => setCustomerFormData({...customerFormData, name: e.target.value})}
+                />
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    value={customerFormData.phone}
+                    onChange={(e) => setCustomerFormData({...customerFormData, phone: e.target.value})}
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                  <textarea 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    rows="2"
+                    value={customerFormData.address}
+                    onChange={(e) => setCustomerFormData({...customerFormData, address: e.target.value})}
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    value={customerFormData.email}
+                    onChange={(e) => setCustomerFormData({...customerFormData, email: e.target.value})}
+                  />
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => { setEditingCustomer(null); setCustomerFormData({ name: '', phone: '', address: '', email: '', joinDate: new Date().toISOString().split('T')[0] }); }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleEditCustomer}
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                  >
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <p className="text-sm text-gray-600">Daftar semua pelanggan yang tersedia</p>
+                  <button
+                    onClick={openAddCustomerFromManage}
+                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
+                  >
+                    <Plus size={12} /> Tambah
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {customers.map((customer) => {
+                    const orderCount = JSON.parse(localStorage.getItem('orders') || '[]').filter(o => o.customerName === customer.name).length;
+                    return (
+                      <div key={customer.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-800">{customer.name}</p>
+                          <p className="text-xs text-gray-500">{orderCount} pesanan</p>
+                          {customer.phone && (
+                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                              <Phone size={10} /> {customer.phone}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openEditCustomerModal(customer)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="Edit Pelanggan"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCustomer(customer)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Hapus Pelanggan"
+                            disabled={orderCount > 0}
+                          >
+                            <Trash size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+            <button onClick={() => { setShowManageCustomersModal(false); setEditingCustomer(null); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Tambah Kategori
+  const AddCategoryModal = () => {
+    if (!showCategoryModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
+            <div className="flex items-center gap-2">
+              <Tag size={20} className="text-purple-600" />
+              <h3 className="font-bold text-lg text-gray-800">Tambah Kategori Produk</h3>
+            </div>
+            <button onClick={() => setShowCategoryModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="p-5 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kategori *</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Contoh: Baju Atasan, Bawahan, Outer, dll"
+                autoFocus
+              />
+              <p className="text-xs text-gray-500 mt-1">Kategori akan muncul di dropdown pilihan produk</p>
+            </div>
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <button onClick={() => setShowCategoryModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
+            <button onClick={handleAddCategory} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700">
+              Simpan Kategori
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Kelola Kategori
+  const ManageCategoriesModal = () => {
+    if (!showManageCategoriesModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
+            <div className="flex items-center gap-2">
+              <Tag size={20} className="text-purple-600" />
+              <h3 className="font-bold text-lg text-gray-800">Kelola Kategori Produk</h3>
+            </div>
+            <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {editingCategory ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Edit Kategori</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                  value={editCategoryName}
+                  onChange={(e) => setEditCategoryName(e.target.value)}
+                  placeholder="Nama kategori"
+                  autoFocus
+                />
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => { setEditingCategory(null); setEditCategoryName(''); }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleEditCategory}
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                  >
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <p className="text-sm text-gray-600">Daftar semua kategori produk yang tersedia</p>
+                  <button
+                    onClick={openAddCategoryFromManage}
+                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
+                  >
+                    <Plus size={12} /> Tambah
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {productCategories.map((category) => {
+                    const productCount = products.filter(p => p.category === category).length;
+                    return (
+                      <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-800">{category}</p>
+                          <p className="text-xs text-gray-500">{productCount} produk</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openEditCategoryModal(category)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="Edit Kategori"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCategory(category)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Hapus Kategori"
+                            disabled={productCount > 0}
+                          >
+                            <Trash size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+            <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Tambah Produk Baru
+  const AddProductModalContent = () => {
+    if (!showAddProductModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-green-50 to-white">
+            <div className="flex items-center gap-2">
+              <PlusCircle size={20} className="text-green-600" />
+              <h3 className="font-bold text-lg text-gray-800">Tambah Produk Baru</h3>
+            </div>
+            <button onClick={() => setShowAddProductModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Nama Produk *</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                  value={productNameInput}
+                  onChange={(e) => setProductNameInput(e.target.value)}
+                  placeholder="Contoh: Kemeja Batik Pria"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Harga Dasar (Rp) *</label>
+                <input 
+                  type="text"
+                  inputMode="numeric"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                  value={productBasePriceInput}
+                  onChange={(e) => setProductBasePriceInput(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="Contoh: 150000"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Kategori</label>
+              <div className="flex gap-2">
+                <select 
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                  value={productCategoryInput}
+                  onChange={(e) => setProductCategoryInput(e.target.value)}
+                >
+                  <option value="">Pilih Kategori</option>
+                  {productCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowManageCategoriesModal(true)}
+                  className="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-1 whitespace-nowrap"
+                  title="Kelola Kategori"
+                >
+                  <Tag size={14} /> Kelola
+                </button>
+              </div>
+            </div>
+            
+            <div className="border-t pt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Variasi Produk (Ukuran & Warna)</label>
+              
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <div>
+                  <input 
+                    type="text" 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    placeholder="Ukuran (S, M, L, XL)"
+                    value={variationSizeInput}
+                    onChange={(e) => setVariationSizeInput(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <input 
+                    type="text" 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    placeholder="Warna (Merah, Biru, Hitam)"
+                    value={variationColorInput}
+                    onChange={(e) => setVariationColorInput(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-1">
+                  <input 
+                    type="text"
+                    inputMode="numeric"
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                    placeholder="Harga"
+                    value={variationPriceInput}
+                    onChange={(e) => setVariationPriceInput(e.target.value.replace(/[^0-9]/g, ''))}
+                  />
+                  <button 
+                    onClick={handleAddVariationSimple}
+                    className="px-2 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+              
+              {tempVariationsList.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <p className="text-xs text-gray-500">Variasi yang sudah ditambahkan:</p>
+                  {tempVariationsList.map((v) => (
+                    <div key={v.id} className="flex justify-between items-center bg-gray-50 p-2 rounded-lg">
+                      <div className="flex gap-3 text-sm">
+                        <span className="font-medium">{v.size}</span>
+                        <span className="text-gray-500">•</span>
+                        <span>{v.color}</span>
+                        <span className="text-blue-600">Rp {formatPriceDisplay(v.price)}</span>
+                      </div>
+                      <button onClick={() => handleRemoveVariationSimple(v.id)} className="text-red-500 hover:text-red-700">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+            <button onClick={() => setShowAddProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
+            <button onClick={handleSaveNewProductSimple} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium">Simpan Produk</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Header */}
@@ -696,24 +1305,30 @@ export default function CreateOrder() {
             <div className="p-5 space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Pilih Pelanggan *</label>
-                <select 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  value={selectedCustomer}
-                  onChange={(e) => setSelectedCustomer(e.target.value)}
-                  required
-                >
-                  <option value="">-- Pilih Pelanggan --</option>
-                  {customers.map(customer => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.name} • {customer.phone}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <select 
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    value={selectedCustomer}
+                    onChange={(e) => setSelectedCustomer(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Pilih Pelanggan --</option>
+                    {customers.map(customer => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.name} • {customer.phone}
+                      </option>
+                    ))}
+                  </select>
+
+                </div>
                 <div className="flex gap-2 mt-2">
-                  <button onClick={() => setIsAddCustomerModalOpen(true)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">
-                    <Plus size={12} /> Tambah Pelanggan
+                  <button 
+                    onClick={() => setShowManageCustomersModal(true)} 
+                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700"
+                  >
+                    <Users size={12} /> Kelola
                   </button>
-                  <button onClick={openCsvModal} className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700">
+                  <button onClick={openCsvModal} className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-medium hover:bg-purple-700">
                     <Upload size={12} /> Import CSV
                   </button>
                 </div>
@@ -762,6 +1377,22 @@ export default function CreateOrder() {
                   </optgroup>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">Status akan menentukan jobs yang digenerate</p>
+              </div>
+
+              {/* FIELD CATATAN PESANAN */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  <div className="flex items-center gap-1">
+                    <FileText size={12} /> Catatan Pesanan
+                  </div>
+                </label>
+                <textarea
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows="3"
+                  value={orderNotes}
+                  onChange={(e) => setOrderNotes(e.target.value)}
+                />
+                <p className="text-xs text-gray-400 mt-1">Catatan akan muncul di detail pesanan dan dapat dilihat oleh tim produksi.</p>
               </div>
             </div>
           </div>
@@ -846,7 +1477,7 @@ export default function CreateOrder() {
                     </div>
 
                     {/* Size & Color */}
-                    {product && (
+                    {product && product.variations && (
                       <div className="grid grid-cols-2 gap-3 mb-4">
                         <div>
                           <label className="block text-xs text-gray-500 mb-1">Ukuran</label>
@@ -998,119 +1629,12 @@ export default function CreateOrder() {
         </div>
       </div>
 
-      {/* ================== MODAL TAMBAH PRODUK - INLINE RENDERING ================== */}
-      {/* ✅ PERBAIKAN: Modal di-render langsung di sini, bukan sebagai komponen terpisah */}
-      {showAddProductModal && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-green-50 to-white">
-              <div className="flex items-center gap-2">
-                <PlusCircle size={20} className="text-green-600" />
-                <h3 className="font-bold text-lg text-gray-800">Tambah Produk Baru</h3>
-              </div>
-              <button onClick={() => setShowAddProductModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {/* Informasi Dasar Produk */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Nama Produk *</label>
-                  <input 
-                    type="text" 
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
-                    value={productNameInput}
-                    onChange={(e) => setProductNameInput(e.target.value)}
-                    placeholder="Contoh: Kemeja Batik Pria"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Harga Dasar (Rp) *</label>
-                  <input 
-                    type="text"
-                    inputMode="numeric"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
-                    value={productBasePriceInput}
-                    onChange={(e) => setProductBasePriceInput(e.target.value.replace(/[^0-9]/g, ''))}
-                    placeholder="Contoh: 150000"
-                  />
-                </div>
-              </div>
-              
-              {/* Tambah Variasi */}
-              <div className="border-t pt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Variasi Produk (Ukuran & Warna)</label>
-                
-                {/* Form Tambah Variasi */}
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div>
-                    <input 
-                      type="text" 
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
-                      placeholder="Ukuran (S, M, L, XL)"
-                      value={variationSizeInput}
-                      onChange={(e) => setVariationSizeInput(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <input 
-                      type="text" 
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
-                      placeholder="Warna (Merah, Biru, Hitam)"
-                      value={variationColorInput}
-                      onChange={(e) => setVariationColorInput(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex gap-1">
-                    <input 
-                      type="text"
-                      inputMode="numeric"
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" 
-                      placeholder="Harga"
-                      value={variationPriceInput}
-                      onChange={(e) => setVariationPriceInput(e.target.value.replace(/[^0-9]/g, ''))}
-                    />
-                    <button 
-                      onClick={handleAddVariationSimple}
-                      className="px-2 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Daftar Variasi yang Sudah Ditambahkan */}
-                {tempVariationsList.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    <p className="text-xs text-gray-500">Variasi yang sudah ditambahkan:</p>
-                    {tempVariationsList.map((v) => (
-                      <div key={v.id} className="flex justify-between items-center bg-gray-50 p-2 rounded-lg">
-                        <div className="flex gap-3 text-sm">
-                          <span className="font-medium">{v.size}</span>
-                          <span className="text-gray-500">•</span>
-                          <span>{v.color}</span>
-                          <span className="text-blue-600">Rp {formatPriceDisplay(v.price)}</span>
-                        </div>
-                        <button onClick={() => handleRemoveVariationSimple(v.id)} className="text-red-500 hover:text-red-700">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-              <button onClick={() => setShowAddProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
-              <button onClick={handleSaveNewProductSimple} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium">Simpan Produk</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modals */}
+      <AddProductModalContent />
+      <AddCategoryModal />
+      <ManageCategoriesModal />
+      <AddCustomerModal />
+      <ManageCustomersModal />
       
       {/* Notes Modal */}
       {notesModal.isOpen && (
@@ -1213,28 +1737,6 @@ export default function CreateOrder() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Customer Modal */}
-      {isAddCustomerModalOpen && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
-            <div className="px-6 py-4 border-b flex justify-between items-center">
-              <div className="flex items-center gap-2"><User size={20} className="text-blue-600" /><h3 className="font-bold">Tambah Pelanggan Baru</h3></div>
-              <button onClick={() => setIsAddCustomerModalOpen(false)}><X size={20} /></button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div><label className="block text-sm font-medium mb-1">Nama Pelanggan *</label><input type="text" className="w-full border rounded-lg p-2.5 text-sm" value={newCustomer.name} onChange={(e) => setNewCustomer({...newCustomer, name: e.target.value})} /></div>
-              <div><label className="block text-sm font-medium mb-1">No. Telepon</label><input type="tel" className="w-full border rounded-lg p-2.5 text-sm" value={newCustomer.phone} onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})} /></div>
-              <div><label className="block text-sm font-medium mb-1">Alamat</label><textarea rows="2" className="w-full border rounded-lg p-2.5 text-sm" value={newCustomer.address} onChange={(e) => setNewCustomer({...newCustomer, address: e.target.value})} /></div>
-              <div><label className="block text-sm font-medium mb-1">Email</label><input type="email" className="w-full border rounded-lg p-2.5 text-sm" value={newCustomer.email} onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})} /></div>
-            </div>
-            <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-              <button onClick={() => setIsAddCustomerModalOpen(false)} className="px-4 py-2 border rounded-lg text-sm">Batal</button>
-              <button onClick={handleAddCustomer} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Simpan</button>
             </div>
           </div>
         </div>

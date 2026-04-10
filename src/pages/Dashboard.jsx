@@ -98,11 +98,16 @@ export default function Dashboard() {
     },
   ]);
 
-  const recentOrders = [
-    { id: 'ORD-00124', customer: 'Toko Maju Jaya', items: 3, status: 'production', deadline: '2 hari' },
-    { id: 'ORD-00123', customer: 'Butik Modern', items: 1, status: 'cutting', deadline: '1 hari' },
-    { id: 'ORD-00122', customer: 'Konveksi Sejahtera', items: 5, status: 'sewing', deadline: '3 hari' },
-  ];
+  // Data untuk Pesanan Terbaru (akan diisi dari localStorage)
+  const [recentOrders, setRecentOrders] = useState([]);
+
+  // Data untuk Status Produksi (akan diisi dari availableJobs)
+  const [productionStatus, setProductionStatus] = useState([
+    { stage: 'Cutting', count: 0, icon: '✂️', color: 'amber', jobs: [] },
+    { stage: 'Sewing', count: 0, icon: '🧵', color: 'orange', jobs: [] },
+    { stage: 'Finishing', count: 0, icon: '✨', color: 'lime', jobs: [] },
+    { stage: 'Packing', count: 0, icon: '📦', color: 'emerald', jobs: [] }
+  ]);
 
   // Data Mock untuk Charts
   const orderHistoryData = [
@@ -133,90 +138,25 @@ export default function Dashboard() {
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
 
-  // Data stok menipis (static untuk demo)
+  // Data stok menipis
   const [lowStockItems, setLowStockItems] = useState([]);
 
   useEffect(() => {
-  const loadStockData = () => {
-    const savedStock = localStorage.getItem('stockItems');
-    if (savedStock) {
-      const stock = JSON.parse(savedStock);
-      // Ambil item dengan status 'critical' dan 'warning'
-      const criticalAndWarning = stock.filter(item => 
-        item.status === 'critical' || item.status === 'warning'
-      );
-      setLowStockItems(criticalAndWarning);
-    }
-  };
-  
-  loadStockData();
-  const interval = setInterval(loadStockData, 30000);
-  return () => clearInterval(interval);
-}, []);
-
-  // Data kinerja departemen
-  const departmentPerformance = [
-    {
-      name: 'Potong',
-      totalJobs: 24,
-      completed: 18,
-      pending: 6,
-      efficiency: 85,
-      avgTime: '2.5 jam',
-      trend: 'up',
-      color: 'blue',
-      icon: '✂️',
-      employees: 8
-    },
-    {
-      name: 'Jahit',
-      totalJobs: 32,
-      completed: 28,
-      pending: 4,
-      efficiency: 92,
-      avgTime: '4 jam',
-      trend: 'up',
-      color: 'green',
-      icon: '🧵',
-      employees: 12
-    },
-    {
-      name: 'Finishing',
-      totalJobs: 28,
-      completed: 22,
-      pending: 6,
-      efficiency: 78,
-      avgTime: '1.5 jam',
-      trend: 'down',
-      color: 'yellow',
-      icon: '✨',
-      employees: 6
-    },
-    {
-      name: 'Packing',
-      totalJobs: 20,
-      completed: 19,
-      pending: 1,
-      efficiency: 95,
-      avgTime: '1 jam',
-      trend: 'up',
-      color: 'purple',
-      icon: '📦',
-      employees: 5
-    },
-    {
-      name: 'QC',
-      totalJobs: 18,
-      completed: 16,
-      pending: 2,
-      efficiency: 88,
-      avgTime: '0.8 jam',
-      trend: 'stable',
-      color: 'red',
-      icon: '✅',
-      employees: 4
-    }
-  ];
+    const loadStockData = () => {
+      const savedStock = localStorage.getItem('stockItems');
+      if (savedStock) {
+        const stock = JSON.parse(savedStock);
+        const criticalAndWarning = stock.filter(item => 
+          item.status === 'critical' || item.status === 'warning'
+        );
+        setLowStockItems(criticalAndWarning);
+      }
+    };
+    
+    loadStockData();
+    const interval = setInterval(loadStockData, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Deteksi ukuran layar
   useEffect(() => {
@@ -232,12 +172,10 @@ export default function Dashboard() {
   const getActiveOrders = () => {
     try {
       const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      // Status yang dianggap sebagai pesanan aktif (belum selesai/dibatalkan)
       const activeStatuses = [
         'cutting', 'sewing', 'finishing', 'packing', 'qc', 
         'processing', 'production', 'draft'
       ];
-      
       const active = orders.filter(order => activeStatuses.includes(order.status));
       return active;
     } catch (error) {
@@ -351,6 +289,46 @@ export default function Dashboard() {
     setShowActiveOrdersModal(true);
   };
 
+  // ================== FUNGSI UNTUK LOAD DATA PESANAN TERBARU ==================
+  const loadRecentOrders = () => {
+    try {
+      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+      // Ambil 5 pesanan terbaru (berdasarkan orderDate)
+      const sortedOrders = [...orders].sort((a, b) => 
+        new Date(b.orderDate) - new Date(a.orderDate)
+      ).slice(0, 5);
+      
+      const formattedOrders = sortedOrders.map(order => {
+        const dueDate = order.dueDate;
+        const today = new Date().toISOString().split('T')[0];
+        let deadlineText = '';
+        if (dueDate) {
+          if (dueDate < today) {
+            deadlineText = 'Terlambat';
+          } else {
+            const dueDateObj = new Date(dueDate);
+            const todayObj = new Date();
+            const diffDays = Math.ceil((dueDateObj - todayObj) / (1000 * 60 * 60 * 24));
+            deadlineText = `${diffDays} hari`;
+          }
+        }
+        
+        return {
+          id: order.id,
+          customer: order.customerName || 'Pelanggan',
+          items: order.items || order.itemsDetail?.length || 0,
+          status: order.status,
+          deadline: deadlineText,
+          isOverdue: dueDate && dueDate < today
+        };
+      });
+      
+      setRecentOrders(formattedOrders);
+    } catch (error) {
+      console.error('Error loading recent orders:', error);
+    }
+  };
+
   // ================== FUNGSI UNTUK PRODUCTION COUNTS ==================
   useEffect(() => {
     const loadProductionData = () => {
@@ -365,16 +343,44 @@ export default function Dashboard() {
           'Packing': 0
         };
 
+        // Hitung jobs per departemen
+        const deptJobs = {
+          'Cutting': [],
+          'Sewing': [],
+          'Finishing': [],
+          'Packing': []
+        };
+
         availableJobs.forEach(job => {
           if (job.status !== 'selesai') {
-            if (job.department === 'Potong') counts['Cutting'] += (job.qty || 0);
-            if (job.department === 'Jahit') counts['Sewing'] += (job.qty || 0);
-            if (job.department === 'Finishing') counts['Finishing'] += (job.qty || 0);
-            if (job.department === 'Packing') counts['Packing'] += (job.qty || 0);
+            if (job.department === 'Potong') {
+              counts['Cutting'] += (job.qty || 0);
+              deptJobs['Cutting'].push(job);
+            }
+            if (job.department === 'Jahit') {
+              counts['Sewing'] += (job.qty || 0);
+              deptJobs['Sewing'].push(job);
+            }
+            if (job.department === 'Finishing') {
+              counts['Finishing'] += (job.qty || 0);
+              deptJobs['Finishing'].push(job);
+            }
+            if (job.department === 'Packing') {
+              counts['Packing'] += (job.qty || 0);
+              deptJobs['Packing'].push(job);
+            }
           }
         });
 
         setProductionCounts(counts);
+        
+        // Update production status dengan data dari jobs
+        setProductionStatus([
+          { stage: 'Cutting', count: counts['Cutting'], icon: '✂️', color: 'amber', jobs: deptJobs['Cutting'] },
+          { stage: 'Sewing', count: counts['Sewing'], icon: '🧵', color: 'orange', jobs: deptJobs['Sewing'] },
+          { stage: 'Finishing', count: counts['Finishing'], icon: '✨', color: 'lime', jobs: deptJobs['Finishing'] },
+          { stage: 'Packing', count: counts['Packing'], icon: '📦', color: 'emerald', jobs: deptJobs['Packing'] }
+        ]);
 
         // Hitung pesanan selesai dan dibatalkan
         const completed = orders.filter(order => 
@@ -408,6 +414,9 @@ export default function Dashboard() {
 
         // Hitung stuck items
         calculateStuckItems();
+        
+        // Load recent orders
+        loadRecentOrders();
       } catch (error) {
         console.error('Error loading production data:', error);
       }
@@ -418,15 +427,11 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleStageClick = (stageName) => {
-    const deptMap = {
-      'Cutting': 'Potong',
-      'Sewing': 'Jahit',
-      'Finishing': 'Finishing',
-      'Packing': 'Packing'
-    };
+  const handleStageClick = (stageName, jobs) => {
+    const targetDept = stageName === 'Cutting' ? 'Potong' :
+                       stageName === 'Sewing' ? 'Jahit' :
+                       stageName === 'Finishing' ? 'Finishing' : 'Packing';
 
-    const targetDept = deptMap[stageName];
     const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
     const filteredOrders = availableJobs
       .filter(job => job.department === targetDept && job.status !== 'selesai')
@@ -499,21 +504,39 @@ export default function Dashboard() {
     return colorMap[color] || 'bg-gray-100 text-gray-600';
   };
 
-  // Helper untuk trend icon
-  const getTrendIcon = (trend) => {
-    switch (trend) {
-      case 'up': return <TrendingUp size={14} className="text-green-500" />;
-      case 'down': return <TrendingDown size={14} className="text-red-500" />;
-      default: return <span className="text-gray-400">→</span>;
-    }
+  // Helper untuk mendapatkan warna badge status
+  const getStatusBadgeColor = (status) => {
+    const colorMap = {
+      cutting: 'bg-amber-100 text-amber-800',
+      sewing: 'bg-orange-100 text-orange-800',
+      finishing: 'bg-lime-100 text-lime-800',
+      packing: 'bg-emerald-100 text-emerald-800',
+      qc: 'bg-teal-100 text-teal-800',
+      completed: 'bg-green-100 text-green-800',
+      delivered: 'bg-purple-100 text-purple-800',
+      cancelled: 'bg-red-100 text-red-800',
+      processing: 'bg-blue-100 text-blue-800',
+      production: 'bg-yellow-100 text-yellow-800',
+      draft: 'bg-gray-100 text-gray-800'
+    };
+    return colorMap[status] || 'bg-gray-100 text-gray-800';
   };
 
-  // Helper untuk progress bar color
-  const getProgressColor = (efficiency) => {
-    if (efficiency >= 90) return 'bg-green-500';
-    if (efficiency >= 75) return 'bg-blue-500';
-    if (efficiency >= 60) return 'bg-yellow-500';
-    return 'bg-red-500';
+  const getStatusLabel = (status) => {
+    const labelMap = {
+      cutting: 'Potong',
+      sewing: 'Jahit',
+      finishing: 'Finishing',
+      packing: 'Packing',
+      qc: 'QC',
+      completed: 'Selesai',
+      delivered: 'Terkirim',
+      cancelled: 'Dibatalkan',
+      processing: 'Diproses',
+      production: 'Produksi',
+      draft: 'Draft'
+    };
+    return labelMap[status] || status;
   };
 
   // Helper untuk stock status
@@ -632,51 +655,51 @@ export default function Dashboard() {
           </button>
         </div>
 
-  {/* Low Stock Alert */}
-  <div className="enterprise-card p-3 md:p-4 animate-enter-fade delay-200">
-    <div className="flex items-center justify-between mb-2 md:mb-3">
-      <div className="flex items-center">
-        <div className="w-8 h-8 md:w-10 md:h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-2 md:mr-3">
-          <AlertCircle size={isMobile ? 16 : 20} className="text-yellow-600" />
-        </div>
-        <div>
-          <h3 className="font-bold text-slate-900 text-sm md:text-base">Stok Menipis</h3>
-          <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mt-0.5">Daftar Pengadaan</p>
-        </div>
-      </div>
-      <Link 
-        to="/stock?status=critical"
-        className="bg-yellow-100 text-yellow-800 text-xs font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-full hover:bg-yellow-200 transition-colors"
-      >
-        {lowStockItems.filter(item => item.status === 'critical').length} kritis
-      </Link>
-    </div>
+        {/* Low Stock Alert */}
+        <div className="enterprise-card p-3 md:p-4 animate-enter-fade delay-200">
+          <div className="flex items-center justify-between mb-2 md:mb-3">
+            <div className="flex items-center">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-2 md:mr-3">
+                <AlertCircle size={isMobile ? 16 : 20} className="text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm md:text-base">Stok Menipis</h3>
+                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mt-0.5">Daftar Pengadaan</p>
+              </div>
+            </div>
+            <Link 
+              to="/stock?status=critical"
+              className="bg-yellow-100 text-yellow-800 text-xs font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-full hover:bg-yellow-200 transition-colors"
+            >
+              {lowStockItems.filter(item => item.status === 'critical').length} kritis
+            </Link>
+          </div>
 
-  <div className="space-y-1.5 md:space-y-2">
-    {lowStockItems.filter(item => item.status === 'critical').slice(0, 2).map((item, index) => (
-      <Link 
-        key={index} 
-        to={`/stock?search=${encodeURIComponent(item.material)}`}
-        className="py-2 border-b border-slate-100 last:border-0 group block hover:bg-yellow-50/50 rounded-lg transition-colors"
-      >
-        <div className="flex justify-between items-center mb-1.5">
-          <div><p className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-yellow-700 transition-colors">{item.material}</p></div>
-          <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{item.currentStock} {item.unit}</span>
-        </div>
-        <div className="w-full bg-slate-100 rounded-full h-1 mt-1 overflow-hidden">
-          <div className="bg-red-500 h-full rounded-full" style={{ width: `${(item.currentStock / item.minStock) * 100}%` }}></div>
-        </div>
-      </Link>
-    ))}
-  </div>
+          <div className="space-y-1.5 md:space-y-2">
+            {lowStockItems.filter(item => item.status === 'critical').slice(0, 2).map((item, index) => (
+              <Link 
+                key={index} 
+                to={`/stock?search=${encodeURIComponent(item.material)}`}
+                className="py-2 border-b border-slate-100 last:border-0 group block hover:bg-yellow-50/50 rounded-lg transition-colors"
+              >
+                <div className="flex justify-between items-center mb-1.5">
+                  <div><p className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-yellow-700 transition-colors">{item.material}</p></div>
+                  <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{item.currentStock} {item.unit}</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-1 mt-1 overflow-hidden">
+                  <div className="bg-red-500 h-full rounded-full" style={{ width: `${(item.currentStock / item.minStock) * 100}%` }}></div>
+                </div>
+              </Link>
+            ))}
+          </div>
 
-  <Link 
-    to="/stock"
-    className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-yellow-600 hover:text-yellow-800 font-medium block"
-  >
-    Lihat semua {lowStockItems.length} bahan menipis
-  </Link>
-</div>
+          <Link 
+            to="/stock"
+            className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-yellow-600 hover:text-yellow-800 font-medium block"
+          >
+            Lihat semua {lowStockItems.length} bahan menipis
+          </Link>
+        </div>
 
         {/* Quick Stats */}
         <div className="enterprise-card p-3 md:p-4 animate-enter-fade delay-300">
@@ -698,7 +721,7 @@ export default function Dashboard() {
             </div>
             <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
-              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">92</div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{completedCount}</div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Selesai</div>
             </div>
             <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm relative overflow-hidden">
@@ -712,7 +735,7 @@ export default function Dashboard() {
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Stuck</div>
             </div>
           </div>
-          <button onClick={() => { calculateStuckItems(); }} className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-blue-600 hover:text-blue-800 font-medium">
+          <button onClick={() => { calculateStuckItems(); loadRecentOrders(); }} className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-blue-600 hover:text-blue-800 font-medium">
             Refresh data
           </button>
         </div>
@@ -817,71 +840,201 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Three Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Recent Orders */}
-        <Card className="enterprise-card p-2 md:p-3 lg:col-span-1 animate-enter-fade delay-200">
-          <CardHeader className="pb-1 md:pb-2">
-            <div className="flex justify-between items-center"><h3 className="font-semibold text-gray-800 text-sm md:text-base">Pesanan Terbaru</h3><Link to="/orders" className="text-xs text-blue-600 hover:text-blue-800 font-medium">Lihat semua →</Link></div>
+      {/* Two Column Layout - FULL WIDTH dengan grid yang memenuhi space */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Recent Orders - FULL WIDTH di kiri */}
+        <Card className="enterprise-card animate-enter-fade delay-200 h-full">
+          <CardHeader className="border-b border-gray-100 pb-3">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold text-gray-800 text-sm md:text-base flex items-center gap-2">
+                  <Clock size={16} className="text-blue-500" />
+                  Pesanan Terbaru
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">5 pesanan terakhir yang masuk</p>
+              </div>
+              <Link to="/orders" className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                Lihat semua <ChevronRight size={12} />
+              </Link>
+            </div>
           </CardHeader>
-          <CardBody>
-            <div className="space-y-2 md:space-y-3">
-              {recentOrders.map((order) => (
-                <div key={order.id} className="flex items-center justify-between p-1.5 md:p-2 hover:bg-gray-50 rounded-lg border border-gray-100">
-                  <div><p className="font-medium text-gray-800 text-xs md:text-sm">{order.id}</p><p className="text-xs text-gray-600 line-clamp-1">{order.customer}</p></div>
-                  <div className="text-right"><span className="inline-block px-1.5 md:px-2 py-0.5 md:py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{order.items} item</span><p className="text-xs text-gray-600 mt-0.5">Deadline: {order.deadline}</p></div>
-                </div>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Production Status */}
-        <Card className="enterprise-card p-2 md:p-3 lg:col-span-1 animate-enter-fade delay-300">
-          <CardHeader className="pb-1 md:pb-2 border-b border-gray-50 mb-3"><div className="flex justify-between items-center"><h3 className="font-bold text-gray-800 text-sm md:text-base">Status Produksi</h3></div></CardHeader>
-          <CardBody>
-            <div className="space-y-3 md:space-y-4">
-              {['Cutting', 'Sewing', 'Finishing', 'Packing'].map((stage) => (
-                <div key={stage} onClick={() => handleStageClick(stage)} className="flex items-center justify-between p-2.5 hover:bg-slate-50 cursor-pointer rounded-xl transition-all duration-200 border border-transparent hover:border-slate-200 hover:shadow-sm active:scale-[0.98] group">
-                  <div className="flex items-center"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-50 flex items-center justify-center mr-3 group-hover:bg-white group-hover:shadow-sm transition-colors border border-slate-100"><span className="text-lg md:text-xl transform group-hover:scale-110 transition-transform">{stage === 'Cutting' ? '✂️' : stage === 'Sewing' ? '🧵' : stage === 'Finishing' ? '✨' : '📦'}</span></div><div><p className="font-bold text-gray-800 text-xs md:text-sm group-hover:text-primary-600 transition-colors">{stage}</p><p className="text-[10px] text-gray-500 font-medium">Departemen</p></div></div>
-                  <div className="text-right flex items-center space-x-3"><div><p className="font-black text-gray-900 text-sm md:text-lg leading-none">{productionCounts[stage] || 0}</p><p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">item</p></div><ChevronRight size={14} className="text-gray-300 group-hover:text-primary-400 group-hover:translate-x-1 transition-all" /></div>
-                </div>
-              ))}
-              {/* Pesanan Selesai Card */}
-              <div onClick={() => handleStatusClick('completed')} className="flex items-center justify-between p-2.5 hover:bg-green-50 cursor-pointer rounded-xl transition-all duration-200 border border-transparent hover:border-green-200 hover:shadow-sm active:scale-[0.98] group">
-                <div className="flex items-center"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-green-50 flex items-center justify-center mr-3 group-hover:bg-white group-hover:shadow-sm transition-colors border border-green-100"><span className="text-lg md:text-xl transform group-hover:scale-110 transition-transform">✅</span></div><div><p className="font-bold text-gray-800 text-xs md:text-sm group-hover:text-green-600 transition-colors">Pesanan Selesai</p><p className="text-[10px] text-gray-500 font-medium">Telah selesai</p></div></div>
-                <div className="text-right flex items-center space-x-3"><div><p className="font-black text-gray-900 text-sm md:text-lg leading-none">{completedCount}</p><p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">pesanan</p></div><ChevronRight size={14} className="text-gray-300 group-hover:text-green-400 group-hover:translate-x-1 transition-all" /></div>
-              </div>
-              {/* Pesanan Dibatalkan Card */}
-              <div onClick={() => handleStatusClick('cancelled')} className="flex items-center justify-between p-2.5 hover:bg-red-50 cursor-pointer rounded-xl transition-all duration-200 border border-transparent hover:border-red-200 hover:shadow-sm active:scale-[0.98] group">
-                <div className="flex items-center"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-red-50 flex items-center justify-center mr-3 group-hover:bg-white group-hover:shadow-sm transition-colors border border-red-100"><span className="text-lg md:text-xl transform group-hover:scale-110 transition-transform">❌</span></div><div><p className="font-bold text-gray-800 text-xs md:text-sm group-hover:text-red-600 transition-colors">Pesanan Dibatalkan</p><p className="text-[10px] text-gray-500 font-medium">Telah dibatalkan</p></div></div>
-                <div className="text-right flex items-center space-x-3"><div><p className="font-black text-gray-900 text-sm md:text-lg leading-none">{cancelledCount}</p><p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">pesanan</p></div><ChevronRight size={14} className="text-gray-300 group-hover:text-red-400 group-hover:translate-x-1 transition-all" /></div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Department Performance Summary */}
-         {/*<Card className="enterprise-card p-2 md:p-3 lg:col-span-1 animate-enter-fade delay-400">
-          <CardHeader className="pb-1 md:pb-2"><div className="flex justify-between items-center"><h3 className="font-semibold text-gray-800 text-sm md:text-base">Kinerja Departemen</h3><Link to="/joblist" className="text-xs text-blue-600 hover:text-blue-800 font-medium">Detail →</Link></div></CardHeader>
-          <CardBody>
-            <div className="space-y-2 md:space-y-4">
-              <div className="grid grid-cols-2 gap-1.5 md:gap-3 mb-1 md:mb-2">
-                <div className="enterprise-pill p-2 md:p-3 overflow-hidden group"><div className="flex items-center relative z-10"><Users size={14} className="text-slate-600 mr-1 md:mr-2" /><span className="text-xs text-slate-500 font-medium">Karyawan</span></div><p className="text-sm md:text-xl font-black text-slate-900 mt-1 relative z-10">35</p></div>
-                <div className="enterprise-pill p-2 md:p-3 overflow-hidden group"><div className="flex items-center relative z-10"><Package size={14} className="text-slate-600 mr-1 md:mr-2" /><span className="text-xs text-slate-500 font-medium">Pekerjaan</span></div><p className="text-sm md:text-xl font-black text-slate-900 mt-1 relative z-10">122</p></div>
-              </div>
-              <div className="space-y-1.5 md:space-y-2">
-                {departmentPerformance.slice(0, 3).map((dept) => (
-                  <div key={dept.name} className="p-1.5 md:p-2 hover:bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-0.5 md:mb-1"><div className="flex items-center"><span className="mr-1.5 md:mr-2 text-base md:text-lg">{dept.icon}</span><span className="text-xs md:text-sm font-medium text-gray-800">{dept.name}</span></div><div className="flex items-center">{getTrendIcon(dept.trend)}<span className={`ml-0.5 md:ml-1 text-xs font-bold ${dept.trend === 'up' ? 'text-green-600' : dept.trend === 'down' ? 'text-red-600' : 'text-gray-600'}`}>{dept.efficiency}%</span></div></div>
-                    <div className="w-full bg-gray-200 rounded-full h-1 md:h-1.5"><div className={`h-1 md:h-1.5 rounded-full ${getProgressColor(dept.efficiency)}`} style={{ width: `${dept.efficiency}%` }}></div></div>
-                    <div className="flex justify-between text-xs text-gray-500 mt-0.5 md:mt-1"><span>{dept.completed}/{dept.totalJobs} selesai</span><span className="flex items-center"><Clock size={10} className="mr-0.5 md:mr-1" /> {dept.avgTime}</span></div>
+          <CardBody className="p-0">
+            <div className="divide-y divide-gray-100">
+              {recentOrders.length > 0 ? (
+                recentOrders.map((order) => {
+                  const statusBadge = getStatusBadge(order.status);
+                  return (
+                    <Link 
+                      key={order.id} 
+                      to={`/orders/${order.id}`}
+                      className="block p-4 hover:bg-gray-50 transition-colors group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="font-bold text-blue-600 text-sm">{order.id}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${statusBadge.color}`}>
+                              {statusBadge.label}
+                            </span>
+                            {order.isOverdue && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                                ⚠️ Terlambat
+                              </span>
+                            )}
+                          </div>
+                          <p className="font-medium text-gray-800 text-sm">{order.customer}</p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <Package size={12} /> {order.items} item
+                            </span>
+                            {order.deadline && (
+                              <span className={`flex items-center gap-1 ${order.isOverdue ? 'text-red-500' : 'text-gray-500'}`}>
+                                <Clock size={12} /> Deadline: {order.deadline}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
+                      </div>
+                    </Link>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8">
+                  <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                    <Package className="text-gray-400" size={24} />
                   </div>
-                ))}
+                  <p className="text-gray-500 text-sm">Belum ada pesanan</p>
+                  <Link to="/orders/create" className="mt-3 inline-block text-blue-600 text-sm hover:text-blue-700">
+                    Buat pesanan pertama →
+                  </Link>
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Production Status - FULL WIDTH di kanan */}
+        <Card className="enterprise-card animate-enter-fade delay-300 h-full">
+          <CardHeader className="border-b border-gray-100 pb-3">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold text-gray-800 text-sm md:text-base flex items-center gap-2">
+                  <Grid size={16} className="text-green-500" />
+                  Status Produksi
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">Jumlah item dalam setiap tahap produksi</p>
+              </div>
+              <Link to="/joblist" className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                Lihat semua <ChevronRight size={12} />
+              </Link>
+            </div>
+          </CardHeader>
+          <CardBody className="p-4">
+            <div className="space-y-3">
+              {productionStatus.map((stage) => {
+                const colorMap = {
+                  amber: 'bg-amber-50 border-amber-200 hover:border-amber-300',
+                  orange: 'bg-orange-50 border-orange-200 hover:border-orange-300',
+                  lime: 'bg-lime-50 border-lime-200 hover:border-lime-300',
+                  emerald: 'bg-emerald-50 border-emerald-200 hover:border-emerald-300'
+                };
+                const iconColorMap = {
+                  amber: 'text-amber-600',
+                  orange: 'text-orange-600',
+                  lime: 'text-lime-600',
+                  emerald: 'text-emerald-600'
+                };
+                const badgeColorMap = {
+                  amber: 'bg-amber-100 text-amber-800',
+                  orange: 'bg-orange-100 text-orange-800',
+                  lime: 'bg-lime-100 text-lime-800',
+                  emerald: 'bg-emerald-100 text-emerald-800'
+                };
+                
+                return (
+                  <div 
+                    key={stage.stage}
+                    onClick={() => handleStageClick(stage.stage, stage.jobs)}
+                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 ${colorMap[stage.color]} hover:shadow-sm active:scale-[0.99]`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm`}>
+                        {stage.icon}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-800 text-sm">{stage.stage}</p>
+                        <p className="text-xs text-gray-500">Departemen</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className={`font-black text-lg ${iconColorMap[stage.color]}`}>{stage.count}</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase">item</p>
+                      </div>
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${badgeColorMap[stage.color]}`}>
+                        {stage.count > 0 ? `${stage.count} item` : 'Kosong'}
+                      </div>
+                      <ChevronRight size={16} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {/* Pesanan Selesai Card */}
+              <div 
+                onClick={() => handleStatusClick('completed')}
+                className="flex items-center justify-between p-3 rounded-xl border border-green-200 bg-green-50 cursor-pointer transition-all duration-200 hover:shadow-sm active:scale-[0.99] hover:border-green-300"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm">
+                    ✅
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-800 text-sm">Pesanan Selesai</p>
+                    <p className="text-xs text-gray-500">Telah selesai</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="font-black text-lg text-green-600">{completedCount}</p>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase">pesanan</p>
+                  </div>
+                  <div className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    {completedCount > 0 ? `${completedCount} selesai` : 'Belum ada'}
+                  </div>
+                  <ChevronRight size={16} className="text-gray-400 group-hover:text-green-500 transition-colors" />
+                </div>
+              </div>
+              
+              {/* Pesanan Dibatalkan Card */}
+              <div 
+                onClick={() => handleStatusClick('cancelled')}
+                className="flex items-center justify-between p-3 rounded-xl border border-red-200 bg-red-50 cursor-pointer transition-all duration-200 hover:shadow-sm active:scale-[0.99] hover:border-red-300"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm">
+                    ❌
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-800 text-sm">Pesanan Dibatalkan</p>
+                    <p className="text-xs text-gray-500">Telah dibatalkan</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="font-black text-lg text-red-600">{cancelledCount}</p>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase">pesanan</p>
+                  </div>
+                  <div className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    {cancelledCount > 0 ? `${cancelledCount} batal` : 'Belum ada'}
+                  </div>
+                  <ChevronRight size={16} className="text-gray-400 group-hover:text-red-500 transition-colors" />
+                </div>
               </div>
             </div>
           </CardBody>
-        </Card>*/}
+        </Card>
       </div>
 
       {/* ================== MODAL PESANAN AKTIF ================== */}

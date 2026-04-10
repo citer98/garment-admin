@@ -57,7 +57,12 @@ const initialStockItems = [
     supplier: 'PT. Sandang Textile',
     lastRestock: '2024-03-15',
     location: 'Gudang A-01',
-    notes: 'Kualitas premium, warna putih'
+    notes: 'Kualitas premium, warna putih',
+    variations: [
+      { id: 'VAR-001-1', size: 'S', color: 'Putih', stock: 15, price: 45000 },
+      { id: 'VAR-001-2', size: 'M', color: 'Putih', stock: 20, price: 45000 },
+      { id: 'VAR-001-3', size: 'L', color: 'Putih', stock: 10, price: 45500 }
+    ]
   },
   {
     id: 'MAT-002',
@@ -72,7 +77,10 @@ const initialStockItems = [
     supplier: 'CV. Benang Nusantara',
     lastRestock: '2024-03-10',
     location: 'Gudang B-03',
-    notes: 'Warna putih, ukuran 40s'
+    notes: 'Warna putih, ukuran 40s',
+    variations: [
+      { id: 'VAR-002-1', size: '40s', color: 'Putih', stock: 12, price: 25000 }
+    ]
   },
   {
     id: 'MAT-003',
@@ -87,7 +95,11 @@ const initialStockItems = [
     supplier: 'UD. Kancing Jaya',
     lastRestock: '2024-02-28',
     location: 'Gudang C-02',
-    notes: 'Warna silver, diameter 15mm'
+    notes: 'Warna silver, diameter 15mm',
+    variations: [
+      { id: 'VAR-003-1', size: '15mm', color: 'Silver', stock: 50, price: 500 },
+      { id: 'VAR-003-2', size: '15mm', color: 'Gold', stock: 35, price: 550 }
+    ]
   },
   {
     id: 'MAT-004',
@@ -102,7 +114,11 @@ const initialStockItems = [
     supplier: 'CV. Resleting Prima',
     lastRestock: '2024-03-01',
     location: 'Gudang C-02',
-    notes: 'Panjang 60cm, warna hitam'
+    notes: 'Panjang 60cm, warna hitam',
+    variations: [
+      { id: 'VAR-004-1', size: '60cm', color: 'Hitam', stock: 40, price: 3000 },
+      { id: 'VAR-004-2', size: '60cm', color: 'Coklat', stock: 20, price: 3100 }
+    ]
   },
   {
     id: 'MAT-005',
@@ -117,7 +133,11 @@ const initialStockItems = [
     supplier: 'PT. Label Indonesia',
     lastRestock: '2024-03-05',
     location: 'Gudang D-01',
-    notes: 'Custom logo'
+    notes: 'Custom logo',
+    variations: [
+      { id: 'VAR-005-1', size: '3x5cm', color: 'Putih', stock: 60, price: 800 },
+      { id: 'VAR-005-2', size: '3x5cm', color: 'Hitam', stock: 50, price: 850 }
+    ]
   },
   {
     id: 'MAT-006',
@@ -132,7 +152,12 @@ const initialStockItems = [
     supplier: 'PT. Sandang Textile',
     lastRestock: '2024-03-18',
     location: 'Gudang A-02',
-    notes: 'Warna hitam, tebal'
+    notes: 'Warna hitam, tebal',
+    variations: [
+      { id: 'VAR-006-1', size: 'S', color: 'Hitam', stock: 100, price: 35000 },
+      { id: 'VAR-006-2', size: 'M', color: 'Hitam', stock: 80, price: 35000 },
+      { id: 'VAR-006-3', size: 'L', color: 'Hitam', stock: 70, price: 35500 }
+    ]
   },
   {
     id: 'MAT-007',
@@ -147,7 +172,10 @@ const initialStockItems = [
     supplier: 'CV. Benang Nusantara',
     lastRestock: '2024-03-12',
     location: 'Gudang B-03',
-    notes: 'Warna hitam'
+    notes: 'Warna hitam',
+    variations: [
+      { id: 'VAR-007-1', size: '40s', color: 'Hitam', stock: 35, price: 28000 }
+    ]
   },
   {
     id: 'MAT-008',
@@ -162,7 +190,12 @@ const initialStockItems = [
     supplier: 'PT. Textile Makmur',
     lastRestock: '2024-03-14',
     location: 'Gudang A-03',
-    notes: 'Untuk kemeja'
+    notes: 'Untuk kemeja',
+    variations: [
+      { id: 'VAR-008-1', size: 'S', color: 'Putih', stock: 80, price: 15000 },
+      { id: 'VAR-008-2', size: 'M', color: 'Putih', stock: 60, price: 15000 },
+      { id: 'VAR-008-3', size: 'L', color: 'Putih', stock: 40, price: 15500 }
+    ]
   }
 ];
 
@@ -342,6 +375,13 @@ export default function Stock() {
     setShowManageCategoriesModal(true);
   };
 
+  const openAddCategoryFromManage = () => {
+    setShowManageCategoriesModal(false);
+    setEditingCategory(null);
+    setShowAddCategoryModal(true);
+    setNewCategoryName('');
+  };
+
   // ================== FUNGSI UNTUK SATUAN ==================
   const handleAddUnit = () => {
     if (!newUnitName.trim()) {
@@ -425,6 +465,13 @@ export default function Stock() {
     setEditingUnit(unit);
     setEditUnitName(unit);
     setShowManageUnitsModal(true);
+  };
+
+  const openAddUnitFromManage = () => {
+    setShowManageUnitsModal(false);
+    setEditingUnit(null);
+    setShowAddUnitModal(true);
+    setNewUnitName('');
   };
 
   // ================== FUNGSI UNTUK SUPPLIER ==================
@@ -534,21 +581,6 @@ export default function Stock() {
     setShowManageSuppliersModal(true);
   };
 
-  // ================== FUNGSI UNTUK MEMBUKA MODAL TAMBAH DARI MODAL KELOLA ==================
-  const openAddCategoryFromManage = () => {
-    setShowManageCategoriesModal(false);
-    setEditingCategory(null);
-    setShowAddCategoryModal(true);
-    setNewCategoryName('');
-  };
-
-  const openAddUnitFromManage = () => {
-    setShowManageUnitsModal(false);
-    setEditingUnit(null);
-    setShowAddUnitModal(true);
-    setNewUnitName('');
-  };
-
   const openAddSupplierFromManage = () => {
     setShowManageSuppliersModal(false);
     setEditingSupplier(null);
@@ -655,10 +687,22 @@ export default function Stock() {
         items = initialStockItems;
       }
       
-      const updatedItems = items.map(item => ({
-        ...item,
-        status: updateItemStatus(item)
-      }));
+      const updatedItems = items.map(item => {
+        let totalStock = item.currentStock;
+        let totalPrice = item.price;
+        
+        if (item.variations && item.variations.length > 0) {
+          totalStock = item.variations.reduce((sum, v) => sum + (v.stock || 0), 0);
+          totalPrice = item.variations[0]?.price || item.price;
+        }
+        
+        return {
+          ...item,
+          currentStock: totalStock,
+          price: totalPrice,
+          status: updateItemStatus({ ...item, currentStock: totalStock })
+        };
+      });
       
       setStockItems(updatedItems);
       localStorage.setItem('stockItems', JSON.stringify(updatedItems));
@@ -717,7 +761,16 @@ export default function Stock() {
       price: Number(formData.price),
       lastRestock: new Date().toISOString().split('T')[0],
       location: formData.location || '-',
-      notes: formData.notes || ''
+      notes: formData.notes || '',
+      variations: [
+        {
+          id: `VAR-${newId}`,
+          size: 'Default',
+          color: 'Default',
+          stock: Number(formData.currentStock),
+          price: Number(formData.price)
+        }
+      ]
     };
     
     newItem.status = updateItemStatus(newItem);
@@ -834,7 +887,7 @@ export default function Stock() {
     setShowDetailModal(true);
   };
 
-  // ================== EXPORT FUNCTIONS ==================
+  // ================== EXPORT FUNCTIONS - PER VARIASI ==================
   const formatCurrencyIDR = (value) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
   };
@@ -844,100 +897,197 @@ export default function Stock() {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   };
 
-  // Export to Excel
-  const exportToExcel = () => {
-    const exportData = filteredItems.map(item => {
-      const percentage = getStockPercentage(item.currentStock, item.minStock);
-      const statusBadge = getStatusBadge(item.status);
-      const totalValue = item.currentStock * item.price;
-      
-      return {
-        'Kode Material': item.code,
-        'Nama Material': item.material,
-        'Kategori': item.category,
-        'Stok Saat Ini': item.currentStock,
-        'Satuan': item.unit,
-        'Stok Minimal': item.minStock,
-        'Stok Maksimal': item.maxStock,
-        'Persentase Stok': `${percentage}%`,
-        'Status': statusBadge.label,
-        'Harga Satuan (Rp)': item.price,
-        'Total Nilai (Rp)': totalValue,
-        'Supplier': item.supplier || '-',
-        'Lokasi': item.location || '-',
-        'Terakhir Restock': item.lastRestock || '-',
-        'Catatan': item.notes || '-'
-      };
+  // Fungsi untuk mendapatkan data export per variasi
+  const getVariationExportData = () => {
+    const exportRows = [];
+    
+    filteredItems.forEach(product => {
+      if (product.variations && product.variations.length > 0) {
+        product.variations.forEach(variation => {
+          const percentage = getStockPercentage(variation.stock, product.minStock);
+          const statusBadge = getStatusBadge(
+            variation.stock === 0 ? 'critical' : 
+            variation.stock < product.minStock * 0.5 ? 'warning' : 'normal'
+          );
+          const totalValue = variation.stock * variation.price;
+          
+          exportRows.push({
+            'Kode Produk': product.code,
+            'Nama Produk': product.material,
+            'Kategori': product.category,
+            'Ukuran': variation.size || '-',
+            'Warna': variation.color || '-',
+            'Stok Saat Ini': variation.stock || 0,
+            'Satuan': product.unit,
+            'Stok Minimal': product.minStock,
+            'Stok Maksimal': product.maxStock,
+            'Persentase Stok': `${percentage}%`,
+            'Status': statusBadge.label,
+            'Harga Satuan (Rp)': variation.price || 0,
+            'Total Nilai (Rp)': totalValue,
+            'Supplier': product.supplier || '-',
+            'Lokasi': product.location || '-',
+            'Terakhir Restock': product.lastRestock || '-',
+            'Catatan': product.notes || '-'
+          });
+        });
+      } else {
+        const percentage = getStockPercentage(product.currentStock, product.minStock);
+        const statusBadge = getStatusBadge(product.status);
+        const totalValue = product.currentStock * product.price;
+        
+        exportRows.push({
+          'Kode Produk': product.code,
+          'Nama Produk': product.material,
+          'Kategori': product.category,
+          'Ukuran': '-',
+          'Warna': '-',
+          'Stok Saat Ini': product.currentStock,
+          'Satuan': product.unit,
+          'Stok Minimal': product.minStock,
+          'Stok Maksimal': product.maxStock,
+          'Persentase Stok': `${percentage}%`,
+          'Status': statusBadge.label,
+          'Harga Satuan (Rp)': product.price,
+          'Total Nilai (Rp)': totalValue,
+          'Supplier': product.supplier || '-',
+          'Lokasi': product.location || '-',
+          'Terakhir Restock': product.lastRestock || '-',
+          'Catatan': product.notes || '-'
+        });
+      }
     });
     
+    return exportRows;
+  };
+
+  // Export to Excel dengan per variasi
+  const exportToExcel = () => {
+    const exportData = getVariationExportData();
+    
+    if (exportData.length === 0) {
+      alert('Tidak ada data untuk diekspor!');
+      return;
+    }
+    
+    // Create worksheet
     const ws = XLSX.utils.json_to_sheet(exportData);
     
+    // Set column widths
     const colWidths = [
-      { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 10 },
-      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 },
-      { wch: 18 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 30 }
+      { wch: 15 }, // Kode Produk
+      { wch: 30 }, // Nama Produk
+      { wch: 15 }, // Kategori
+      { wch: 12 }, // Ukuran
+      { wch: 15 }, // Warna
+      { wch: 12 }, // Stok Saat Ini
+      { wch: 10 }, // Satuan
+      { wch: 12 }, // Stok Minimal
+      { wch: 12 }, // Stok Maksimal
+      { wch: 12 }, // Persentase Stok
+      { wch: 12 }, // Status
+      { wch: 15 }, // Harga Satuan
+      { wch: 18 }, // Total Nilai
+      { wch: 25 }, // Supplier
+      { wch: 15 }, // Lokasi
+      { wch: 15 }, // Terakhir Restock
+      { wch: 30 }  // Catatan
     ];
     ws['!cols'] = colWidths;
     
+    // Hitung total keseluruhan
+    const totalStockValue = exportData.reduce((sum, row) => sum + (row['Total Nilai (Rp)'] || 0), 0);
+    const totalItemsExport = exportData.length;
+    const totalCritical = exportData.filter(row => row['Status'] === 'Kritis').length;
+    const totalWarning = exportData.filter(row => row['Status'] === 'Menipis').length;
+    const totalNormal = exportData.filter(row => row['Status'] === 'Normal').length;
+    
+    // Add summary sheet
     const summaryData = [
-      { 'Ringkasan Laporan Stok Material': '' },
-      { 'Tanggal Laporan': new Date().toLocaleDateString('id-ID') },
-      { 'Waktu Laporan': new Date().toLocaleTimeString('id-ID') },
-      { 'Total Material': stockItems.length },
-      { 'Total Material (Filtered)': filteredItems.length },
-      { 'Total Nilai Inventaris': formatCurrencyIDR(totalValue) },
-      { 'Status Stok': '' },
-      { 'Kritis (<25%)': criticalItems },
-      { 'Menipis (25%-49%)': lowStockItems },
-      { 'Normal (≥50%)': normalStock },
-      { 'Kategori': '' },
-      ...categories.map(cat => {
-        const count = stockItems.filter(item => item.category === cat).length;
-        return { [cat]: `${count} material` };
-      })
+      { 'A': 'Ringkasan Laporan Stok Material (Per Variasi)', 'B': '' },
+      { 'A': 'Tanggal Laporan', 'B': new Date().toLocaleDateString('id-ID') },
+      { 'A': 'Waktu Laporan', 'B': new Date().toLocaleTimeString('id-ID') },
+      { 'A': '', 'B': '' },
+      { 'A': 'Total Variasi', 'B': totalItemsExport },
+      { 'A': 'Total Nilai Inventaris', 'B': formatCurrencyIDR(totalStockValue) },
+      { 'A': '', 'B': '' },
+      { 'A': 'Status Stok', 'B': '' },
+      { 'A': 'Kritis (<25%)', 'B': totalCritical },
+      { 'A': 'Menipis (25%-49%)', 'B': totalWarning },
+      { 'A': 'Normal (≥50%)', 'B': totalNormal },
+      { 'A': '', 'B': '' },
+      { 'A': 'Kategori', 'B': '' }
     ];
+    
+    // Add category breakdown
+    categories.forEach(cat => {
+      const count = exportData.filter(row => row['Kategori'] === cat).length;
+      summaryData.push({ 'A': cat, 'B': `${count} variasi` });
+    });
     
     const wsSummary = XLSX.utils.json_to_sheet(summaryData);
     wsSummary['!cols'] = [{ wch: 30 }, { wch: 25 }];
     
+    // Create workbook
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Laporan Stok Material');
     XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan');
     
+    // Generate file name
     const fileName = `Laporan_Stok_Material_${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    // Export
     XLSX.writeFile(wb, fileName);
     
-    alert(`✅ Berhasil mengekspor ${filteredItems.length} material ke file Excel!`);
+    alert(`✅ Berhasil mengekspor ${totalItemsExport} variasi ke file Excel!`);
   };
 
-  // Export to CSV
+  // Export to CSV dengan per variasi
   const exportToCSV = () => {
-    const headers = ['Kode', 'Material', 'Kategori', 'Stok Saat Ini', 'Stok Minimal', 'Persentase', 'Satuan', 'Harga', 'Supplier', 'Lokasi', 'Status', 'Terakhir Restock'];
-    const csvData = filteredItems.map(item => {
-      const percentage = getStockPercentage(item.currentStock, item.minStock);
-      const statusBadge = getStatusBadge(item.status);
-      return [
-        item.code,
-        item.material,
-        item.category,
-        item.currentStock,
-        item.minStock,
-        `${percentage}%`,
-        item.unit,
-        item.price,
-        item.supplier || '',
-        item.location || '',
-        statusBadge.label,
-        item.lastRestock || ''
-      ];
-    });
+    const exportData = getVariationExportData();
     
-    const csvContent = [headers.join(','), ...csvData.map(row => row.join(','))].join('\n');
+    if (exportData.length === 0) {
+      alert('Tidak ada data untuk diekspor!');
+      return;
+    }
+    
+    const headers = [
+      'Kode Produk', 'Nama Produk', 'Kategori', 'Ukuran', 'Warna',
+      'Stok Saat Ini', 'Satuan', 'Stok Minimal', 'Stok Maksimal',
+      'Persentase Stok', 'Status', 'Harga Satuan (Rp)', 'Total Nilai (Rp)',
+      'Supplier', 'Lokasi', 'Terakhir Restock', 'Catatan'
+    ];
+    
+    const rows = exportData.map(row => [
+      row['Kode Produk'],
+      row['Nama Produk'],
+      row['Kategori'],
+      row['Ukuran'],
+      row['Warna'],
+      row['Stok Saat Ini'],
+      row['Satuan'],
+      row['Stok Minimal'],
+      row['Stok Maksimal'],
+      row['Persentase Stok'],
+      row['Status'],
+      row['Harga Satuan (Rp)'],
+      row['Total Nilai (Rp)'],
+      row['Supplier'],
+      row['Lokasi'],
+      row['Terakhir Restock'],
+      row['Catatan']
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+    
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const fileName = `Laporan_Stok_Material_${new Date().toISOString().split('T')[0]}.csv`;
     saveAs(blob, fileName);
     
-    alert(`✅ Berhasil mengekspor ${filteredItems.length} material ke file CSV!`);
+    alert(`✅ Berhasil mengekspor ${exportData.length} variasi ke file CSV!`);
   };
 
   // Stat Cards Component

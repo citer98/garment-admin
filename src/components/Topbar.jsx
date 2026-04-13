@@ -140,7 +140,7 @@ export default function Topbar({ onMenuClick }) {
       </div>
 
       {/* Center: Search - Desktop */}
-      <div className="hidden md:flex flex-1 max-w-xl mx-2 lg:mx-4">
+      {/*<div className="hidden md:flex flex-1 max-w-xl mx-2 lg:mx-4">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
           <input
@@ -151,7 +151,7 @@ export default function Topbar({ onMenuClick }) {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-      </div>
+      </div>*/}
 
       {/* Mobile Search Button */}
       <button 

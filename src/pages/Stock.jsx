@@ -35,7 +35,10 @@ import {
   Building2,
   Phone,
   Mail,
-  FileText
+  FileText,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/formatters';
@@ -216,6 +219,10 @@ export default function Stock() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   
+  // ================== STATE UNTUK ZOOM/SCALE ==================
+  const [zoomLevel, setZoomLevel] = useState(0.8); // Default 80%
+  const [showZoomControls, setShowZoomControls] = useState(false);
+  
   // ================== STATE UNTUK KATEGORI ==================
   const [categories, setCategories] = useState(['Kain', 'Benang', 'Aksesoris', 'Bahan Pelapis', 'Lainnya']);
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
@@ -271,6 +278,19 @@ export default function Stock() {
     notes: ''
   });
   const [restockAmount, setRestockAmount] = useState(0);
+
+  // ==================== FUNGSI UNTUK ZOOM ====================
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.05, 1.2));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.05, 0.5));
+  };
+
+  const handleZoomReset = () => {
+    setZoomLevel(0.8);
+  };
 
   // Deteksi ukuran layar
   useEffect(() => {
@@ -970,39 +990,22 @@ export default function Stock() {
       return;
     }
     
-    // Create worksheet
     const ws = XLSX.utils.json_to_sheet(exportData);
     
-    // Set column widths
     const colWidths = [
-      { wch: 15 }, // Kode Produk
-      { wch: 30 }, // Nama Produk
-      { wch: 15 }, // Kategori
-      { wch: 12 }, // Ukuran
-      { wch: 15 }, // Warna
-      { wch: 12 }, // Stok Saat Ini
-      { wch: 10 }, // Satuan
-      { wch: 12 }, // Stok Minimal
-      { wch: 12 }, // Stok Maksimal
-      { wch: 12 }, // Persentase Stok
-      { wch: 12 }, // Status
-      { wch: 15 }, // Harga Satuan
-      { wch: 18 }, // Total Nilai
-      { wch: 25 }, // Supplier
-      { wch: 15 }, // Lokasi
-      { wch: 15 }, // Terakhir Restock
-      { wch: 30 }  // Catatan
+      { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 15 },
+      { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+      { wch: 12 }, { wch: 15 }, { wch: 18 }, { wch: 25 }, { wch: 15 },
+      { wch: 15 }, { wch: 30 }
     ];
     ws['!cols'] = colWidths;
     
-    // Hitung total keseluruhan
     const totalStockValue = exportData.reduce((sum, row) => sum + (row['Total Nilai (Rp)'] || 0), 0);
     const totalItemsExport = exportData.length;
     const totalCritical = exportData.filter(row => row['Status'] === 'Kritis').length;
     const totalWarning = exportData.filter(row => row['Status'] === 'Menipis').length;
     const totalNormal = exportData.filter(row => row['Status'] === 'Normal').length;
     
-    // Add summary sheet
     const summaryData = [
       { 'A': 'Ringkasan Laporan Stok Material (Per Variasi)', 'B': '' },
       { 'A': 'Tanggal Laporan', 'B': new Date().toLocaleDateString('id-ID') },
@@ -1019,7 +1022,6 @@ export default function Stock() {
       { 'A': 'Kategori', 'B': '' }
     ];
     
-    // Add category breakdown
     categories.forEach(cat => {
       const count = exportData.filter(row => row['Kategori'] === cat).length;
       summaryData.push({ 'A': cat, 'B': `${count} variasi` });
@@ -1028,15 +1030,11 @@ export default function Stock() {
     const wsSummary = XLSX.utils.json_to_sheet(summaryData);
     wsSummary['!cols'] = [{ wch: 30 }, { wch: 25 }];
     
-    // Create workbook
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Laporan Stok Material');
     XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan');
     
-    // Generate file name
     const fileName = `Laporan_Stok_Material_${new Date().toISOString().split('T')[0]}.xlsx`;
-    
-    // Export
     XLSX.writeFile(wb, fileName);
     
     alert(`✅ Berhasil mengekspor ${totalItemsExport} variasi ke file Excel!`);
@@ -2027,260 +2025,309 @@ export default function Stock() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Manajemen Stok Material</h1>
-            <p className="text-sm text-gray-500 mt-1">Kelola stok bahan baku dan aksesoris produksi</p>
+    <div className="relative">
+      {/* ==================== ZOOM CONTROLS - FLOATING BUTTON ==================== */}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+        <button
+          onClick={() => setShowZoomControls(!showZoomControls)}
+          className="w-10 h-10 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+          title="Zoom Controls"
+        >
+          <span className="text-sm font-bold">{Math.round(zoomLevel * 100)}%</span>
+        </button>
+        
+        {showZoomControls && (
+          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex flex-col gap-2">
+            <button
+              onClick={handleZoomIn}
+              className="w-10 h-10 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center justify-center"
+              title="Perbesar (Zoom In)"
+            >
+              <ZoomIn size={18} />
+            </button>
+            <button
+              onClick={handleZoomReset}
+              className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 flex items-center justify-center"
+              title="Reset ke 80%"
+            >
+              <RotateCcw size={18} />
+            </button>
+            <button
+              onClick={handleZoomOut}
+              className="w-10 h-10 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center justify-center"
+              title="Perkecil (Zoom Out)"
+            >
+              <ZoomOut size={18} />
+            </button>
           </div>
-          <div className="flex gap-3">
-            <button onClick={exportToExcel} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
-              <Download size={16} /> Export Excel
-            </button>
-            <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-              <FileText size={16} /> Export CSV
-            </button>
-            <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-              <Plus size={16} /> Tambah Material
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Stat Cards */}
-      <StatCards />
-
-      {/* Info Box Status */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
-        <div className="flex items-center gap-2 text-sm text-blue-800">
-          <AlertCircle size={16} />
-          <span className="font-medium">Tingkatan Status Stok:</span>
-          <span className="text-green-700">● Normal (≥50%)</span>
-          <span className="text-yellow-700">● Menipis (25%-49%)</span>
-          <span className="text-red-700">● Kritis (&lt;25%)</span>
-          <span className="text-gray-500 text-xs ml-2">*Persentase dihitung dari Stok Minimal</span>
-        </div>
-      </div>
-
-      {/* Filter Section */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="Cari material, kode, atau supplier..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      {/* ==================== MAIN CONTENT WITH SCALE TRANSFORM ==================== */}
+      <div 
+        className="transition-all duration-300"
+        style={{
+          transform: `scale(${zoomLevel})`,
+          transformOrigin: 'top left',
+          width: `${100 / zoomLevel}%`,
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Manajemen Stok Material</h1>
+                <p className="text-sm text-gray-500 mt-1">Kelola stok bahan baku dan aksesoris produksi</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={exportToExcel} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+                  <Download size={16} /> Export Excel
+                </button>
+                <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+                  <FileText size={16} /> Export CSV
+                </button>
+                <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                  <Plus size={16} /> Tambah Material
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <select
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
-              <option value="Semua">Semua Kategori</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-            <select
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="Semua">Semua Status</option>
-              <option value="critical">Kritis (&lt;25%)</option>
-              <option value="warning">Menipis (25%-49%)</option>
-              <option value="normal">Normal (≥50%)</option>
-            </select>
-            <button 
-              onClick={() => { setSearchQuery(''); setCategoryFilter('Semua'); setStatusFilter('Semua'); }} 
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Stock Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kode</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Material</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kategori</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Stok</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Supplier</th>
-                <th className="px-5 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredItems.length > 0 ? (
-                filteredItems.map((item) => {
-                  const statusBadge = getStatusBadge(item.status);
-                  const percentage = getStockPercentage(item.currentStock, item.minStock);
-                  const progressWidth = getProgressBarWidth(item.currentStock, item.minStock);
-                  
-                  return (
-                    <tr key={item.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => openDetailModal(item)}>
-                      <td className="px-5 py-4">
-                        <span className="font-mono text-sm font-medium text-gray-800">{item.code}</span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="font-medium text-gray-800">{item.material}</p>
-                        <p className="text-xs text-gray-400">Lokasi: {item.location || '-'}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">{item.category}</span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="min-w-[140px]">
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="font-medium">{item.currentStock}</span>
-                            <span className="text-gray-400 text-xs">/ {item.minStock} {item.unit}</span>
-                            <span className={`text-xs font-medium ${getStatusColor(item.status)}`}>
-                              ({percentage}%)
+          {/* Stat Cards */}
+          <StatCards />
+
+          {/* Info Box Status */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              <AlertCircle size={16} />
+              <span className="font-medium">Tingkatan Status Stok:</span>
+              <span className="text-green-700">● Normal (≥50%)</span>
+              <span className="text-yellow-700">● Menipis (25%-49%)</span>
+              <span className="text-red-700">● Kritis (&lt;25%)</span>
+              <span className="text-gray-500 text-xs ml-2">*Persentase dihitung dari Stok Minimal</span>
+            </div>
+          </div>
+
+          {/* Filter Section */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Cari material, kode, atau supplier..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-3">
+                <select
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                >
+                  <option value="Semua">Semua Kategori</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <select
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="Semua">Semua Status</option>
+                  <option value="critical">Kritis (&lt;25%)</option>
+                  <option value="warning">Menipis (25%-49%)</option>
+                  <option value="normal">Normal (≥50%)</option>
+                </select>
+                <button 
+                  onClick={() => { setSearchQuery(''); setCategoryFilter('Semua'); setStatusFilter('Semua'); }} 
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Stock Table */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kode</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Material</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kategori</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Stok</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Supplier</th>
+                    <th className="px-5 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredItems.length > 0 ? (
+                    filteredItems.map((item) => {
+                      const statusBadge = getStatusBadge(item.status);
+                      const percentage = getStockPercentage(item.currentStock, item.minStock);
+                      const progressWidth = getProgressBarWidth(item.currentStock, item.minStock);
+                      
+                      return (
+                        <tr key={item.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => openDetailModal(item)}>
+                          <td className="px-5 py-4">
+                            <span className="font-mono text-sm font-medium text-gray-800">{item.code}</span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <p className="font-medium text-gray-800">{item.material}</p>
+                            <p className="text-xs text-gray-400">Lokasi: {item.location || '-'}</p>
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">{item.category}</span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="min-w-[140px]">
+                              <div className="flex justify-between text-sm mb-1">
+                                <span className="font-medium">{item.currentStock}</span>
+                                <span className="text-gray-400 text-xs">/ {item.minStock} {item.unit}</span>
+                                <span className={`text-xs font-medium ${getStatusColor(item.status)}`}>
+                                  ({percentage}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                <div 
+                                  className={`h-1.5 rounded-full ${getProgressBarColor(item.status)} transition-all duration-500`} 
+                                  style={{ width: `${progressWidth}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                           </td>
+                          <td className="px-5 py-4">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
+                              {statusBadge.icon} {statusBadge.label}
                             </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div 
-                              className={`h-1.5 rounded-full ${getProgressBarColor(item.status)} transition-all duration-500`} 
-                              style={{ width: `${progressWidth}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                       </td>
-                      <td className="px-5 py-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
-                          {statusBadge.icon} {statusBadge.label}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="text-sm text-gray-600 truncate max-w-[150px]">{item.supplier || '-'}</p>
-                      </td>
-                      <td className="px-5 py-4 text-center">
-                        <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => openEditModal(item)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <Edit2 size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteItem(item)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Hapus"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          </td>
+                          <td className="px-5 py-4">
+                            <p className="text-sm text-gray-600 truncate max-w-[150px]">{item.supplier || '-'}</p>
+                          </td>
+                          <td className="px-5 py-4 text-center">
+                            <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => openEditModal(item)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteItem(item)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Hapus"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="px-5 py-12 text-center">
+                        <div className="flex flex-col items-center">
+                          <Package className="text-gray-300 mb-3" size={48} />
+                          <p className="text-gray-500 font-medium">Tidak ada data stok</p>
+                          <p className="text-gray-400 text-sm mt-1">Coba ubah filter atau tambahkan material baru</p>
+                          <button onClick={() => setShowAddModal(true)} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Tambah Material</button>
                         </div>
                       </td>
                     </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="7" className="px-5 py-12 text-center">
-                    <div className="flex flex-col items-center">
-                      <Package className="text-gray-300 mb-3" size={48} />
-                      <p className="text-gray-500 font-medium">Tidak ada data stok</p>
-                      <p className="text-gray-400 text-sm mt-1">Coba ubah filter atau tambahkan material baru</p>
-                      <button onClick={() => setShowAddModal(true)} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Tambah Material</button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
-          <p className="text-sm text-gray-600">
-            Menampilkan <span className="font-semibold">{filteredItems.length}</span> dari <span className="font-semibold">{stockItems.length}</span> material
-          </p>
-          <button onClick={loadStockData} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors">
-            <RefreshCw size={14} /> Refresh
-          </button>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+              <p className="text-sm text-gray-600">
+                Menampilkan <span className="font-semibold">{filteredItems.length}</span> dari <span className="font-semibold">{stockItems.length}</span> material
+              </p>
+              <button onClick={loadStockData} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors">
+                <RefreshCw size={14} /> Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Low Stock Alert Banner */}
+          {criticalItems > 0 && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
+                <div>
+                  <h4 className="font-semibold text-red-800">Perhatian! Stok Kritis</h4>
+                  <p className="text-sm text-red-700">
+                    Terdapat {criticalItems} material yang stoknya berada di bawah 25% dari kebutuhan minimal. 
+                    Segera lakukan restock untuk menghindari keterlambatan produksi.
+                  </p>
+                  <button 
+                    onClick={() => setStatusFilter('critical')}
+                    className="mt-2 text-sm text-red-700 font-medium hover:text-red-800 underline"
+                  >
+                    Lihat material kritis →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Warning Stock Alert Banner */}
+          {lowStockItems > 0 && criticalItems === 0 && (
+            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="text-yellow-500 flex-shrink-0 mt-0.5" size={20} />
+                <div>
+                  <h4 className="font-semibold text-yellow-800">Perhatian! Stok Menipis</h4>
+                  <p className="text-sm text-yellow-700">
+                    Terdapat {lowStockItems} material yang stoknya berada di antara 25% - 49% dari kebutuhan minimal.
+                    Segera persiapkan pembelian bahan baku.
+                  </p>
+                  <button 
+                    onClick={() => setStatusFilter('warning')}
+                    className="mt-2 text-sm text-yellow-700 font-medium hover:text-yellow-800 underline"
+                  >
+                    Lihat material menipis →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modals */}
+          <StockFormModal 
+            isOpen={showAddModal}
+            onClose={() => { setShowAddModal(false); resetForm(); }}
+            onSubmit={handleAddItem}
+            title="Tambah Material Baru"
+          />
+          
+          <StockFormModal 
+            isOpen={showEditModal}
+            onClose={() => { setShowEditModal(false); resetForm(); setSelectedItem(null); }}
+            onSubmit={handleEditItem}
+            title="Edit Material"
+          />
+          
+          <DetailModal />
+          
+          <AddCategoryModal />
+          <ManageCategoriesModal />
+          <AddUnitModal />
+          <ManageUnitsModal />
+          <AddSupplierModal />
+          <ManageSuppliersModal />
         </div>
       </div>
-
-      {/* Low Stock Alert Banner */}
-      {criticalItems > 0 && (
-        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
-            <div>
-              <h4 className="font-semibold text-red-800">Perhatian! Stok Kritis</h4>
-              <p className="text-sm text-red-700">
-                Terdapat {criticalItems} material yang stoknya berada di bawah 25% dari kebutuhan minimal. 
-                Segera lakukan restock untuk menghindari keterlambatan produksi.
-              </p>
-              <button 
-                onClick={() => setStatusFilter('critical')}
-                className="mt-2 text-sm text-red-700 font-medium hover:text-red-800 underline"
-              >
-                Lihat material kritis →
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Warning Stock Alert Banner */}
-      {lowStockItems > 0 && criticalItems === 0 && (
-        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="text-yellow-500 flex-shrink-0 mt-0.5" size={20} />
-            <div>
-              <h4 className="font-semibold text-yellow-800">Perhatian! Stok Menipis</h4>
-              <p className="text-sm text-yellow-700">
-                Terdapat {lowStockItems} material yang stoknya berada di antara 25% - 49% dari kebutuhan minimal.
-                Segera persiapkan pembelian bahan baku.
-              </p>
-              <button 
-                onClick={() => setStatusFilter('warning')}
-                className="mt-2 text-sm text-yellow-700 font-medium hover:text-yellow-800 underline"
-              >
-                Lihat material menipis →
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modals */}
-      <StockFormModal 
-        isOpen={showAddModal}
-        onClose={() => { setShowAddModal(false); resetForm(); }}
-        onSubmit={handleAddItem}
-        title="Tambah Material Baru"
-      />
-      
-      <StockFormModal 
-        isOpen={showEditModal}
-        onClose={() => { setShowEditModal(false); resetForm(); setSelectedItem(null); }}
-        onSubmit={handleEditItem}
-        title="Edit Material"
-      />
-      
-      <DetailModal />
-      
-      <AddCategoryModal />
-      <ManageCategoriesModal />
-      <AddUnitModal />
-      <ManageUnitsModal />
-      <AddSupplierModal />
-      <ManageSuppliersModal />
     </div>
   );
 }

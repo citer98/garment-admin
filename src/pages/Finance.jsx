@@ -602,7 +602,7 @@ export default function Finance() {
   return (
     <div className="relative">
       {/* ==================== ZOOM CONTROLS - FLOATING BUTTON ==================== */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+      {/*<div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
         <button
           onClick={() => setShowZoomControls(!showZoomControls)}
           className="w-10 h-10 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
@@ -636,7 +636,7 @@ export default function Finance() {
             </button>
           </div>
         )}
-      </div>
+      </div>*/}
 
       {/* ==================== MAIN CONTENT WITH SCALE TRANSFORM ==================== */}
       <div 

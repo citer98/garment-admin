@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+// src/pages/UserManagement.jsx
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit2, Trash2, UserPlus, Filter, XCircle, CheckCircle, X, Eye, EyeOff } from 'lucide-react';
+import { Edit2, Trash2, UserPlus, Filter, XCircle, CheckCircle, X, Eye, EyeOff, Users, Shield, UserCheck } from 'lucide-react';
 import { DataTable } from '../components/ui/DataTable';
 import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 
@@ -10,7 +11,7 @@ export const userData = [
     id: 1, 
     name: 'Pak Hartono', 
     username: 'admin', 
-    password: 'admin123', // Tambahkan password
+    password: 'admin123',
     role: 'Admin', 
     department: 'Management', 
     status: 'active',
@@ -23,7 +24,7 @@ export const userData = [
     id: 2, 
     name: 'Budi Santoso', 
     username: 'budi', 
-    password: 'budi123', // Tambahkan password
+    password: 'budi123',
     role: 'Karyawan', 
     department: 'Potong', 
     status: 'active',
@@ -36,7 +37,7 @@ export const userData = [
     id: 3, 
     name: 'Siti Aminah', 
     username: 'siti', 
-    password: 'siti123', // Tambahkan password
+    password: 'siti123',
     role: 'Karyawan', 
     department: 'Jahit', 
     status: 'active',
@@ -49,7 +50,7 @@ export const userData = [
     id: 4, 
     name: 'Joko Anwar', 
     username: 'joko', 
-    password: 'joko123', // Tambahkan password
+    password: 'joko123',
     role: 'Karyawan', 
     department: 'Finishing', 
     status: 'inactive',
@@ -62,7 +63,7 @@ export const userData = [
     id: 5, 
     name: 'Desi Ratnasari', 
     username: 'desi', 
-    password: 'desi123', // Tambahkan password
+    password: 'desi123',
     role: 'Karyawan', 
     department: 'Packing', 
     status: 'active',
@@ -88,7 +89,7 @@ export default function UserManagement() {
     role: 'Karyawan',
     department: 'Potong',
     status: 'active',
-    password: '' // Tambahkan field password
+    password: ''
   });
 
   const columns = [
@@ -232,7 +233,7 @@ export default function UserManagement() {
     };
     
     setUsers([...users, userToAdd]);
-    userData.push(userToAdd); // Tambah ke data global
+    userData.push(userToAdd);
     
     // Reset form
     setNewUser({
@@ -249,7 +250,7 @@ export default function UserManagement() {
     setShowPassword(false);
     setIsAddModalOpen(false);
     
-    alert('Pengguna berhasil ditambahkan!');
+    alert('✅ Pengguna berhasil ditambahkan!');
   };
 
   const toggleStatus = (id) => {
@@ -267,231 +268,294 @@ export default function UserManagement() {
     }
   };
 
+  const totalUsers = users.length;
+  const activeUsers = users.filter(u => u.status === 'active').length;
+  const inactiveUsers = users.filter(u => u.status === 'inactive').length;
+  const adminCount = users.filter(u => u.role === 'Admin').length;
+  const employeeCount = users.filter(u => u.role === 'Karyawan').length;
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Manajemen Pengguna</h2>
-          <p className="text-gray-600">Kelola akses dan data karyawan</p>
-        </div>
-        
-        <div className="flex space-x-3">
-          <button className="flex items-center px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50">
-            <Filter size={18} className="mr-2" />
-            Filter
-          </button>
-          
-          <button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-          >
-            <UserPlus size={18} className="mr-2" />
-            Tambah User
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      {/* ==================== MAIN CONTENT WITH SCALE TRANSFORM ==================== */}
+      <div 
+        className="transition-all duration-300"
+        style={{
+          transform: 'scale(0.85)',
+          transformOrigin: 'top left',
+          width: '117.65%',
+          minHeight: '100vh',
+          paddingBottom: '100px'
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800">Manajemen Pengguna</h2>
+              <p className="text-gray-600">Kelola akses dan data karyawan</p>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button className="flex items-center px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                <Filter size={18} className="mr-2" />
+                Filter
+              </button>
+              
+              <button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                <UserPlus size={18} className="mr-2" />
+                Tambah User
+              </button>
+            </div>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-gray-200">
-          <p className="text-sm text-gray-600">Total Pengguna</p>
-          <p className="text-2xl font-bold text-gray-800 mt-1">{users.length}</p>
-        </div>
-        
-        <div className="bg-white p-5 rounded-xl border border-gray-200">
-          <p className="text-sm text-gray-600">Aktif</p>
-          <p className="text-2xl font-bold text-green-600 mt-1">
-            {users.filter(u => u.status === 'active').length}
-          </p>
-        </div>
-        
-        <div className="bg-white p-5 rounded-xl border border-gray-200">
-          <p className="text-sm text-gray-600">Karyawan</p>
-          <p className="text-2xl font-bold text-blue-600 mt-1">
-            {users.filter(u => u.role === 'Karyawan').length}
-          </p>
-        </div>
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={users}
-        pageSize={8}
-        searchable={true}
-        downloadable={true}
-      />
-
-      <div className="mt-4 text-sm text-gray-600">
-        💡 Klik pada kolom header untuk mengurutkan data. Gunakan icon aksi untuk mengelola pengguna.
-      </div>
-
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        title="Hapus Pengguna"
-        message={`Apakah Anda yakin ingin menghapus pengguna "${selectedUser?.name}"? Tindakan ini tidak dapat dibatalkan.`}
-        confirmText="Hapus"
-        type="danger"
-      />
-
-      {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-800">Tambah Pengguna Baru</h3>
-                <button
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="p-1 hover:bg-gray-100 rounded-full"
-                >
-                  <X size={20} />
-                </button>
+          {/* Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users size={20} className="text-blue-600" />
+                </div>
               </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nama Lengkap *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-lg p-3"
-                    value={newUser.name}
-                    onChange={(e) => setNewUser({...newUser, name: e.target.value})}
-                    required
-                  />
+              <p className="text-2xl font-bold text-gray-800 mt-3">{totalUsers}</p>
+              <p className="text-xs text-gray-500">Total Pengguna</p>
+            </div>
+            
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <UserCheck size={20} className="text-green-600" />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Username *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-lg p-3"
-                    value={newUser.username}
-                    onChange={(e) => setNewUser({...newUser, username: e.target.value})}
-                    required
-                  />
+              </div>
+              <p className="text-2xl font-bold text-green-600 mt-3">{activeUsers}</p>
+              <p className="text-xs text-gray-500">Aktif</p>
+            </div>
+            
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <XCircle size={20} className="text-red-600" />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    className="w-full border border-gray-300 rounded-lg p-3"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                    required
-                  />
+              </div>
+              <p className="text-2xl font-bold text-red-600 mt-3">{inactiveUsers}</p>
+              <p className="text-xs text-gray-500">Nonaktif</p>
+            </div>
+            
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Shield size={20} className="text-purple-600" />
                 </div>
+              </div>
+              <p className="text-2xl font-bold text-purple-600 mt-3">{adminCount}</p>
+              <p className="text-xs text-gray-500">Admin</p>
+            </div>
+            
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users size={20} className="text-blue-600" />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-blue-600 mt-3">{employeeCount}</p>
+              <p className="text-xs text-gray-500">Karyawan</p>
+            </div>
+          </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Password *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      className="w-full border border-gray-300 rounded-lg p-3 pr-10"
-                      value={newUser.password}
-                      onChange={(e) => setNewUser({...newUser, password: e.target.value})}
-                      required
-                      placeholder="Minimal 6 karakter"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
+          {/* Data Table */}
+          <DataTable
+            columns={columns}
+            data={users}
+            pageSize={8}
+            searchable={true}
+            downloadable={true}
+          />
+
+          <div className="mt-4 text-sm text-gray-600">
+            💡 Klik pada kolom header untuk mengurutkan data. Gunakan icon aksi untuk mengelola pengguna.
+          </div>
+
+          {/* Confirmation Modal */}
+          <ConfirmationModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={confirmDelete}
+            title="Hapus Pengguna"
+            message={`Apakah Anda yakin ingin menghapus pengguna "${selectedUser?.name}"? Tindakan ini tidak dapat dibatalkan.`}
+            confirmText="Hapus"
+            type="danger"
+          />
+
+          {/* ==================== MODAL TAMBAH PENGGUNA (DENGAN BACKGROUND PUTIH/BLUR) ==================== */}
+          {isAddModalOpen && (
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
+                  <div className="flex items-center gap-2">
+                    <UserPlus size={22} className="text-blue-600" />
+                    <h3 className="font-bold text-xl text-gray-800">Tambah Pengguna Baru</h3>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Password akan digunakan untuk login</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    No. Telepon
-                  </label>
-                  <input
-                    type="tel"
-                    className="w-full border border-gray-300 rounded-lg p-3"
-                    value={newUser.phone}
-                    onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Alamat
-                  </label>
-                  <textarea
-                    className="w-full border border-gray-300 rounded-lg p-3"
-                    value={newUser.address}
-                    onChange={(e) => setNewUser({...newUser, address: e.target.value})}
-                    rows="2"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Role
-                    </label>
-                    <select
-                      className="w-full border border-gray-300 rounded-lg p-3"
-                      value={newUser.role}
-                      onChange={(e) => setNewUser({...newUser, role: e.target.value})}
-                    >
-                      <option value="Karyawan">Karyawan</option>
-                      <option value="Supervisor">Supervisor</option>
-                      <option value="Manager">Manager</option>
-                      <option value="Admin">Admin</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Departemen
-                    </label>
-                    <select
-                      className="w-full border border-gray-300 rounded-lg p-3"
-                      value={newUser.department}
-                      onChange={(e) => setNewUser({...newUser, department: e.target.value})}
-                    >
-                      <option value="Potong">Potong</option>
-                      <option value="Jahit">Jahit</option>
-                      <option value="Finishing">Finishing</option>
-                      <option value="Packing">Packing</option>
-                      <option value="QC">Quality Control</option>
-                      <option value="Management">Management</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4">
                   <button
                     onClick={() => setIsAddModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Nama Lengkap *
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      value={newUser.name}
+                      onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                      placeholder="Contoh: Ahmad Budi"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Username *
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      value={newUser.username}
+                      onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                      placeholder="Contoh: ahmad.budi"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Username akan digunakan untuk login</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                      placeholder="contoh@email.com"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Password *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        value={newUser.password}
+                        onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                        required
+                        placeholder="Minimal 6 karakter"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Password akan digunakan untuk login</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      No. Telepon
+                    </label>
+                    <input
+                      type="tel"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      value={newUser.phone}
+                      onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
+                      placeholder="08123456789"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Alamat
+                    </label>
+                    <textarea
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-y"
+                      value={newUser.address}
+                      onChange={(e) => setNewUser({...newUser, address: e.target.value})}
+                      rows="2"
+                      placeholder="Jl. Contoh No. 123, Kota"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Role
+                      </label>
+                      <select
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        value={newUser.role}
+                        onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                      >
+                        <option value="Karyawan">Karyawan</option>
+                        <option value="Supervisor">Supervisor</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Admin">Admin</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Departemen
+                      </label>
+                      <select
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        value={newUser.department}
+                        onChange={(e) => setNewUser({...newUser, department: e.target.value})}
+                      >
+                        <option value="Potong">Potong</option>
+                        <option value="Jahit">Jahit</option>
+                        <option value="Finishing">Finishing</option>
+                        <option value="Packing">Packing</option>
+                        <option value="QC">Quality Control</option>
+                        <option value="Management">Management</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl sticky bottom-0">
+                  <button
+                    onClick={() => setIsAddModalOpen(false)}
+                    className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
                   >
                     Batal
                   </button>
                   <button
                     onClick={handleAddUser}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                     disabled={!newUser.name || !newUser.username || !newUser.email || !newUser.password}
+                    className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                   >
                     Tambah Pengguna
                   </button>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

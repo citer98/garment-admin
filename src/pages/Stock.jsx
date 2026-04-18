@@ -219,10 +219,6 @@ export default function Stock() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   
-  // ================== STATE UNTUK ZOOM/SCALE ==================
-  const [zoomLevel, setZoomLevel] = useState(0.8); // Default 80%
-  const [showZoomControls, setShowZoomControls] = useState(false);
-  
   // ================== STATE UNTUK KATEGORI ==================
   const [categories, setCategories] = useState(['Kain', 'Benang', 'Aksesoris', 'Bahan Pelapis', 'Lainnya']);
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
@@ -278,19 +274,6 @@ export default function Stock() {
     notes: ''
   });
   const [restockAmount, setRestockAmount] = useState(0);
-
-  // ==================== FUNGSI UNTUK ZOOM ====================
-  const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev + 0.05, 1.2));
-  };
-
-  const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(prev - 0.05, 0.5));
-  };
-
-  const handleZoomReset = () => {
-    setZoomLevel(0.8);
-  };
 
   // Deteksi ukuran layar
   useEffect(() => {
@@ -1143,14 +1126,16 @@ export default function Stock() {
     </div>
   );
 
+  // ================== MODAL-MODAL DENGAN BACKGROUND PUTIH/BLUR ==================
+
   // Modal Tambah Kategori
   const AddCategoryModal = () => {
     if (!showAddCategoryModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
-          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
             <div className="flex items-center gap-2">
               <Tag size={20} className="text-purple-600" />
               <h3 className="font-bold text-lg text-gray-800">Tambah Kategori Baru</h3>
@@ -1160,7 +1145,7 @@ export default function Stock() {
             </button>
           </div>
           
-          <div className="p-5 space-y-4">
+          <div className="p-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kategori *</label>
               <input 
@@ -1175,8 +1160,8 @@ export default function Stock() {
             </div>
           </div>
           
-          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-            <button onClick={() => setShowAddCategoryModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <button onClick={() => setShowAddCategoryModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
             <button onClick={handleAddCategory} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700">
               Simpan Kategori
             </button>
@@ -1191,9 +1176,9 @@ export default function Stock() {
     if (!showManageCategoriesModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <Tag size={20} className="text-purple-600" />
               <h3 className="font-bold text-lg text-gray-800">Kelola Kategori</h3>
@@ -1203,7 +1188,7 @@ export default function Stock() {
             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {editingCategory ? (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Edit Kategori</label>
@@ -1215,7 +1200,7 @@ export default function Stock() {
                   placeholder="Nama kategori"
                   autoFocus
                 />
-                <div className="flex gap-2 mt-3">
+                <div className="flex gap-2 mt-4">
                   <button
                     onClick={() => { setEditingCategory(null); setEditCategoryName(''); }}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
@@ -1232,13 +1217,13 @@ export default function Stock() {
               </div>
             ) : (
               <div>
-                <div className="flex justify-between items-center mb-3">
+                <div className="flex justify-between items-center mb-4">
                   <p className="text-sm text-gray-600">Daftar semua kategori yang tersedia</p>
                   <button
                     onClick={openAddCategoryFromManage}
-                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
                   >
-                    <Plus size={12} /> Tambah
+                    <Plus size={14} /> Tambah
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -1275,8 +1260,8 @@ export default function Stock() {
             )}
           </div>
           
-          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-            <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+            <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
               Tutup
             </button>
           </div>
@@ -1290,9 +1275,9 @@ export default function Stock() {
     if (!showAddUnitModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
-          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-cyan-50 to-white">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-cyan-50 to-white">
             <div className="flex items-center gap-2">
               <Ruler size={20} className="text-cyan-600" />
               <h3 className="font-bold text-lg text-gray-800">Tambah Satuan Baru</h3>
@@ -1302,7 +1287,7 @@ export default function Stock() {
             </button>
           </div>
           
-          <div className="p-5 space-y-4">
+          <div className="p-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nama Satuan *</label>
               <input 
@@ -1317,8 +1302,8 @@ export default function Stock() {
             </div>
           </div>
           
-          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-            <button onClick={() => setShowAddUnitModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <button onClick={() => setShowAddUnitModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
             <button onClick={handleAddUnit} className="px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-medium hover:bg-cyan-700">
               Simpan Satuan
             </button>
@@ -1333,9 +1318,9 @@ export default function Stock() {
     if (!showManageUnitsModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-cyan-50 to-white">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-cyan-50 to-white sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <Ruler size={20} className="text-cyan-600" />
               <h3 className="font-bold text-lg text-gray-800">Kelola Satuan</h3>
@@ -1345,7 +1330,7 @@ export default function Stock() {
             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {editingUnit ? (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Edit Satuan</label>
@@ -1357,7 +1342,7 @@ export default function Stock() {
                   placeholder="Nama satuan"
                   autoFocus
                 />
-                <div className="flex gap-2 mt-3">
+                <div className="flex gap-2 mt-4">
                   <button
                     onClick={() => { setEditingUnit(null); setEditUnitName(''); }}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
@@ -1374,13 +1359,13 @@ export default function Stock() {
               </div>
             ) : (
               <div>
-                <div className="flex justify-between items-center mb-3">
+                <div className="flex justify-between items-center mb-4">
                   <p className="text-sm text-gray-600">Daftar semua satuan yang tersedia</p>
                   <button
                     onClick={openAddUnitFromManage}
-                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
                   >
-                    <Plus size={12} /> Tambah
+                    <Plus size={14} /> Tambah
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -1417,8 +1402,8 @@ export default function Stock() {
             )}
           </div>
           
-          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-            <button onClick={() => { setShowManageUnitsModal(false); setEditingUnit(null); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+            <button onClick={() => { setShowManageUnitsModal(false); setEditingUnit(null); }} className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
               Tutup
             </button>
           </div>
@@ -1432,9 +1417,9 @@ export default function Stock() {
     if (!showAddSupplierModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
-          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-orange-50 to-white">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-orange-50 to-white">
             <div className="flex items-center gap-2">
               <Truck size={20} className="text-orange-600" />
               <h3 className="font-bold text-lg text-gray-800">Tambah Supplier Baru</h3>
@@ -1444,7 +1429,7 @@ export default function Stock() {
             </button>
           </div>
           
-          <div className="p-5 space-y-4">
+          <div className="p-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nama Supplier *</label>
               <input 
@@ -1498,8 +1483,8 @@ export default function Stock() {
             </div>
           </div>
           
-          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-            <button onClick={() => setShowAddSupplierModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Batal</button>
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <button onClick={() => setShowAddSupplierModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
             <button onClick={handleAddSupplier} className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700">
               Simpan Supplier
             </button>
@@ -1514,9 +1499,9 @@ export default function Stock() {
     if (!showManageSuppliersModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-orange-50 to-white">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-orange-50 to-white sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <Truck size={20} className="text-orange-600" />
               <h3 className="font-bold text-lg text-gray-800">Kelola Supplier</h3>
@@ -1526,7 +1511,7 @@ export default function Stock() {
             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {editingSupplier ? (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nama Supplier *</label>
@@ -1573,7 +1558,7 @@ export default function Stock() {
                     onChange={(e) => setEditSupplierData({...editSupplierData, address: e.target.value})}
                   />
                 </div>
-                <div className="flex gap-2 mt-4">
+                <div className="flex gap-2 mt-5">
                   <button
                     onClick={() => { setEditingSupplier(null); setEditSupplierData({ name: '', contact: '', phone: '', email: '', address: '' }); }}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
@@ -1590,13 +1575,13 @@ export default function Stock() {
               </div>
             ) : (
               <div>
-                <div className="flex justify-between items-center mb-3">
+                <div className="flex justify-between items-center mb-4">
                   <p className="text-sm text-gray-600">Daftar semua supplier yang tersedia</p>
                   <button
                     onClick={openAddSupplierFromManage}
-                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
                   >
-                    <Plus size={12} /> Tambah
+                    <Plus size={14} /> Tambah
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -1643,8 +1628,8 @@ export default function Stock() {
             )}
           </div>
           
-          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-            <button onClick={() => { setShowManageSuppliersModal(false); setEditingSupplier(null); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+            <button onClick={() => { setShowManageSuppliersModal(false); setEditingSupplier(null); }} className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
               Tutup
             </button>
           </div>
@@ -1658,8 +1643,8 @@ export default function Stock() {
     if (!isOpen) return null;
     
     return (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <Warehouse size={22} className="text-blue-600" />
@@ -1872,9 +1857,9 @@ export default function Stock() {
     const supplierInfo = supplierDetail ? JSON.parse(supplierDetail) : null;
     
     return (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <Package size={20} className="text-blue-600" />
               <h3 className="font-bold text-lg text-gray-800">Detail Material</h3>
@@ -1884,7 +1869,7 @@ export default function Stock() {
             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs text-gray-500">Kode</p>
@@ -2002,7 +1987,7 @@ export default function Stock() {
             </div>
           </div>
           
-          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
             <button onClick={() => openEditModal(selectedItem)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium flex items-center gap-1">
               <Edit2 size={14} /> Edit
             </button>
@@ -2025,51 +2010,16 @@ export default function Stock() {
   }
 
   return (
-    <div className="relative">
-      {/* ==================== ZOOM CONTROLS - FLOATING BUTTON ==================== */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-        <button
-          onClick={() => setShowZoomControls(!showZoomControls)}
-          className="w-10 h-10 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
-          title="Zoom Controls"
-        >
-          <span className="text-sm font-bold">{Math.round(zoomLevel * 100)}%</span>
-        </button>
-        
-        {showZoomControls && (
-          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex flex-col gap-2">
-            <button
-              onClick={handleZoomIn}
-              className="w-10 h-10 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center justify-center"
-              title="Perbesar (Zoom In)"
-            >
-              <ZoomIn size={18} />
-            </button>
-            <button
-              onClick={handleZoomReset}
-              className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 flex items-center justify-center"
-              title="Reset ke 80%"
-            >
-              <RotateCcw size={18} />
-            </button>
-            <button
-              onClick={handleZoomOut}
-              className="w-10 h-10 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center justify-center"
-              title="Perkecil (Zoom Out)"
-            >
-              <ZoomOut size={18} />
-            </button>
-          </div>
-        )}
-      </div>
-
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* ==================== MAIN CONTENT WITH SCALE TRANSFORM ==================== */}
       <div 
         className="transition-all duration-300"
         style={{
-          transform: `scale(${zoomLevel})`,
+          transform: 'scale(0.85)',
           transformOrigin: 'top left',
-          width: `${100 / zoomLevel}%`,
+          width: '117.65%',
+          minHeight: '100vh',
+          paddingBottom: '100px'
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

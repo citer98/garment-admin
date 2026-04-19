@@ -63,7 +63,15 @@ export default function Dashboard() {
   const [selectedStuckOrder, setSelectedStuckOrder] = useState(null);
   const [showStuckDetailModal, setShowStuckDetailModal] = useState(false);
 
-  // Stats untuk dashboard
+  // ================== STATISTIK CEPAT YANG REAL-TIME ==================
+  const [quickStats, setQuickStats] = useState({
+    efficiency: 85,      // Efisiensi produksi (persentase)
+    completedCount: 0,   // Pesanan selesai
+    pendingCount: 0,     // Pesanan pending (menunggu)
+    stuckCount: 0        // Item stuck
+  });
+
+  // Stats untuk dashboard (4 card utama)
   const [stats, setStats] = useState([
     {
       title: "Pesanan Aktif",
@@ -75,24 +83,24 @@ export default function Dashboard() {
     },
     {
       title: "Revenue Bulan Ini",
-      value: "Rp 48.5jt",
-      change: "+12.5%",
+      value: "Rp 0",
+      change: "+0%",
       icon: "💰",
       color: "green",
       link: "/finance"
     },
     {
       title: "Profit Margin",
-      value: "33.2%",
-      change: "+2.1%",
+      value: "0%",
+      change: "+0%",
       icon: "📊",
       color: "purple",
       link: "/finance"
     },
     {
       title: "Avg Order Value",
-      value: "Rp 1.25jt",
-      change: "+5.3%",
+      value: "Rp 0",
+      change: "+0%",
       icon: "📈",
       color: "yellow",
       link: "/finance"
@@ -110,25 +118,25 @@ export default function Dashboard() {
     { stage: 'Pengemasan', count: 0, totalItems: 0, icon: '📦', color: 'emerald', orders: [] }
   ]);
 
-  // Data Mock untuk Charts
-  const orderHistoryData = [
-    { name: 'Sen', total: 4 },
-    { name: 'Sel', total: 7 },
-    { name: 'Rab', total: 5 },
-    { name: 'Kam', total: 9 },
-    { name: 'Jum', total: 12 },
-    { name: 'Sab', total: 8 },
-    { name: 'Min', total: 3 },
-  ];
+  // Data Mock untuk Charts (akan di-update dengan data real nanti)
+  const [orderHistoryData, setOrderHistoryData] = useState([
+    { name: 'Sen', total: 0 },
+    { name: 'Sel', total: 0 },
+    { name: 'Rab', total: 0 },
+    { name: 'Kam', total: 0 },
+    { name: 'Jum', total: 0 },
+    { name: 'Sab', total: 0 },
+    { name: 'Min', total: 0 },
+  ]);
 
-  const revenueData = [
-    { month: 'Jan', revenue: 35 },
-    { month: 'Feb', revenue: 42 },
-    { month: 'Mar', revenue: 48 },
-    { month: 'Apr', revenue: 38 },
-    { month: 'May', revenue: 52 },
-    { month: 'Jun', revenue: 61 },
-  ];
+  const [revenueData, setRevenueData] = useState([
+    { month: 'Jan', revenue: 0 },
+    { month: 'Feb', revenue: 0 },
+    { month: 'Mar', revenue: 0 },
+    { month: 'Apr', revenue: 0 },
+    { month: 'May', revenue: 0 },
+    { month: 'Jun', revenue: 0 },
+  ]);
 
   const productionMixData = [
     { name: 'Potong', value: productionCounts.Potong || 0 },
@@ -228,6 +236,111 @@ export default function Dashboard() {
     }
   };
 
+  // ================== FUNGSI UNTUK MENGHITUNG REVENUE ==================
+  const calculateRevenueStats = (orders) => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    // Revenue bulan ini
+    const thisMonthRevenue = orders
+      .filter(order => {
+        const orderDate = new Date(order.orderDate);
+        return orderDate.getMonth() === currentMonth && 
+               orderDate.getFullYear() === currentYear &&
+               order.status !== 'cancelled';
+      })
+      .reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    
+    // Revenue bulan lalu
+    const lastMonthRevenue = orders
+      .filter(order => {
+        const orderDate = new Date(order.orderDate);
+        return orderDate.getMonth() === currentMonth - 1 && 
+               orderDate.getFullYear() === currentYear &&
+               order.status !== 'cancelled';
+      })
+      .reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    
+    // Persentase perubahan
+    let revenueChange = 0;
+    if (lastMonthRevenue > 0) {
+      revenueChange = ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
+    }
+    
+    // Hitung profit margin (estimasi 30% dari revenue)
+    const estimatedProfit = thisMonthRevenue * 0.3;
+    const profitMargin = thisMonthRevenue > 0 ? (estimatedProfit / thisMonthRevenue) * 100 : 0;
+    
+    // Average Order Value
+    const completedOrders = orders.filter(o => o.status === 'completed' || o.status === 'delivered');
+    const avgOrderValue = completedOrders.length > 0 
+      ? completedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) / completedOrders.length 
+      : 0;
+    
+    return {
+      revenue: thisMonthRevenue,
+      revenueChange: revenueChange,
+      profitMargin: profitMargin,
+      avgOrderValue: avgOrderValue
+    };
+  };
+
+  // ================== FUNGSI UNTUK MENGHITUNG TREN PESANAN ==================
+  const calculateOrderTrend = (orders) => {
+    const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const today = new Date();
+    const weekData = {};
+    
+    // Inisialisasi data untuk 7 hari terakhir
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dayName = days[date.getDay()];
+      const dateKey = date.toISOString().split('T')[0];
+      weekData[dateKey] = { name: dayName, total: 0 };
+    }
+    
+    // Hitung pesanan per hari
+    orders.forEach(order => {
+      const orderDate = order.orderDate;
+      if (weekData[orderDate]) {
+        weekData[orderDate].total++;
+      }
+    });
+    
+    return Object.values(weekData);
+  };
+
+  // ================== FUNGSI UNTUK MENGHITUNG REVENUE 6 BULAN ==================
+  const calculateRevenueTrend = (orders) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const now = new Date();
+    const sixMonthsData = [];
+    
+    for (let i = 5; i >= 0; i--) {
+      const monthIndex = (now.getMonth() - i + 12) % 12;
+      const year = now.getFullYear() - (now.getMonth() - i < 0 ? 1 : 0);
+      const monthName = months[monthIndex];
+      
+      const monthlyRevenue = orders
+        .filter(order => {
+          const orderDate = new Date(order.orderDate);
+          return orderDate.getMonth() === monthIndex && 
+                 orderDate.getFullYear() === year &&
+                 order.status !== 'cancelled';
+        })
+        .reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+      
+      sixMonthsData.push({
+        month: monthName,
+        revenue: Math.round(monthlyRevenue / 1000000) // Dalam juta Rupiah
+      });
+    }
+    
+    return sixMonthsData;
+  };
+
   // ================== FUNGSI UNTUK MENGHITUNG ITEM STUCK ==================
   const calculateStuckItems = (ordersFromParam = null) => {
     try {
@@ -272,16 +385,43 @@ export default function Dashboard() {
       });
 
       setStuckItems(stuck);
+      return stuck.length;
     } catch (error) {
       console.error('Error calculating stuck items:', error);
+      return 0;
     }
   };
 
+  // ================== FUNGSI UNTUK MENGHITUNG PESANAN PENDING ==================
+  const calculatePendingOrders = (orders) => {
+    // Pesanan pending adalah pesanan dengan status 'cutting' yang belum mulai dikerjakan
+    const pending = orders.filter(order => 
+      order.status === 'cutting' && 
+      order.status !== 'cancelled' &&
+      order.status !== 'completed' &&
+      order.status !== 'delivered'
+    );
+    return pending.length;
+  };
+
+  // ================== FUNGSI UNTUK MENGHITUNG EFISIENSI ==================
+  const calculateEfficiency = (orders) => {
+    // Efisiensi = (pesanan selesai tepat waktu) / (total pesanan selesai) * 100
+    const completedOrdersList = orders.filter(o => o.status === 'completed' || o.status === 'delivered');
+    if (completedOrdersList.length === 0) return 85; // Default value
+    
+    const onTimeOrders = completedOrdersList.filter(order => {
+      if (!order.dueDate) return true;
+      return order.orderDate <= order.dueDate;
+    });
+    
+    const efficiency = (onTimeOrders.length / completedOrdersList.length) * 100;
+    return Math.round(efficiency);
+  };
+
   // ================== FUNGSI UNTUK LOAD DATA PESANAN TERBARU ==================
-  const loadRecentOrders = () => {
+  const loadRecentOrders = (orders) => {
     try {
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      
       // Status pesanan yang dianggap AKTIF
       const activeStatuses = [
         'cutting', 'sewing', 'finishing', 'packing', 'qc', 
@@ -332,7 +472,59 @@ export default function Dashboard() {
     try {
       const orders = JSON.parse(localStorage.getItem('orders') || '[]');
       
-      // Hitung jumlah PESANAN per departemen berdasarkan STATUS ORDER langsung
+      // ========== UPDATE STATISTIK CEPAT ==========
+      const completedCount_ = orders.filter(o => o.status === 'completed' || o.status === 'delivered').length;
+      const cancelledCount_ = orders.filter(o => o.status === 'cancelled').length;
+      const pendingCount_ = calculatePendingOrders(orders);
+      const stuckCount_ = calculateStuckItems(orders);
+      const efficiency_ = calculateEfficiency(orders);
+      
+      setQuickStats({
+        efficiency: efficiency_,
+        completedCount: completedCount_,
+        pendingCount: pendingCount_,
+        stuckCount: stuckCount_
+      });
+      
+      // ========== UPDATE STATS CARDS (Revenue, Profit Margin, Avg Order) ==========
+      const revenueStats = calculateRevenueStats(orders);
+      setStats(prevStats => 
+        prevStats.map(stat => {
+          if (stat.title === "Revenue Bulan Ini") {
+            const changeSymbol = revenueStats.revenueChange >= 0 ? '+' : '';
+            return { 
+              ...stat, 
+              value: `Rp ${formatCurrency(revenueStats.revenue)}`,
+              change: `${changeSymbol}${revenueStats.revenueChange.toFixed(1)}%`
+            };
+          }
+          if (stat.title === "Profit Margin") {
+            const changeSymbol = revenueStats.revenueChange >= 0 ? '+' : '';
+            return { 
+              ...stat, 
+              value: `${revenueStats.profitMargin.toFixed(1)}%`,
+              change: `${changeSymbol}${revenueStats.revenueChange.toFixed(1)}%`
+            };
+          }
+          if (stat.title === "Avg Order Value") {
+            return { 
+              ...stat, 
+              value: `Rp ${formatCurrency(revenueStats.avgOrderValue)}`
+            };
+          }
+          return stat;
+        })
+      );
+      
+      // ========== UPDATE TREN PESANAN CHART ==========
+      const trendData = calculateOrderTrend(orders);
+      setOrderHistoryData(trendData);
+      
+      // ========== UPDATE REVENUE CHART ==========
+      const revenueTrendData = calculateRevenueTrend(orders);
+      setRevenueData(revenueTrendData);
+      
+      // ========== HITUNG PRODUCTION COUNTS ==========
       const ordersPerDept = {
         'Potong': 0,
         'Jahit': 0,
@@ -340,7 +532,6 @@ export default function Dashboard() {
         'Pengemasan': 0
       };
       
-      // Hitung TOTAL ITEM per departemen
       const totalItemsPerDept = {
         'Potong': 0,
         'Jahit': 0,
@@ -348,7 +539,6 @@ export default function Dashboard() {
         'Pengemasan': 0
       };
       
-      // Simpan detail pesanan untuk modal
       const deptOrdersDetail = {
         'Potong': [],
         'Jahit': [],
@@ -356,11 +546,9 @@ export default function Dashboard() {
         'Pengemasan': []
       };
       
-      // Status yang dianggap aktif (belum selesai/dibatalkan)
       const activeStatuses = ['cutting', 'sewing', 'finishing', 'packing', 'qc'];
       
       orders.forEach(order => {
-        // Hanya proses pesanan yang belum selesai/dibatalkan
         if (order.status === 'completed' || order.status === 'delivered' || order.status === 'cancelled') {
           return;
         }
@@ -372,7 +560,6 @@ export default function Dashboard() {
         const totalAmount = order.totalAmount || 0;
         const orderDate = order.orderDate || '';
         
-        // Mapping status order ke departemen
         if (orderStatus === 'cutting') {
           ordersPerDept['Potong']++;
           totalItemsPerDept['Potong'] += totalQty;
@@ -426,7 +613,6 @@ export default function Dashboard() {
           });
         }
         else if (orderStatus === 'qc') {
-          // QC masuk ke Pengemasan
           ordersPerDept['Pengemasan']++;
           totalItemsPerDept['Pengemasan'] += totalQty;
           deptOrdersDetail['Pengemasan'].push({
@@ -441,11 +627,8 @@ export default function Dashboard() {
         }
       });
 
-      console.log('Production Counts from Orders:', ordersPerDept);
-      
       setProductionCounts(ordersPerDept);
       
-      // Update production status dengan jumlah PESANAN dan TOTAL ITEM
       setProductionStatus([
         { 
           stage: 'Potong', 
@@ -481,24 +664,14 @@ export default function Dashboard() {
         }
       ]);
 
-      // Hitung pesanan selesai dan dibatalkan
-      const completed = orders.filter(order => 
-        order.status === 'completed' || order.status === 'delivered'
-      );
-      const cancelled = orders.filter(order => 
-        order.status === 'cancelled'
-      );
+      setCompletedOrders(orders.filter(order => order.status === 'completed' || order.status === 'delivered'));
+      setCancelledOrders(orders.filter(order => order.status === 'cancelled'));
+      setCompletedCount(completedCount_);
+      setCancelledCount(cancelledCount_);
 
-      setCompletedOrders(completed);
-      setCancelledOrders(cancelled);
-      setCompletedCount(completed.length);
-      setCancelledCount(cancelled.length);
-
-      // Hitung pesanan aktif
       const active = orders.filter(order => activeStatuses.includes(order.status));
       setActiveOrdersCount(active.length);
       
-      // Update stats dengan nilai pesanan aktif
       setStats(prevStats => 
         prevStats.map(stat => 
           stat.title === "Pesanan Aktif" 
@@ -506,12 +679,8 @@ export default function Dashboard() {
             : stat
         )
       );
-
-      // Hitung stuck items
-      calculateStuckItems(orders);
       
-      // Load recent orders
-      loadRecentOrders();
+      loadRecentOrders(orders);
       
     } catch (error) {
       console.error('Error loading production data:', error);
@@ -520,14 +689,12 @@ export default function Dashboard() {
 
   // Handler untuk klik stage produksi
   const handleStageClick = (stageName, ordersFromState) => {
-    // Jika ada orders dari state productionStatus, gunakan itu
     if (ordersFromState && ordersFromState.length > 0) {
       setStageOrders(ordersFromState);
       setSelectedStage(stageName);
       return;
     }
     
-    // Fallback: ambil langsung dari orders di localStorage
     const orders = JSON.parse(localStorage.getItem('orders') || '[]');
     let filteredOrders = [];
     
@@ -774,7 +941,7 @@ export default function Dashboard() {
                   <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{item.currentStock} {item.unit}</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-1 mt-1 overflow-hidden">
-                  <div className="bg-red-500 h-full rounded-full" style={{ width: `${(item.currentStock / item.minStock) * 100}%` }}></div>
+                  <div className="bg-red-500 h-full rounded-full" style={{ width: `${Math.min((item.currentStock / item.minStock) * 100, 100)}%` }}></div>
                 </div>
               </Link>
             ))}
@@ -788,7 +955,7 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {/* Quick Stats */}
+        {/* Quick Stats - SEKARANG REAL-TIME */}
         <div className="enterprise-card p-3 md:p-4 animate-enter-fade delay-300">
           <div className="flex items-center justify-between mb-2 md:mb-3">
             <div className="flex items-center">
@@ -803,22 +970,22 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-2 gap-1.5 md:gap-2">
             <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm">
-              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">85<span className="text-sm">%</span></div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{quickStats.efficiency}<span className="text-sm">%</span></div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Efisiensi</div>
             </div>
             <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
-              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{completedCount}</div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{quickStats.completedCount}</div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Selesai</div>
             </div>
             <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-yellow-500"></div>
-              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">8</div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{quickStats.pendingCount}</div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Pending</div>
             </div>
             <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
-              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{stuckItems.length}</div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{quickStats.stuckCount}</div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Stuck</div>
             </div>
           </div>
@@ -863,7 +1030,6 @@ export default function Dashboard() {
         <Card className="enterprise-card p-4 md:p-6 animate-enter-fade delay-300">
           <div className="flex items-center justify-between mb-6">
             <div><h3 className="text-lg font-bold text-gray-800 flex items-center"><BarChart3 size={18} className="mr-2 text-blue-500" /> Tren Pesanan (7 Hari)</h3><p className="text-xs text-gray-500">Jumlah pesanan masuk per hari</p></div>
-            <select className="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs outline-none"><option>Minggu ini</option><option>Minggu lalu</option></select>
           </div>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -911,7 +1077,6 @@ export default function Dashboard() {
         <Card className="enterprise-card p-4 md:p-6 lg:col-span-2 animate-enter-fade delay-500">
           <div className="flex items-center justify-between mb-6">
             <div><h3 className="text-lg font-bold text-gray-800 flex items-center"><DollarSign size={18} className="mr-2 text-green-500" /> Performa Keuangan (Rp Juta)</h3><p className="text-xs text-gray-500">Rekapitulasi pendapatan 6 bulan terakhir</p></div>
-            <div className="flex items-center bg-gray-100 p-1 rounded-lg"><button className="px-3 py-1 bg-white text-[10px] font-bold rounded-md shadow-sm">Revenue</button><button className="px-3 py-1 text-[10px] font-bold text-gray-500">Margin</button></div>
           </div>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -1001,7 +1166,7 @@ export default function Dashboard() {
           </CardBody>
         </Card>
 
-        {/* Production Status - MENGGUNAKAN DATA DARI ORDERS LANGSUNG */}
+        {/* Production Status */}
         <Card className="enterprise-card animate-enter-fade delay-300 h-full">
           <CardHeader className="border-b border-gray-100 pb-3">
             <div className="flex justify-between items-center">
@@ -1441,7 +1606,7 @@ export default function Dashboard() {
                               <div><div className="text-xs text-gray-600">Stok Saat Ini</div><div className="font-bold text-gray-800 text-sm">{item.currentStock} {item.unit}</div></div>
                               <div><div className="text-xs text-gray-600">Stok Minimal</div><div className="font-bold text-gray-800 text-sm">{item.minStock} {item.unit}</div></div>
                             </div>
-                            <div className="mt-2 md:mt-3"><div className="flex justify-between text-xs mb-0.5"><span className="text-gray-600">Tingkat Stok</span><span className="font-bold">{Math.round((item.currentStock / item.minStock) * 100)}%</span></div><div className="w-full bg-gray-200 rounded-full h-1.5"><div className={`h-1.5 rounded-full ${stockStatus.status === 'critical' ? 'bg-red-500' : 'bg-yellow-500'}`} style={{ width: `${(item.currentStock / item.minStock) * 100}%` }}></div></div></div>
+                            <div className="mt-2 md:mt-3"><div className="flex justify-between text-xs mb-0.5"><span className="text-gray-600">Tingkat Stok</span><span className="font-bold">{Math.round((item.currentStock / item.minStock) * 100)}%</span></div><div className="w-full bg-gray-200 rounded-full h-1.5"><div className={`h-1.5 rounded-full ${stockStatus.status === 'critical' ? 'bg-red-500' : 'bg-yellow-500'}`} style={{ width: `${Math.min((item.currentStock / item.minStock) * 100, 100)}%` }}></div></div></div>
                           </div>
                           <div className="mt-2 md:mt-0"><button className="px-3 md:px-4 py-1.5 md:py-2 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 w-full">Pesan Bahan</button></div>
                         </div>
@@ -1596,7 +1761,7 @@ export default function Dashboard() {
   );
 }
 
-// Helper function untuk stock status (perlu ditambahkan di luar komponen)
+// Helper function untuk stock status
 function getStockStatus(currentStock, minStock) {
   const ratio = currentStock / minStock;
   if (ratio <= 0.3) {

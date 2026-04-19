@@ -41,10 +41,10 @@ export default function Dashboard() {
   const [selectedStage, setSelectedStage] = useState(null);
   const [stageOrders, setStageOrders] = useState([]);
   const [productionCounts, setProductionCounts] = useState({
-    'Cutting': 0,
-    'Sewing': 0,
+    'Potong': 0,
+    'Jahit': 0,
     'Finishing': 0,
-    'Packing': 0
+    'Pengemasan': 0
   });
 
   // State untuk Pesanan Selesai dan Dibatalkan
@@ -53,17 +53,17 @@ export default function Dashboard() {
   const [completedCount, setCompletedCount] = useState(0);
   const [cancelledCount, setCancelledCount] = useState(0);
 
-  // ================== STATE UNTUK PESANAN AKTIF ==================
+  // State untuk PESANAN AKTIF
   const [activeOrders, setActiveOrders] = useState([]);
   const [activeOrdersCount, setActiveOrdersCount] = useState(0);
   const [showActiveOrdersModal, setShowActiveOrdersModal] = useState(false);
 
-  // ================== STATE UNTUK ITEM STUCK ==================
+  // State untuk ITEM STUCK
   const [stuckItems, setStuckItems] = useState([]);
   const [selectedStuckOrder, setSelectedStuckOrder] = useState(null);
   const [showStuckDetailModal, setShowStuckDetailModal] = useState(false);
 
-  // Stats untuk dashboard - update nilai active orders secara dinamis
+  // Stats untuk dashboard
   const [stats, setStats] = useState([
     {
       title: "Pesanan Aktif",
@@ -99,15 +99,15 @@ export default function Dashboard() {
     },
   ]);
 
-  // Data untuk Pesanan Terbaru (akan diisi dari localStorage)
+  // Data untuk Pesanan Terbaru
   const [recentOrders, setRecentOrders] = useState([]);
 
-  // Data untuk Status Produksi (akan diisi dari availableJobs)
+  // Data untuk Status Produksi
   const [productionStatus, setProductionStatus] = useState([
-    { stage: 'Cutting', count: 0, totalItems: 0, icon: '✂️', color: 'amber', jobs: [] },
-    { stage: 'Sewing', count: 0, totalItems: 0, icon: '🧵', color: 'orange', jobs: [] },
-    { stage: 'Finishing', count: 0, totalItems: 0, icon: '✨', color: 'lime', jobs: [] },
-    { stage: 'Packing', count: 0, totalItems: 0, icon: '📦', color: 'emerald', jobs: [] }
+    { stage: 'Potong', count: 0, totalItems: 0, icon: '✂️', color: 'amber', orders: [] },
+    { stage: 'Jahit', count: 0, totalItems: 0, icon: '🧵', color: 'orange', orders: [] },
+    { stage: 'Finishing', count: 0, totalItems: 0, icon: '✨', color: 'lime', orders: [] },
+    { stage: 'Pengemasan', count: 0, totalItems: 0, icon: '📦', color: 'emerald', orders: [] }
   ]);
 
   // Data Mock untuk Charts
@@ -131,10 +131,10 @@ export default function Dashboard() {
   ];
 
   const productionMixData = [
-    { name: 'Cutting', value: productionCounts.Cutting || 0 },
-    { name: 'Sewing', value: productionCounts.Sewing || 0 },
+    { name: 'Potong', value: productionCounts.Potong || 0 },
+    { name: 'Jahit', value: productionCounts.Jahit || 0 },
     { name: 'Finishing', value: productionCounts.Finishing || 0 },
-    { name: 'Packing', value: productionCounts.Packing || 0 },
+    { name: 'Pengemasan', value: productionCounts.Pengemasan || 0 },
   ];
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
@@ -185,10 +185,53 @@ export default function Dashboard() {
     }
   };
 
-  // ================== FUNGSI UNTUK MENGHITUNG ITEM STUCK ==================
-  const calculateStuckItems = () => {
+  // Helper function untuk mendapatkan departemen dari status
+  const getDepartmentFromStatus = (status) => {
+    const deptMap = {
+      'cutting': 'Potong',
+      'sewing': 'Jahit',
+      'finishing': 'Finishing',
+      'packing': 'Pengemasan',
+      'qc': 'QC',
+      'production': 'Produksi',
+      'processing': 'Processing',
+      'draft': 'Draft'
+    };
+    return deptMap[status] || status;
+  };
+
+  // Helper function untuk mendapatkan karyawan yang ditugaskan
+  const getAssignedEmployee = (order) => {
     try {
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+      const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
+      const orderJobs = availableJobs.filter(job => job.order_id === order.id);
+      const activeJob = orderJobs.find(job => job.status === 'dalam_proses');
+      return activeJob?.accepted_by || 'Belum ditugaskan';
+    } catch {
+      return 'Belum ditugaskan';
+    }
+  };
+
+  // Helper untuk mendapatkan warna priority badge
+  const getPriorityBadge = (priority) => {
+    switch (priority) {
+      case 'critical':
+        return 'bg-red-100 text-red-800 border border-red-200';
+      case 'high':
+        return 'bg-orange-100 text-orange-800 border border-orange-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+      case 'low':
+        return 'bg-green-100 text-green-800 border border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border border-gray-200';
+    }
+  };
+
+  // ================== FUNGSI UNTUK MENGHITUNG ITEM STUCK ==================
+  const calculateStuckItems = (ordersFromParam = null) => {
+    try {
+      const orders = ordersFromParam || JSON.parse(localStorage.getItem('orders') || '[]');
       const today = new Date().toISOString().split('T')[0];
       const stuck = [];
 
@@ -234,83 +277,21 @@ export default function Dashboard() {
     }
   };
 
-  // Helper function untuk mendapatkan departemen dari status
-  const getDepartmentFromStatus = (status) => {
-    const deptMap = {
-      'cutting': 'Potong',
-      'sewing': 'Jahit',
-      'finishing': 'Finishing',
-      'packing': 'Packing',
-      'qc': 'QC',
-      'production': 'Produksi',
-      'processing': 'Processing',
-      'draft': 'Draft'
-    };
-    return deptMap[status] || status;
-  };
-
-  // Helper function untuk mendapatkan karyawan yang ditugaskan
-  const getAssignedEmployee = (order) => {
-    try {
-      const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
-      const orderJobs = availableJobs.filter(job => job.order_id === order.id);
-      const activeJob = orderJobs.find(job => job.status === 'dalam_proses');
-      return activeJob?.accepted_by || 'Belum ditugaskan';
-    } catch {
-      return 'Belum ditugaskan';
-    }
-  };
-
-  // Helper untuk mendapatkan warna priority badge
-  const getPriorityBadge = (priority) => {
-    switch (priority) {
-      case 'critical':
-        return 'bg-red-100 text-red-800 border border-red-200';
-      case 'high':
-        return 'bg-orange-100 text-orange-800 border border-orange-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
-      case 'low':
-        return 'bg-green-100 text-green-800 border border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border border-gray-200';
-    }
-  };
-
-  // Handler untuk klik item stuck
-  const handleStuckItemClick = (stuckItem) => {
-    setSelectedStuckOrder(stuckItem);
-    setShowStuckDetailModal(true);
-  };
-
-  // Handler untuk klik Pesanan Aktif
-  const handleActiveOrdersClick = () => {
-    const active = getActiveOrders();
-    setActiveOrders(active);
-    setShowActiveOrdersModal(true);
-  };
-
-  // ================== FUNGSI UNTUK LOAD DATA PESANAN TERBARU (HANYA PESANAN AKTIF) ==================
+  // ================== FUNGSI UNTUK LOAD DATA PESANAN TERBARU ==================
   const loadRecentOrders = () => {
     try {
       const orders = JSON.parse(localStorage.getItem('orders') || '[]');
       
-      // Status pesanan yang dianggap AKTIF (masih dalam proses)
+      // Status pesanan yang dianggap AKTIF
       const activeStatuses = [
-        'cutting',      // Potong
-        'sewing',       // Jahit
-        'finishing',    // Finishing
-        'packing',      // Packing
-        'qc',           // Quality Control
-        'processing',   // Diproses
-        'production',   // Produksi
-        'draft'         // Draft
+        'cutting', 'sewing', 'finishing', 'packing', 'qc', 
+        'processing', 'production', 'draft'
       ];
       
       // Filter hanya pesanan dengan status aktif
       const activeOrdersOnly = orders.filter(order => activeStatuses.includes(order.status));
       
-      // Ambil 5 pesanan terbaru dari pesanan aktif (berdasarkan orderDate)
+      // Ambil 5 pesanan terbaru dari pesanan aktif
       const sortedOrders = [...activeOrdersOnly].sort((a, b) => 
         new Date(b.orderDate) - new Date(a.orderDate)
       ).slice(0, 5);
@@ -346,179 +327,240 @@ export default function Dashboard() {
     }
   };
 
-  // ================== FUNGSI UNTUK PRODUCTION COUNTS (MENAMPILKAN PESANAN BUKAN ITEM) ==================
-  useEffect(() => {
-    const loadProductionData = () => {
-      try {
-        const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
-        const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-
-        // Hitung jumlah PESANAN UNIK per departemen
-        const uniqueOrdersPerDept = {
-          'Cutting': new Set(),
-          'Sewing': new Set(),
-          'Finishing': new Set(),
-          'Packing': new Set()
-        };
-
-        // Hitung TOTAL ITEM (kuantitas) per departemen
-        const totalItemsPerDept = {
-          'Cutting': 0,
-          'Sewing': 0,
-          'Finishing': 0,
-          'Packing': 0
-        };
-
-        // Simpan jobs untuk detail modal
-        const deptJobs = {
-          'Cutting': [],
-          'Sewing': [],
-          'Finishing': [],
-          'Packing': []
-        };
-
-        availableJobs.forEach(job => {
-          if (job.status !== 'selesai') {
-            const qty = job.qty || 0;
-            
-            if (job.department === 'Potong') {
-              deptJobs['Cutting'].push(job);
-              uniqueOrdersPerDept['Cutting'].add(job.order_id);
-              totalItemsPerDept['Cutting'] += qty;
-            }
-            if (job.department === 'Jahit') {
-              deptJobs['Sewing'].push(job);
-              uniqueOrdersPerDept['Sewing'].add(job.order_id);
-              totalItemsPerDept['Sewing'] += qty;
-            }
-            if (job.department === 'Finishing') {
-              deptJobs['Finishing'].push(job);
-              uniqueOrdersPerDept['Finishing'].add(job.order_id);
-              totalItemsPerDept['Finishing'] += qty;
-            }
-            if (job.department === 'Packing') {
-              deptJobs['Packing'].push(job);
-              uniqueOrdersPerDept['Packing'].add(job.order_id);
-              totalItemsPerDept['Packing'] += qty;
-            }
-          }
-        });
-
-        // Set counts berdasarkan jumlah PESANAN UNIK
-        const counts = {
-          'Cutting': uniqueOrdersPerDept['Cutting'].size,
-          'Sewing': uniqueOrdersPerDept['Sewing'].size,
-          'Finishing': uniqueOrdersPerDept['Finishing'].size,
-          'Packing': uniqueOrdersPerDept['Packing'].size
-        };
-
-        setProductionCounts(counts);
+  // ================== FUNGSI UTAMA LOAD PRODUCTION DATA DARI ORDERS ==================
+  const loadProductionData = () => {
+    try {
+      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+      
+      // Hitung jumlah PESANAN per departemen berdasarkan STATUS ORDER langsung
+      const ordersPerDept = {
+        'Potong': 0,
+        'Jahit': 0,
+        'Finishing': 0,
+        'Pengemasan': 0
+      };
+      
+      // Hitung TOTAL ITEM per departemen
+      const totalItemsPerDept = {
+        'Potong': 0,
+        'Jahit': 0,
+        'Finishing': 0,
+        'Pengemasan': 0
+      };
+      
+      // Simpan detail pesanan untuk modal
+      const deptOrdersDetail = {
+        'Potong': [],
+        'Jahit': [],
+        'Finishing': [],
+        'Pengemasan': []
+      };
+      
+      // Status yang dianggap aktif (belum selesai/dibatalkan)
+      const activeStatuses = ['cutting', 'sewing', 'finishing', 'packing', 'qc'];
+      
+      orders.forEach(order => {
+        // Hanya proses pesanan yang belum selesai/dibatalkan
+        if (order.status === 'completed' || order.status === 'delivered' || order.status === 'cancelled') {
+          return;
+        }
         
-        // Update production status dengan jumlah PESANAN dan TOTAL ITEM
-        setProductionStatus([
-          { 
-            stage: 'Cutting', 
-            count: counts['Cutting'], 
-            totalItems: totalItemsPerDept['Cutting'],
-            icon: '✂️', 
-            color: 'amber', 
-            jobs: deptJobs['Cutting'] 
-          },
-          { 
-            stage: 'Sewing', 
-            count: counts['Sewing'], 
-            totalItems: totalItemsPerDept['Sewing'],
-            icon: '🧵', 
-            color: 'orange', 
-            jobs: deptJobs['Sewing'] 
-          },
-          { 
-            stage: 'Finishing', 
-            count: counts['Finishing'], 
-            totalItems: totalItemsPerDept['Finishing'],
-            icon: '✨', 
-            color: 'lime', 
-            jobs: deptJobs['Finishing'] 
-          },
-          { 
-            stage: 'Packing', 
-            count: counts['Packing'], 
-            totalItems: totalItemsPerDept['Packing'],
-            icon: '📦', 
-            color: 'emerald', 
-            jobs: deptJobs['Packing'] 
-          }
-        ]);
-
-        // Hitung pesanan selesai dan dibatalkan
-        const completed = orders.filter(order => 
-          order.status === 'completed' || order.status === 'delivered'
-        );
-        const cancelled = orders.filter(order => 
-          order.status === 'cancelled'
-        );
-
-        setCompletedOrders(completed);
-        setCancelledOrders(cancelled);
-        setCompletedCount(completed.length);
-        setCancelledCount(cancelled.length);
-
-        // Hitung pesanan aktif
-        const activeStatuses = [
-          'cutting', 'sewing', 'finishing', 'packing', 'qc', 
-          'processing', 'production', 'draft'
-        ];
-        const active = orders.filter(order => activeStatuses.includes(order.status));
-        setActiveOrdersCount(active.length);
+        const orderStatus = order.status;
+        const orderId = order.id;
+        const customerName = order.customerName || 'Pelanggan';
+        const totalQty = order.itemsDetail?.reduce((sum, item) => sum + (item.qty || 0), 0) || order.items || 0;
+        const totalAmount = order.totalAmount || 0;
+        const orderDate = order.orderDate || '';
         
-        // Update stats dengan nilai pesanan aktif
-        setStats(prevStats => 
-          prevStats.map(stat => 
-            stat.title === "Pesanan Aktif" 
-              ? { ...stat, value: active.length.toString() }
-              : stat
-          )
-        );
+        // Mapping status order ke departemen
+        if (orderStatus === 'cutting') {
+          ordersPerDept['Potong']++;
+          totalItemsPerDept['Potong'] += totalQty;
+          deptOrdersDetail['Potong'].push({
+            id: orderId,
+            customerName: customerName,
+            product: order.itemsDetail?.[0]?.productName || 'Produk',
+            items: totalQty,
+            totalAmount: totalAmount,
+            orderDate: orderDate,
+            status: orderStatus
+          });
+        }
+        else if (orderStatus === 'sewing') {
+          ordersPerDept['Jahit']++;
+          totalItemsPerDept['Jahit'] += totalQty;
+          deptOrdersDetail['Jahit'].push({
+            id: orderId,
+            customerName: customerName,
+            product: order.itemsDetail?.[0]?.productName || 'Produk',
+            items: totalQty,
+            totalAmount: totalAmount,
+            orderDate: orderDate,
+            status: orderStatus
+          });
+        }
+        else if (orderStatus === 'finishing') {
+          ordersPerDept['Finishing']++;
+          totalItemsPerDept['Finishing'] += totalQty;
+          deptOrdersDetail['Finishing'].push({
+            id: orderId,
+            customerName: customerName,
+            product: order.itemsDetail?.[0]?.productName || 'Produk',
+            items: totalQty,
+            totalAmount: totalAmount,
+            orderDate: orderDate,
+            status: orderStatus
+          });
+        }
+        else if (orderStatus === 'packing') {
+          ordersPerDept['Pengemasan']++;
+          totalItemsPerDept['Pengemasan'] += totalQty;
+          deptOrdersDetail['Pengemasan'].push({
+            id: orderId,
+            customerName: customerName,
+            product: order.itemsDetail?.[0]?.productName || 'Produk',
+            items: totalQty,
+            totalAmount: totalAmount,
+            orderDate: orderDate,
+            status: orderStatus
+          });
+        }
+        else if (orderStatus === 'qc') {
+          // QC masuk ke Pengemasan
+          ordersPerDept['Pengemasan']++;
+          totalItemsPerDept['Pengemasan'] += totalQty;
+          deptOrdersDetail['Pengemasan'].push({
+            id: orderId,
+            customerName: customerName,
+            product: order.itemsDetail?.[0]?.productName || 'Produk',
+            items: totalQty,
+            totalAmount: totalAmount,
+            orderDate: orderDate,
+            status: orderStatus
+          });
+        }
+      });
 
-        // Hitung stuck items
-        calculateStuckItems();
-        
-        // Load recent orders
-        loadRecentOrders();
-      } catch (error) {
-        console.error('Error loading production data:', error);
-      }
+      console.log('Production Counts from Orders:', ordersPerDept);
+      
+      setProductionCounts(ordersPerDept);
+      
+      // Update production status dengan jumlah PESANAN dan TOTAL ITEM
+      setProductionStatus([
+        { 
+          stage: 'Potong', 
+          count: ordersPerDept['Potong'], 
+          totalItems: totalItemsPerDept['Potong'],
+          icon: '✂️', 
+          color: 'amber', 
+          orders: deptOrdersDetail['Potong']
+        },
+        { 
+          stage: 'Jahit', 
+          count: ordersPerDept['Jahit'], 
+          totalItems: totalItemsPerDept['Jahit'],
+          icon: '🧵', 
+          color: 'orange', 
+          orders: deptOrdersDetail['Jahit']
+        },
+        { 
+          stage: 'Finishing', 
+          count: ordersPerDept['Finishing'], 
+          totalItems: totalItemsPerDept['Finishing'],
+          icon: '✨', 
+          color: 'lime', 
+          orders: deptOrdersDetail['Finishing']
+        },
+        { 
+          stage: 'Pengemasan', 
+          count: ordersPerDept['Pengemasan'], 
+          totalItems: totalItemsPerDept['Pengemasan'],
+          icon: '📦', 
+          color: 'emerald', 
+          orders: deptOrdersDetail['Pengemasan']
+        }
+      ]);
+
+      // Hitung pesanan selesai dan dibatalkan
+      const completed = orders.filter(order => 
+        order.status === 'completed' || order.status === 'delivered'
+      );
+      const cancelled = orders.filter(order => 
+        order.status === 'cancelled'
+      );
+
+      setCompletedOrders(completed);
+      setCancelledOrders(cancelled);
+      setCompletedCount(completed.length);
+      setCancelledCount(cancelled.length);
+
+      // Hitung pesanan aktif
+      const active = orders.filter(order => activeStatuses.includes(order.status));
+      setActiveOrdersCount(active.length);
+      
+      // Update stats dengan nilai pesanan aktif
+      setStats(prevStats => 
+        prevStats.map(stat => 
+          stat.title === "Pesanan Aktif" 
+            ? { ...stat, value: active.length.toString() }
+            : stat
+        )
+      );
+
+      // Hitung stuck items
+      calculateStuckItems(orders);
+      
+      // Load recent orders
+      loadRecentOrders();
+      
+    } catch (error) {
+      console.error('Error loading production data:', error);
+    }
+  };
+
+  // Handler untuk klik stage produksi
+  const handleStageClick = (stageName, ordersFromState) => {
+    // Jika ada orders dari state productionStatus, gunakan itu
+    if (ordersFromState && ordersFromState.length > 0) {
+      setStageOrders(ordersFromState);
+      setSelectedStage(stageName);
+      return;
+    }
+    
+    // Fallback: ambil langsung dari orders di localStorage
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    let filteredOrders = [];
+    
+    const statusToDept = {
+      'Potong': 'cutting',
+      'Jahit': 'sewing',
+      'Finishing': 'finishing',
+      'Pengemasan': 'packing'
     };
+    
+    const targetStatus = statusToDept[stageName];
+    if (targetStatus) {
+      filteredOrders = orders
+        .filter(order => order.status === targetStatus)
+        .map(order => ({
+          id: order.id,
+          customerName: order.customerName,
+          customer: order.customerName,
+          product: order.itemsDetail?.[0]?.productName || 'Produk',
+          items: order.items,
+          itemsDetail: order.itemsDetail,
+          totalAmount: order.totalAmount,
+          orderDate: order.orderDate,
+          status: order.status,
+          qty: order.itemsDetail?.reduce((sum, item) => sum + (item.qty || 0), 0) || order.items || 0
+        }));
+    }
 
-    loadProductionData();
-    const interval = setInterval(loadProductionData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleStageClick = (stageName, jobs) => {
-    const targetDept = stageName === 'Cutting' ? 'Potong' :
-                       stageName === 'Sewing' ? 'Jahit' :
-                       stageName === 'Finishing' ? 'Finishing' : 'Packing';
-
-    const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
-    const filteredOrders = availableJobs
-      .filter(job => job.department === targetDept && job.status !== 'selesai')
-      .map(job => ({
-        id: job.order_id,
-        customer: job.customer_name || 'Pelanggan',
-        product: job.product_name || 'Produk',
-        qty: job.qty,
-        deadline: job.deadline,
-        priority: job.priority
-      }));
-
-    const uniqueOrders = Array.from(new Set(filteredOrders.map(o => o.id)))
-      .map(id => filteredOrders.find(o => o.id === id));
-
-    setStageOrders(uniqueOrders);
+    setStageOrders(filteredOrders);
     setSelectedStage(stageName);
   };
 
+  // Handler untuk klik status (Selesai / Dibatalkan)
   const handleStatusClick = (type) => {
     if (type === 'completed') {
       const formattedOrders = completedOrders.map(order => ({
@@ -551,6 +593,19 @@ export default function Dashboard() {
     }
   };
 
+  // Handler untuk klik item stuck
+  const handleStuckItemClick = (stuckItem) => {
+    setSelectedStuckOrder(stuckItem);
+    setShowStuckDetailModal(true);
+  };
+
+  // Handler untuk klik Pesanan Aktif
+  const handleActiveOrdersClick = () => {
+    const active = getActiveOrders();
+    setActiveOrders(active);
+    setShowActiveOrdersModal(true);
+  };
+
   // Handler untuk klik stat card
   const handleStatClick = (stat) => {
     if (stat.onClick === 'showActiveOrders') {
@@ -559,6 +614,13 @@ export default function Dashboard() {
       navigate(stat.link);
     }
   };
+
+  // Load data saat mount dan setiap ada perubahan
+  useEffect(() => {
+    loadProductionData();
+    const interval = setInterval(loadProductionData, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Helper untuk color classes
   const getColorClass = (color) => {
@@ -572,57 +634,14 @@ export default function Dashboard() {
     return colorMap[color] || 'bg-gray-100 text-gray-600';
   };
 
-  // Helper untuk mendapatkan warna badge status
-  const getStatusBadgeColor = (status) => {
-    const colorMap = {
-      cutting: 'bg-amber-100 text-amber-800',
-      sewing: 'bg-orange-100 text-orange-800',
-      finishing: 'bg-lime-100 text-lime-800',
-      packing: 'bg-emerald-100 text-emerald-800',
-      qc: 'bg-teal-100 text-teal-800',
-      completed: 'bg-green-100 text-green-800',
-      delivered: 'bg-purple-100 text-purple-800',
-      cancelled: 'bg-red-100 text-red-800',
-      processing: 'bg-blue-100 text-blue-800',
-      production: 'bg-yellow-100 text-yellow-800',
-      draft: 'bg-gray-100 text-gray-800'
-    };
-    return colorMap[status] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getStatusLabel = (status) => {
-    const labelMap = {
-      cutting: 'Potong',
-      sewing: 'Jahit',
-      finishing: 'Finishing',
-      packing: 'Packing',
-      qc: 'QC',
-      completed: 'Selesai',
-      delivered: 'Terkirim',
-      cancelled: 'Dibatalkan',
-      processing: 'Diproses',
-      production: 'Produksi',
-      draft: 'Draft'
-    };
-    return labelMap[status] || status;
-  };
-
-  // Helper untuk stock status
-  const getStockStatus = (current, min) => {
-    const percentage = (current / min) * 100;
-    if (percentage <= 25) return { status: 'critical', color: 'text-red-600', bg: 'bg-red-50' };
-    if (percentage <= 50) return { status: 'warning', color: 'text-yellow-600', bg: 'bg-yellow-50' };
-    return { status: 'low', color: 'text-green-600', bg: 'bg-green-50' };
-  };
-
   // Helper untuk mendapatkan badge status order
   const getStatusBadge = (status) => {
     const statusMap = {
       'cutting': { label: 'Potong', color: 'bg-amber-100 text-amber-800' },
       'sewing': { label: 'Jahit', color: 'bg-orange-100 text-orange-800' },
       'finishing': { label: 'Finishing', color: 'bg-lime-100 text-lime-800' },
-      'packing': { label: 'Packing', color: 'bg-emerald-100 text-emerald-800' },
-      'qc': { label: 'QC', color: 'bg-teal-100 text-teal-800' },
+      'packing': { label: 'Pengemasan', color: 'bg-emerald-100 text-emerald-800' },
+      'qc': { label: 'Quality Control', color: 'bg-teal-100 text-teal-800' },
       'processing': { label: 'Diproses', color: 'bg-blue-100 text-blue-800' },
       'production': { label: 'Produksi', color: 'bg-yellow-100 text-yellow-800' },
       'draft': { label: 'Draft', color: 'bg-gray-100 text-gray-800' },
@@ -803,13 +822,13 @@ export default function Dashboard() {
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Stuck</div>
             </div>
           </div>
-          <button onClick={() => { calculateStuckItems(); loadRecentOrders(); }} className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-blue-600 hover:text-blue-800 font-medium">
+          <button onClick={loadProductionData} className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-blue-600 hover:text-blue-800 font-medium">
             Refresh data
           </button>
         </div>
       </div>
 
-      {/* Stats Grid - PESANAN AKTIF SEKARANG BISA DIKLIK */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {stats.map((stat, index) => (
           <div
@@ -908,9 +927,9 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Two Column Layout - FULL WIDTH dengan grid yang memenuhi space */}
+      {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent Orders - FULL WIDTH di kiri - TERHUBUNG KE HALAMAN ORDER */}
+        {/* Recent Orders */}
         <Card className="enterprise-card animate-enter-fade delay-200 h-full">
           <CardHeader className="border-b border-gray-100 pb-3">
             <div className="flex justify-between items-center">
@@ -982,7 +1001,7 @@ export default function Dashboard() {
           </CardBody>
         </Card>
 
-        {/* Production Status - FULL WIDTH di kanan (MENAMPILKAN PESANAN) */}
+        {/* Production Status - MENGGUNAKAN DATA DARI ORDERS LANGSUNG */}
         <Card className="enterprise-card animate-enter-fade delay-300 h-full">
           <CardHeader className="border-b border-gray-100 pb-3">
             <div className="flex justify-between items-center">
@@ -1017,10 +1036,9 @@ export default function Dashboard() {
                 return (
                   <div 
                     key={stage.stage}
-                    onClick={() => handleStageClick(stage.stage, stage.jobs)}
+                    onClick={() => handleStageClick(stage.stage, stage.orders)}
                     className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 ${colorMap[stage.color]} hover:shadow-sm active:scale-[0.99]`}
                   >
-                    {/* Bagian Kiri: Icon dan Nama Departemen */}
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm`}>
                         {stage.icon}
@@ -1031,24 +1049,19 @@ export default function Dashboard() {
                       </div>
                     </div>
                     
-                    {/* Bagian Kanan: Jumlah Pesanan dan Total Item */}
                     <div className="flex items-center gap-4">
-                      {/* Jumlah Pesanan */}
                       <div className="text-right">
                         <p className={`font-black text-xl ${iconColorMap[stage.color]}`}>{stage.count}</p>
                         <p className="text-[10px] font-bold text-gray-500 uppercase">pesanan</p>
                       </div>
                       
-                      {/* Separator */}
                       <div className="w-px h-8 bg-gray-300"></div>
                       
-                      {/* Total Item */}
                       <div className="text-right">
                         <p className="font-black text-xl text-gray-600">{stage.totalItems}</p>
                         <p className="text-[10px] font-bold text-gray-500 uppercase">item</p>
                       </div>
                       
-                      {/* Icon Panah */}
                       <ChevronRight size={16} className="text-gray-400 group-hover:text-blue-500 transition-colors ml-1" />
                     </div>
                   </div>
@@ -1452,67 +1465,145 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ================== MODAL STAGE DETAIL - DAFTAR PESANAN ================== */}
+      {/* ================== MODAL STAGE DETAIL ================== */}
       {selectedStage && (
-        <div 
-          className="fixed inset-0 z-[200] flex items-start justify-center p-4 overflow-y-auto"
-        >
+        <div className="fixed inset-0 z-[200] flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col scale-in mt-8 md:mt-12 border-2 border-neutral">
             <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-xl">
-                  {selectedStage === 'Cutting' ? '✂️' : selectedStage === 'Sewing' ? '🧵' : selectedStage === 'Finishing' ? '✨' : selectedStage === 'Packing' ? '📦' : selectedStage === 'Selesai' ? '✅' : selectedStage === 'Dibatalkan' ? '❌' : '📋'}
+                  {selectedStage === 'Potong' ? '✂️' : 
+                   selectedStage === 'Jahit' ? '🧵' : 
+                   selectedStage === 'Finishing' ? '✨' : 
+                   selectedStage === 'Pengemasan' ? '📦' : 
+                   selectedStage === 'Selesai' ? '✅' : 
+                   selectedStage === 'Dibatalkan' ? '❌' : '📋'}
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-800">Daftar Pesanan - {selectedStage}</h3>
-                  <p className="text-xs text-gray-500">{selectedStage === 'Selesai' ? 'Pesanan yang telah selesai diproses dan dikirim' : selectedStage === 'Dibatalkan' ? 'Pesanan yang telah dibatalkan oleh customer atau admin' : 'Menampilkan pesanan yang sedang diproses di departemen ini'}</p>
+                  <p className="text-xs text-gray-500">
+                    {selectedStage === 'Selesai' ? 'Pesanan yang telah selesai diproses dan dikirim' : 
+                     selectedStage === 'Dibatalkan' ? 'Pesanan yang telah dibatalkan oleh customer atau admin' : 
+                     'Menampilkan pesanan yang sedang diproses di departemen ini'}
+                  </p>
                 </div>
               </div>
-              <button onClick={() => setSelectedStage(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600"><X size={20} /></button>
+              <button onClick={() => setSelectedStage(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
               {stageOrders.length > 0 ? (
                 <div className="space-y-3">
                   {stageOrders.map((order) => (
-                    <div key={order.id} className={`p-4 bg-white border rounded-xl hover:shadow-md transition-all group ${selectedStage === 'Selesai' ? 'border-green-200 hover:border-green-300' : selectedStage === 'Dibatalkan' ? 'border-red-200 hover:border-red-300' : 'border-gray-100 hover:border-primary-200'}`}>
+                    <div key={order.id} className={`p-4 bg-white border rounded-xl hover:shadow-md transition-all group ${
+                      selectedStage === 'Selesai' ? 'border-green-200 hover:border-green-300' : 
+                      selectedStage === 'Dibatalkan' ? 'border-red-200 hover:border-red-300' : 
+                      'border-gray-100 hover:border-primary-200'
+                    }`}>
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <div className="flex items-center space-x-2 mb-1">
                             <span className="font-black text-primary-600 text-sm">{order.id}</span>
-                            {selectedStage === 'Selesai' && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-green-100 text-green-800">Selesai</span>}
-                            {selectedStage === 'Dibatalkan' && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-red-100 text-red-800">Dibatalkan</span>}
+                            {selectedStage === 'Selesai' && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-green-100 text-green-800">Selesai</span>
+                            )}
+                            {selectedStage === 'Dibatalkan' && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-red-100 text-red-800">Dibatalkan</span>
+                            )}
                           </div>
                           <h4 className="font-bold text-gray-800">{order.customerName || order.customer}</h4>
-                          <p className="text-sm text-gray-600 mt-0.5">{order.itemsDetail ? `${order.itemsDetail.length} item` : order.product || `${order.items} item`}</p>
-                          {order.totalAmount && <p className="text-sm font-semibold text-gray-700 mt-1">Total: Rp {formatCurrency(order.totalAmount)}</p>}
+                          <p className="text-sm text-gray-600 mt-0.5">
+                            {order.itemsDetail ? `${order.itemsDetail.length} item` : order.product || `${order.items} item`}
+                          </p>
+                          {order.totalAmount && (
+                            <p className="text-sm font-semibold text-gray-700 mt-1">
+                              Total: Rp {formatCurrency(order.totalAmount)}
+                            </p>
+                          )}
                         </div>
-                        <div className="text-right"><p className="text-lg font-black text-gray-900 leading-tight">{order.qty || order.items || 0}</p><p className="text-[10px] text-gray-500 font-bold uppercase">item</p></div>
+                        <div className="text-right">
+                          <p className="text-lg font-black text-gray-900 leading-tight">{order.qty || order.items || 0}</p>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase">item</p>
+                        </div>
                       </div>
                       <div className="pt-3 border-t border-gray-50 flex items-center justify-between">
-                        <div className="flex items-center text-xs text-gray-500"><Clock size={12} className="mr-1 text-primary-400" />{order.orderDate ? <>Tanggal: <span className="ml-1 font-semibold text-gray-700">{formatDate(order.orderDate)}</span></> : order.deadline ? <>Deadline: <span className="ml-1 font-semibold text-gray-700">{order.deadline}</span></> : <>Selesai: <span className="ml-1 font-semibold text-gray-700">{order.completed_at ? formatDate(order.completed_at) : '-'}</span></>}</div>
-                        <Link to={`/orders/${order.id}`} className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center group-hover:translate-x-1 transition-transform">Lihat Detail <ChevronRight size={14} className="ml-0.5" /></Link>
+                        <div className="flex items-center text-xs text-gray-500">
+                          <Clock size={12} className="mr-1 text-primary-400" />
+                          {order.orderDate ? (
+                            <>Tanggal: <span className="ml-1 font-semibold text-gray-700">{formatDate(order.orderDate)}</span></>
+                          ) : order.deadline ? (
+                            <>Deadline: <span className="ml-1 font-semibold text-gray-700">{order.deadline}</span></>
+                          ) : (
+                            <>Selesai: <span className="ml-1 font-semibold text-gray-700">
+                              {order.completed_at ? formatDate(order.completed_at) : '-'}
+                            </span></>
+                          )}
+                        </div>
+                        <Link to={`/orders/${order.id}`} className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center group-hover:translate-x-1 transition-transform">
+                          Lihat Detail <ChevronRight size={14} className="ml-0.5" />
+                        </Link>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${selectedStage === 'Selesai' ? 'bg-green-50' : selectedStage === 'Dibatalkan' ? 'bg-red-50' : 'bg-slate-50'}`}>
-                    {selectedStage === 'Selesai' ? <CheckCircle size={32} className="text-green-500" /> : selectedStage === 'Dibatalkan' ? <AlertCircle size={32} className="text-red-500" /> : <Package size={32} className="text-slate-300" />}
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+                    selectedStage === 'Selesai' ? 'bg-green-50' : 
+                    selectedStage === 'Dibatalkan' ? 'bg-red-50' : 'bg-slate-50'
+                  }`}>
+                    {selectedStage === 'Selesai' ? (
+                      <CheckCircle size={32} className="text-green-500" />
+                    ) : selectedStage === 'Dibatalkan' ? (
+                      <AlertCircle size={32} className="text-red-500" />
+                    ) : (
+                      <Package size={32} className="text-slate-300" />
+                    )}
                   </div>
-                  <h4 className="text-gray-800 font-bold">{selectedStage === 'Selesai' ? 'Belum ada pesanan selesai' : selectedStage === 'Dibatalkan' ? 'Belum ada pesanan dibatalkan' : 'Tidak ada pesanan'}</h4>
-                  <p className="text-sm text-gray-500 max-w-[240px] mt-1">{selectedStage === 'Selesai' ? 'Pesanan yang selesai akan muncul di sini' : selectedStage === 'Dibatalkan' ? 'Pesanan yang dibatalkan akan muncul di sini' : `Saat ini tidak ada pesanan aktif di departemen ${selectedStage}.`}</p>
-                  {selectedStage === 'Selesai' && <Link to="/orders" className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700">Lihat Semua Pesanan</Link>}
-                  {selectedStage === 'Dibatalkan' && <Link to="/orders" className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700">Lihat Semua Pesanan</Link>}
+                  <h4 className="text-gray-800 font-bold">
+                    {selectedStage === 'Selesai' ? 'Belum ada pesanan selesai' : 
+                     selectedStage === 'Dibatalkan' ? 'Belum ada pesanan dibatalkan' : 
+                     'Tidak ada pesanan'}
+                  </h4>
+                  <p className="text-sm text-gray-500 max-w-[240px] mt-1">
+                    {selectedStage === 'Selesai' ? 'Pesanan yang selesai akan muncul di sini' : 
+                     selectedStage === 'Dibatalkan' ? 'Pesanan yang dibatalkan akan muncul di sini' : 
+                     `Saat ini tidak ada pesanan aktif di departemen ${selectedStage}.`}
+                  </p>
+                  {selectedStage === 'Selesai' && (
+                    <Link to="/orders" className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700">
+                      Lihat Semua Pesanan
+                    </Link>
+                  )}
+                  {selectedStage === 'Dibatalkan' && (
+                    <Link to="/orders" className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700">
+                      Lihat Semua Pesanan
+                    </Link>
+                  )}
                 </div>
               )}
             </div>
             <div className="p-5 border-t border-gray-100 bg-slate-50/30 flex justify-end">
-              <button onClick={() => setSelectedStage(null)} className="px-6 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors text-sm shadow-sm">Tutup</button>
+              <button onClick={() => setSelectedStage(null)} className="px-6 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors text-sm shadow-sm">
+                Tutup
+              </button>
             </div>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+// Helper function untuk stock status (perlu ditambahkan di luar komponen)
+function getStockStatus(currentStock, minStock) {
+  const ratio = currentStock / minStock;
+  if (ratio <= 0.3) {
+    return { status: 'critical', bg: 'bg-red-100', color: 'text-red-800' };
+  } else if (ratio <= 0.6) {
+    return { status: 'warning', bg: 'bg-yellow-100', color: 'text-yellow-800' };
+  } else {
+    return { status: 'normal', bg: 'bg-green-100', color: 'text-green-800' };
+  }
 }

@@ -1407,7 +1407,7 @@ export default function Dashboard() {
         <div 
           className="fixed inset-0 z-[200] flex items-start justify-center p-4 overflow-y-auto"
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col scale-in mt-8 md:mt-12 border-4 border-black">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col scale-in mt-8 md:mt-12 border-2 border-neutral">
             <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-xl">

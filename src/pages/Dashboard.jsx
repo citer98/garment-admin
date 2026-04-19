@@ -63,7 +63,15 @@ export default function Dashboard() {
   const [selectedStuckOrder, setSelectedStuckOrder] = useState(null);
   const [showStuckDetailModal, setShowStuckDetailModal] = useState(false);
 
-  // Stats untuk dashboard
+  // ================== STATISTIK CEPAT YANG REAL-TIME ==================
+  const [quickStats, setQuickStats] = useState({
+    efficiency: 85,
+    completedCount: 0,
+    pendingCount: 0,
+    stuckCount: 0
+  });
+
+  // Stats untuk dashboard (4 card utama) - DATA STATIS
   const [stats, setStats] = useState([
     {
       title: "Pesanan Aktif",
@@ -110,7 +118,7 @@ export default function Dashboard() {
     { stage: 'Pengemasan', count: 0, totalItems: 0, icon: '📦', color: 'emerald', orders: [] }
   ]);
 
-  // Data Mock untuk Charts
+  // Data untuk Tren Pesanan (7 Hari) - DATA STATIS
   const orderHistoryData = [
     { name: 'Sen', total: 4 },
     { name: 'Sel', total: 7 },
@@ -121,12 +129,13 @@ export default function Dashboard() {
     { name: 'Min', total: 3 },
   ];
 
+  // Data untuk Performa Keuangan (6 bulan) - DATA STATIS
   const revenueData = [
     { month: 'Jan', revenue: 35 },
     { month: 'Feb', revenue: 42 },
     { month: 'Mar', revenue: 48 },
     { month: 'Apr', revenue: 38 },
-    { month: 'May', revenue: 52 },
+    { month: 'Mei', revenue: 52 },
     { month: 'Jun', revenue: 61 },
   ];
 
@@ -228,6 +237,31 @@ export default function Dashboard() {
     }
   };
 
+  // ================== FUNGSI UNTUK MENGHITUNG PESANAN PENDING ==================
+  const calculatePendingOrders = (orders) => {
+    const pending = orders.filter(order => 
+      order.status === 'cutting' && 
+      order.status !== 'cancelled' &&
+      order.status !== 'completed' &&
+      order.status !== 'delivered'
+    );
+    return pending.length;
+  };
+
+  // ================== FUNGSI UNTUK MENGHITUNG EFISIENSI ==================
+  const calculateEfficiency = (orders) => {
+    const completedOrdersList = orders.filter(o => o.status === 'completed' || o.status === 'delivered');
+    if (completedOrdersList.length === 0) return 85;
+    
+    const onTimeOrders = completedOrdersList.filter(order => {
+      if (!order.dueDate) return true;
+      return order.orderDate <= order.dueDate;
+    });
+    
+    const efficiency = (onTimeOrders.length / completedOrdersList.length) * 100;
+    return Math.round(efficiency);
+  };
+
   // ================== FUNGSI UNTUK MENGHITUNG ITEM STUCK ==================
   const calculateStuckItems = (ordersFromParam = null) => {
     try {
@@ -272,26 +306,23 @@ export default function Dashboard() {
       });
 
       setStuckItems(stuck);
+      return stuck.length;
     } catch (error) {
       console.error('Error calculating stuck items:', error);
+      return 0;
     }
   };
 
   // ================== FUNGSI UNTUK LOAD DATA PESANAN TERBARU ==================
-  const loadRecentOrders = () => {
+  const loadRecentOrders = (orders) => {
     try {
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      
-      // Status pesanan yang dianggap AKTIF
       const activeStatuses = [
         'cutting', 'sewing', 'finishing', 'packing', 'qc', 
         'processing', 'production', 'draft'
       ];
       
-      // Filter hanya pesanan dengan status aktif
       const activeOrdersOnly = orders.filter(order => activeStatuses.includes(order.status));
       
-      // Ambil 5 pesanan terbaru dari pesanan aktif
       const sortedOrders = [...activeOrdersOnly].sort((a, b) => 
         new Date(b.orderDate) - new Date(a.orderDate)
       ).slice(0, 5);
@@ -332,7 +363,34 @@ export default function Dashboard() {
     try {
       const orders = JSON.parse(localStorage.getItem('orders') || '[]');
       
-      // Hitung jumlah PESANAN per departemen berdasarkan STATUS ORDER langsung
+      // ========== UPDATE STATISTIK CEPAT (REAL-TIME) ==========
+      const completedCount_ = orders.filter(o => o.status === 'completed' || o.status === 'delivered').length;
+      const pendingCount_ = calculatePendingOrders(orders);
+      const stuckCount_ = calculateStuckItems(orders);
+      const efficiency_ = calculateEfficiency(orders);
+      
+      setQuickStats({
+        efficiency: efficiency_,
+        completedCount: completedCount_,
+        pendingCount: pendingCount_,
+        stuckCount: stuckCount_
+      });
+      
+      // ========== UPDATE PESANAN AKTIF (REAL-TIME) ==========
+      const activeStatuses = ['cutting', 'sewing', 'finishing', 'packing', 'qc'];
+      const active = orders.filter(order => activeStatuses.includes(order.status));
+      setActiveOrdersCount(active.length);
+      
+      // Update stats hanya untuk Pesanan Aktif (REAL-TIME), sisanya tetap STATIS
+      setStats(prevStats => 
+        prevStats.map(stat => 
+          stat.title === "Pesanan Aktif" 
+            ? { ...stat, value: active.length.toString() }
+            : stat
+        )
+      );
+      
+      // ========== HITUNG PRODUCTION COUNTS (REAL-TIME) ==========
       const ordersPerDept = {
         'Potong': 0,
         'Jahit': 0,
@@ -340,7 +398,6 @@ export default function Dashboard() {
         'Pengemasan': 0
       };
       
-      // Hitung TOTAL ITEM per departemen
       const totalItemsPerDept = {
         'Potong': 0,
         'Jahit': 0,
@@ -348,7 +405,6 @@ export default function Dashboard() {
         'Pengemasan': 0
       };
       
-      // Simpan detail pesanan untuk modal
       const deptOrdersDetail = {
         'Potong': [],
         'Jahit': [],
@@ -356,11 +412,7 @@ export default function Dashboard() {
         'Pengemasan': []
       };
       
-      // Status yang dianggap aktif (belum selesai/dibatalkan)
-      const activeStatuses = ['cutting', 'sewing', 'finishing', 'packing', 'qc'];
-      
       orders.forEach(order => {
-        // Hanya proses pesanan yang belum selesai/dibatalkan
         if (order.status === 'completed' || order.status === 'delivered' || order.status === 'cancelled') {
           return;
         }
@@ -372,7 +424,6 @@ export default function Dashboard() {
         const totalAmount = order.totalAmount || 0;
         const orderDate = order.orderDate || '';
         
-        // Mapping status order ke departemen
         if (orderStatus === 'cutting') {
           ordersPerDept['Potong']++;
           totalItemsPerDept['Potong'] += totalQty;
@@ -426,7 +477,6 @@ export default function Dashboard() {
           });
         }
         else if (orderStatus === 'qc') {
-          // QC masuk ke Pengemasan
           ordersPerDept['Pengemasan']++;
           totalItemsPerDept['Pengemasan'] += totalQty;
           deptOrdersDetail['Pengemasan'].push({
@@ -441,11 +491,8 @@ export default function Dashboard() {
         }
       });
 
-      console.log('Production Counts from Orders:', ordersPerDept);
-      
       setProductionCounts(ordersPerDept);
       
-      // Update production status dengan jumlah PESANAN dan TOTAL ITEM
       setProductionStatus([
         { 
           stage: 'Potong', 
@@ -481,37 +528,12 @@ export default function Dashboard() {
         }
       ]);
 
-      // Hitung pesanan selesai dan dibatalkan
-      const completed = orders.filter(order => 
-        order.status === 'completed' || order.status === 'delivered'
-      );
-      const cancelled = orders.filter(order => 
-        order.status === 'cancelled'
-      );
-
-      setCompletedOrders(completed);
-      setCancelledOrders(cancelled);
-      setCompletedCount(completed.length);
-      setCancelledCount(cancelled.length);
-
-      // Hitung pesanan aktif
-      const active = orders.filter(order => activeStatuses.includes(order.status));
-      setActiveOrdersCount(active.length);
+      setCompletedOrders(orders.filter(order => order.status === 'completed' || order.status === 'delivered'));
+      setCancelledOrders(orders.filter(order => order.status === 'cancelled'));
+      setCompletedCount(completedCount_);
+      setCancelledCount(cancelledCount_);
       
-      // Update stats dengan nilai pesanan aktif
-      setStats(prevStats => 
-        prevStats.map(stat => 
-          stat.title === "Pesanan Aktif" 
-            ? { ...stat, value: active.length.toString() }
-            : stat
-        )
-      );
-
-      // Hitung stuck items
-      calculateStuckItems(orders);
-      
-      // Load recent orders
-      loadRecentOrders();
+      loadRecentOrders(orders);
       
     } catch (error) {
       console.error('Error loading production data:', error);
@@ -520,14 +542,12 @@ export default function Dashboard() {
 
   // Handler untuk klik stage produksi
   const handleStageClick = (stageName, ordersFromState) => {
-    // Jika ada orders dari state productionStatus, gunakan itu
     if (ordersFromState && ordersFromState.length > 0) {
       setStageOrders(ordersFromState);
       setSelectedStage(stageName);
       return;
     }
     
-    // Fallback: ambil langsung dari orders di localStorage
     const orders = JSON.parse(localStorage.getItem('orders') || '[]');
     let filteredOrders = [];
     
@@ -774,7 +794,7 @@ export default function Dashboard() {
                   <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{item.currentStock} {item.unit}</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-1 mt-1 overflow-hidden">
-                  <div className="bg-red-500 h-full rounded-full" style={{ width: `${(item.currentStock / item.minStock) * 100}%` }}></div>
+                  <div className="bg-red-500 h-full rounded-full" style={{ width: `${Math.min((item.currentStock / item.minStock) * 100, 100)}%` }}></div>
                 </div>
               </Link>
             ))}
@@ -788,7 +808,7 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {/* Quick Stats */}
+        {/* Quick Stats - REAL-TIME */}
         <div className="enterprise-card p-3 md:p-4 animate-enter-fade delay-300">
           <div className="flex items-center justify-between mb-2 md:mb-3">
             <div className="flex items-center">
@@ -803,22 +823,22 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-2 gap-1.5 md:gap-2">
             <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm">
-              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">85<span className="text-sm">%</span></div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{quickStats.efficiency}<span className="text-sm">%</span></div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Efisiensi</div>
             </div>
             <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
-              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{completedCount}</div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{quickStats.completedCount}</div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Selesai</div>
             </div>
             <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-yellow-500"></div>
-              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">8</div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{quickStats.pendingCount}</div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Pending</div>
             </div>
             <div className="text-center p-2 md:p-3 border border-slate-100 rounded-lg bg-white shadow-sm relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
-              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{stuckItems.length}</div>
+              <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{quickStats.stuckCount}</div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Stuck</div>
             </div>
           </div>
@@ -828,7 +848,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid - 4 Cards (Revenue, Profit Margin, Avg Order Value = STATIS, Pesanan Aktif = REAL-TIME) */}
       <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {stats.map((stat, index) => (
           <div
@@ -859,7 +879,7 @@ export default function Dashboard() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Order Trend Chart */}
+        {/* Order Trend Chart - DATA STATIS */}
         <Card className="enterprise-card p-4 md:p-6 animate-enter-fade delay-300">
           <div className="flex items-center justify-between mb-6">
             <div><h3 className="text-lg font-bold text-gray-800 flex items-center"><BarChart3 size={18} className="mr-2 text-blue-500" /> Tren Pesanan (7 Hari)</h3><p className="text-xs text-gray-500">Jumlah pesanan masuk per hari</p></div>
@@ -907,7 +927,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* Revenue Chart */}
+        {/* Revenue Chart - DATA STATIS */}
         <Card className="enterprise-card p-4 md:p-6 lg:col-span-2 animate-enter-fade delay-500">
           <div className="flex items-center justify-between mb-6">
             <div><h3 className="text-lg font-bold text-gray-800 flex items-center"><DollarSign size={18} className="mr-2 text-green-500" /> Performa Keuangan (Rp Juta)</h3><p className="text-xs text-gray-500">Rekapitulasi pendapatan 6 bulan terakhir</p></div>
@@ -1001,7 +1021,7 @@ export default function Dashboard() {
           </CardBody>
         </Card>
 
-        {/* Production Status - MENGGUNAKAN DATA DARI ORDERS LANGSUNG */}
+        {/* Production Status */}
         <Card className="enterprise-card animate-enter-fade delay-300 h-full">
           <CardHeader className="border-b border-gray-100 pb-3">
             <div className="flex justify-between items-center">
@@ -1441,7 +1461,7 @@ export default function Dashboard() {
                               <div><div className="text-xs text-gray-600">Stok Saat Ini</div><div className="font-bold text-gray-800 text-sm">{item.currentStock} {item.unit}</div></div>
                               <div><div className="text-xs text-gray-600">Stok Minimal</div><div className="font-bold text-gray-800 text-sm">{item.minStock} {item.unit}</div></div>
                             </div>
-                            <div className="mt-2 md:mt-3"><div className="flex justify-between text-xs mb-0.5"><span className="text-gray-600">Tingkat Stok</span><span className="font-bold">{Math.round((item.currentStock / item.minStock) * 100)}%</span></div><div className="w-full bg-gray-200 rounded-full h-1.5"><div className={`h-1.5 rounded-full ${stockStatus.status === 'critical' ? 'bg-red-500' : 'bg-yellow-500'}`} style={{ width: `${(item.currentStock / item.minStock) * 100}%` }}></div></div></div>
+                            <div className="mt-2 md:mt-3"><div className="flex justify-between text-xs mb-0.5"><span className="text-gray-600">Tingkat Stok</span><span className="font-bold">{Math.round((item.currentStock / item.minStock) * 100)}%</span></div><div className="w-full bg-gray-200 rounded-full h-1.5"><div className={`h-1.5 rounded-full ${stockStatus.status === 'critical' ? 'bg-red-500' : 'bg-yellow-500'}`} style={{ width: `${Math.min((item.currentStock / item.minStock) * 100, 100)}%` }}></div></div></div>
                           </div>
                           <div className="mt-2 md:mt-0"><button className="px-3 md:px-4 py-1.5 md:py-2 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 w-full">Pesan Bahan</button></div>
                         </div>
@@ -1596,7 +1616,7 @@ export default function Dashboard() {
   );
 }
 
-// Helper function untuk stock status (perlu ditambahkan di luar komponen)
+// Helper function untuk stock status
 function getStockStatus(currentStock, minStock) {
   const ratio = currentStock / minStock;
   if (ratio <= 0.3) {

@@ -104,11 +104,11 @@ export default function Dashboard() {
 
   // Data untuk Status Produksi (akan diisi dari availableJobs)
   const [productionStatus, setProductionStatus] = useState([
-  { stage: 'Cutting', count: 0, totalItems: 0, icon: '✂️', color: 'amber', jobs: [] },
-  { stage: 'Sewing', count: 0, totalItems: 0, icon: '🧵', color: 'orange', jobs: [] },
-  { stage: 'Finishing', count: 0, totalItems: 0, icon: '✨', color: 'lime', jobs: [] },
-  { stage: 'Packing', count: 0, totalItems: 0, icon: '📦', color: 'emerald', jobs: [] }
-]);
+    { stage: 'Cutting', count: 0, totalItems: 0, icon: '✂️', color: 'amber', jobs: [] },
+    { stage: 'Sewing', count: 0, totalItems: 0, icon: '🧵', color: 'orange', jobs: [] },
+    { stage: 'Finishing', count: 0, totalItems: 0, icon: '✨', color: 'lime', jobs: [] },
+    { stage: 'Packing', count: 0, totalItems: 0, icon: '📦', color: 'emerald', jobs: [] }
+  ]);
 
   // Data Mock untuk Charts
   const orderHistoryData = [
@@ -290,12 +290,28 @@ export default function Dashboard() {
     setShowActiveOrdersModal(true);
   };
 
-  // ================== FUNGSI UNTUK LOAD DATA PESANAN TERBARU ==================
+  // ================== FUNGSI UNTUK LOAD DATA PESANAN TERBARU (HANYA PESANAN AKTIF) ==================
   const loadRecentOrders = () => {
     try {
       const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      // Ambil 5 pesanan terbaru (berdasarkan orderDate)
-      const sortedOrders = [...orders].sort((a, b) => 
+      
+      // Status pesanan yang dianggap AKTIF (masih dalam proses)
+      const activeStatuses = [
+        'cutting',      // Potong
+        'sewing',       // Jahit
+        'finishing',    // Finishing
+        'packing',      // Packing
+        'qc',           // Quality Control
+        'processing',   // Diproses
+        'production',   // Produksi
+        'draft'         // Draft
+      ];
+      
+      // Filter hanya pesanan dengan status aktif
+      const activeOrdersOnly = orders.filter(order => activeStatuses.includes(order.status));
+      
+      // Ambil 5 pesanan terbaru dari pesanan aktif (berdasarkan orderDate)
+      const sortedOrders = [...activeOrdersOnly].sort((a, b) => 
         new Date(b.orderDate) - new Date(a.orderDate)
       ).slice(0, 5);
       
@@ -332,114 +348,148 @@ export default function Dashboard() {
 
   // ================== FUNGSI UNTUK PRODUCTION COUNTS (MENAMPILKAN PESANAN BUKAN ITEM) ==================
   useEffect(() => {
-  const loadProductionData = () => {
-    try {
-      const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const loadProductionData = () => {
+      try {
+        const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
+        const orders = JSON.parse(localStorage.getItem('orders') || '[]');
 
-      // Hitung jumlah PESANAN UNIK per departemen
-      const uniqueOrdersPerDept = {
-        'Cutting': new Set(),
-        'Sewing': new Set(),
-        'Finishing': new Set(),
-        'Packing': new Set()
-      };
+        // Hitung jumlah PESANAN UNIK per departemen
+        const uniqueOrdersPerDept = {
+          'Cutting': new Set(),
+          'Sewing': new Set(),
+          'Finishing': new Set(),
+          'Packing': new Set()
+        };
 
-      // Hitung TOTAL ITEM (kuantitas) per departemen
-      const totalItemsPerDept = {
-        'Cutting': 0,
-        'Sewing': 0,
-        'Finishing': 0,
-        'Packing': 0
-      };
+        // Hitung TOTAL ITEM (kuantitas) per departemen
+        const totalItemsPerDept = {
+          'Cutting': 0,
+          'Sewing': 0,
+          'Finishing': 0,
+          'Packing': 0
+        };
 
-      // Simpan jobs untuk detail modal
-      const deptJobs = {
-        'Cutting': [],
-        'Sewing': [],
-        'Finishing': [],
-        'Packing': []
-      };
+        // Simpan jobs untuk detail modal
+        const deptJobs = {
+          'Cutting': [],
+          'Sewing': [],
+          'Finishing': [],
+          'Packing': []
+        };
 
-      availableJobs.forEach(job => {
-        if (job.status !== 'selesai') {
-          const qty = job.qty || 0;
-          
-          if (job.department === 'Potong') {
-            deptJobs['Cutting'].push(job);
-            uniqueOrdersPerDept['Cutting'].add(job.order_id);
-            totalItemsPerDept['Cutting'] += qty;
+        availableJobs.forEach(job => {
+          if (job.status !== 'selesai') {
+            const qty = job.qty || 0;
+            
+            if (job.department === 'Potong') {
+              deptJobs['Cutting'].push(job);
+              uniqueOrdersPerDept['Cutting'].add(job.order_id);
+              totalItemsPerDept['Cutting'] += qty;
+            }
+            if (job.department === 'Jahit') {
+              deptJobs['Sewing'].push(job);
+              uniqueOrdersPerDept['Sewing'].add(job.order_id);
+              totalItemsPerDept['Sewing'] += qty;
+            }
+            if (job.department === 'Finishing') {
+              deptJobs['Finishing'].push(job);
+              uniqueOrdersPerDept['Finishing'].add(job.order_id);
+              totalItemsPerDept['Finishing'] += qty;
+            }
+            if (job.department === 'Packing') {
+              deptJobs['Packing'].push(job);
+              uniqueOrdersPerDept['Packing'].add(job.order_id);
+              totalItemsPerDept['Packing'] += qty;
+            }
           }
-          if (job.department === 'Jahit') {
-            deptJobs['Sewing'].push(job);
-            uniqueOrdersPerDept['Sewing'].add(job.order_id);
-            totalItemsPerDept['Sewing'] += qty;
-          }
-          if (job.department === 'Finishing') {
-            deptJobs['Finishing'].push(job);
-            uniqueOrdersPerDept['Finishing'].add(job.order_id);
-            totalItemsPerDept['Finishing'] += qty;
-          }
-          if (job.department === 'Packing') {
-            deptJobs['Packing'].push(job);
-            uniqueOrdersPerDept['Packing'].add(job.order_id);
-            totalItemsPerDept['Packing'] += qty;
-          }
-        }
-      });
+        });
 
-      // Set counts berdasarkan jumlah PESANAN UNIK
-      const counts = {
-        'Cutting': uniqueOrdersPerDept['Cutting'].size,
-        'Sewing': uniqueOrdersPerDept['Sewing'].size,
-        'Finishing': uniqueOrdersPerDept['Finishing'].size,
-        'Packing': uniqueOrdersPerDept['Packing'].size
-      };
+        // Set counts berdasarkan jumlah PESANAN UNIK
+        const counts = {
+          'Cutting': uniqueOrdersPerDept['Cutting'].size,
+          'Sewing': uniqueOrdersPerDept['Sewing'].size,
+          'Finishing': uniqueOrdersPerDept['Finishing'].size,
+          'Packing': uniqueOrdersPerDept['Packing'].size
+        };
 
-      setProductionCounts(counts);
-      
-      // Update production status dengan jumlah PESANAN dan TOTAL ITEM
-      setProductionStatus([
-        { 
-          stage: 'Cutting', 
-          count: counts['Cutting'], 
-          totalItems: totalItemsPerDept['Cutting'],
-          icon: '✂️', 
-          color: 'amber', 
-          jobs: deptJobs['Cutting'] 
-        },
-        { 
-          stage: 'Sewing', 
-          count: counts['Sewing'], 
-          totalItems: totalItemsPerDept['Sewing'],
-          icon: '🧵', 
-          color: 'orange', 
-          jobs: deptJobs['Sewing'] 
-        },
-        { 
-          stage: 'Finishing', 
-          count: counts['Finishing'], 
-          totalItems: totalItemsPerDept['Finishing'],
-          icon: '✨', 
-          color: 'lime', 
-          jobs: deptJobs['Finishing'] 
-        },
-        { 
-          stage: 'Packing', 
-          count: counts['Packing'], 
-          totalItems: totalItemsPerDept['Packing'],
-          icon: '📦', 
-          color: 'emerald', 
-          jobs: deptJobs['Packing'] 
-        }
-      ]);
+        setProductionCounts(counts);
+        
+        // Update production status dengan jumlah PESANAN dan TOTAL ITEM
+        setProductionStatus([
+          { 
+            stage: 'Cutting', 
+            count: counts['Cutting'], 
+            totalItems: totalItemsPerDept['Cutting'],
+            icon: '✂️', 
+            color: 'amber', 
+            jobs: deptJobs['Cutting'] 
+          },
+          { 
+            stage: 'Sewing', 
+            count: counts['Sewing'], 
+            totalItems: totalItemsPerDept['Sewing'],
+            icon: '🧵', 
+            color: 'orange', 
+            jobs: deptJobs['Sewing'] 
+          },
+          { 
+            stage: 'Finishing', 
+            count: counts['Finishing'], 
+            totalItems: totalItemsPerDept['Finishing'],
+            icon: '✨', 
+            color: 'lime', 
+            jobs: deptJobs['Finishing'] 
+          },
+          { 
+            stage: 'Packing', 
+            count: counts['Packing'], 
+            totalItems: totalItemsPerDept['Packing'],
+            icon: '📦', 
+            color: 'emerald', 
+            jobs: deptJobs['Packing'] 
+          }
+        ]);
 
-      // ... sisa kode tetap sama (completed, cancelled, dll)
-      
-    } catch (error) {
-      console.error('Error loading production data:', error);
-    }
-  };
+        // Hitung pesanan selesai dan dibatalkan
+        const completed = orders.filter(order => 
+          order.status === 'completed' || order.status === 'delivered'
+        );
+        const cancelled = orders.filter(order => 
+          order.status === 'cancelled'
+        );
+
+        setCompletedOrders(completed);
+        setCancelledOrders(cancelled);
+        setCompletedCount(completed.length);
+        setCancelledCount(cancelled.length);
+
+        // Hitung pesanan aktif
+        const activeStatuses = [
+          'cutting', 'sewing', 'finishing', 'packing', 'qc', 
+          'processing', 'production', 'draft'
+        ];
+        const active = orders.filter(order => activeStatuses.includes(order.status));
+        setActiveOrdersCount(active.length);
+        
+        // Update stats dengan nilai pesanan aktif
+        setStats(prevStats => 
+          prevStats.map(stat => 
+            stat.title === "Pesanan Aktif" 
+              ? { ...stat, value: active.length.toString() }
+              : stat
+          )
+        );
+
+        // Hitung stuck items
+        calculateStuckItems();
+        
+        // Load recent orders
+        loadRecentOrders();
+      } catch (error) {
+        console.error('Error loading production data:', error);
+      }
+    };
+
     loadProductionData();
     const interval = setInterval(loadProductionData, 30000);
     return () => clearInterval(interval);
@@ -860,7 +910,7 @@ export default function Dashboard() {
 
       {/* Two Column Layout - FULL WIDTH dengan grid yang memenuhi space */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent Orders - FULL WIDTH di kiri */}
+        {/* Recent Orders - FULL WIDTH di kiri - TERHUBUNG KE HALAMAN ORDER */}
         <Card className="enterprise-card animate-enter-fade delay-200 h-full">
           <CardHeader className="border-b border-gray-100 pb-3">
             <div className="flex justify-between items-center">
@@ -869,7 +919,7 @@ export default function Dashboard() {
                   <Clock size={16} className="text-blue-500" />
                   Pesanan Terbaru
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">5 pesanan terakhir yang masuk</p>
+                <p className="text-xs text-gray-500 mt-0.5">5 pesanan terakhir yang masuk (aktif)</p>
               </div>
               <Link to="/orders" className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
                 Lihat semua <ChevronRight size={12} />
@@ -922,7 +972,7 @@ export default function Dashboard() {
                   <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
                     <Package className="text-gray-400" size={24} />
                   </div>
-                  <p className="text-gray-500 text-sm">Belum ada pesanan</p>
+                  <p className="text-gray-500 text-sm">Belum ada pesanan aktif</p>
                   <Link to="/orders/create" className="mt-3 inline-block text-blue-600 text-sm hover:text-blue-700">
                     Buat pesanan pertama →
                   </Link>
@@ -951,59 +1001,59 @@ export default function Dashboard() {
           <CardBody className="p-4">
             <div className="space-y-3">
               {productionStatus.map((stage) => {
-              const colorMap = {
-                amber: 'bg-amber-50 border-amber-200 hover:border-amber-300',
-                orange: 'bg-orange-50 border-orange-200 hover:border-orange-300',
-                lime: 'bg-lime-50 border-lime-200 hover:border-lime-300',
-                emerald: 'bg-emerald-50 border-emerald-200 hover:border-emerald-300'
-              };
-              const iconColorMap = {
-                amber: 'text-amber-600',
-                orange: 'text-orange-600',
-                lime: 'text-lime-600',
-                emerald: 'text-emerald-600'
-              };
-              
-              return (
-                <div 
-                  key={stage.stage}
-                  onClick={() => handleStageClick(stage.stage, stage.jobs)}
-                  className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 ${colorMap[stage.color]} hover:shadow-sm active:scale-[0.99]`}
-                >
-                  {/* Bagian Kiri: Icon dan Nama Departemen */}
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm`}>
-                      {stage.icon}
+                const colorMap = {
+                  amber: 'bg-amber-50 border-amber-200 hover:border-amber-300',
+                  orange: 'bg-orange-50 border-orange-200 hover:border-orange-300',
+                  lime: 'bg-lime-50 border-lime-200 hover:border-lime-300',
+                  emerald: 'bg-emerald-50 border-emerald-200 hover:border-emerald-300'
+                };
+                const iconColorMap = {
+                  amber: 'text-amber-600',
+                  orange: 'text-orange-600',
+                  lime: 'text-lime-600',
+                  emerald: 'text-emerald-600'
+                };
+                
+                return (
+                  <div 
+                    key={stage.stage}
+                    onClick={() => handleStageClick(stage.stage, stage.jobs)}
+                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 ${colorMap[stage.color]} hover:shadow-sm active:scale-[0.99]`}
+                  >
+                    {/* Bagian Kiri: Icon dan Nama Departemen */}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm`}>
+                        {stage.icon}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-800 text-sm">{stage.stage}</p>
+                        <p className="text-xs text-gray-500">Departemen</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm">{stage.stage}</p>
-                      <p className="text-xs text-gray-500">Departemen</p>
+                    
+                    {/* Bagian Kanan: Jumlah Pesanan dan Total Item */}
+                    <div className="flex items-center gap-4">
+                      {/* Jumlah Pesanan */}
+                      <div className="text-right">
+                        <p className={`font-black text-xl ${iconColorMap[stage.color]}`}>{stage.count}</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase">pesanan</p>
+                      </div>
+                      
+                      {/* Separator */}
+                      <div className="w-px h-8 bg-gray-300"></div>
+                      
+                      {/* Total Item */}
+                      <div className="text-right">
+                        <p className="font-black text-xl text-gray-600">{stage.totalItems}</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase">item</p>
+                      </div>
+                      
+                      {/* Icon Panah */}
+                      <ChevronRight size={16} className="text-gray-400 group-hover:text-blue-500 transition-colors ml-1" />
                     </div>
                   </div>
-                  
-                  {/* Bagian Kanan: Jumlah Pesanan dan Total Item */}
-                  <div className="flex items-center gap-4">
-                    {/* Jumlah Pesanan */}
-                    <div className="text-right">
-                      <p className={`font-black text-xl ${iconColorMap[stage.color]}`}>{stage.count}</p>
-                      <p className="text-[10px] font-bold text-gray-500 uppercase">pesanan</p>
-                    </div>
-                    
-                    {/* Separator */}
-                    <div className="w-px h-8 bg-gray-300"></div>
-                    
-                    {/* Total Item */}
-                    <div className="text-right">
-                      <p className="font-black text-xl text-gray-600">{stage.totalItems}</p>
-                      <p className="text-[10px] font-bold text-gray-500 uppercase">item</p>
-                    </div>
-                    
-                    {/* Icon Panah */}
-                    <ChevronRight size={16} className="text-gray-400 group-hover:text-blue-500 transition-colors ml-1" />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
               
               {/* Pesanan Selesai Card */}
               <div 

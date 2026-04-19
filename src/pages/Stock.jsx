@@ -1126,15 +1126,15 @@ export default function Stock() {
     </div>
   );
 
-  // ================== MODAL-MODAL DENGAN BACKGROUND PUTIH/BLUR ==================
+  // ================== MODAL-MODAL DENGAN POSISI LEBIH KE ATAS ==================
 
   // Modal Tambah Kategori
   const AddCategoryModal = () => {
     if (!showAddCategoryModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200 mt-8 md:mt-12">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
             <div className="flex items-center gap-2">
               <Tag size={20} className="text-purple-600" />
@@ -1176,8 +1176,8 @@ export default function Stock() {
     if (!showManageCategoriesModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <Tag size={20} className="text-purple-600" />
@@ -1275,8 +1275,8 @@ export default function Stock() {
     if (!showAddUnitModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200 mt-8 md:mt-12">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-cyan-50 to-white">
             <div className="flex items-center gap-2">
               <Ruler size={20} className="text-cyan-600" />
@@ -1318,8 +1318,8 @@ export default function Stock() {
     if (!showManageUnitsModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-cyan-50 to-white sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <Ruler size={20} className="text-cyan-600" />
@@ -1417,8 +1417,8 @@ export default function Stock() {
     if (!showAddSupplierModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200 mt-8 md:mt-12">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-orange-50 to-white">
             <div className="flex items-center gap-2">
               <Truck size={20} className="text-orange-600" />
@@ -1499,8 +1499,8 @@ export default function Stock() {
     if (!showManageSuppliersModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-orange-50 to-white sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <Truck size={20} className="text-orange-600" />
@@ -1643,8 +1643,8 @@ export default function Stock() {
     if (!isOpen) return null;
     
     return (
-      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <Warehouse size={22} className="text-blue-600" />
@@ -1845,7 +1845,7 @@ export default function Stock() {
     );
   };
 
-  // Detail Modal with Restock
+  // Detail Modal with Restock - DIPERBAIKI POSISINYA LEBIH KE ATAS
   const DetailModal = () => {
     if (!showDetailModal || !selectedItem) return null;
     
@@ -1857,8 +1857,8 @@ export default function Stock() {
     const supplierInfo = supplierDetail ? JSON.parse(supplierDetail) : null;
     
     return (
-      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
+      <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <Package size={20} className="text-blue-600" />

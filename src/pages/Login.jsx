@@ -1,7 +1,8 @@
+// src/pages/Login.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
-import { userData } from './UserManagement'; // Import user data dari UserManagement
+import { Eye, EyeOff, Building2, Users, Shield, UserCheck } from 'lucide-react';
+import { userData } from './UserManagement';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -19,23 +20,19 @@ export default function Login() {
       return;
     }
 
-    // Cari user di data dari UserManagement.jsx
     const user = userData.find(
       account => account.username === username && account.password === password
     );
 
     if (user) {
-      // Cek status user aktif
       if (user.status !== 'active') {
         setError('Akun tidak aktif. Hubungi administrator.');
         return;
       }
 
-      // Simpan data user ke localStorage (tanpa password untuk keamanan)
       const { password: userPassword, ...userWithoutPassword } = user;
       localStorage.setItem('user', JSON.stringify(userWithoutPassword));
       
-      // Redirect berdasarkan role
       if (user.role === 'Admin') {
         nav('/dashboard');
       } else {
@@ -46,7 +43,6 @@ export default function Login() {
     }
   };
 
-  // Demo accounts tetap untuk testing
   const demoAccounts = [
     { username: 'admin', password: 'admin123', name: 'Pak Hartono', role: 'Admin' },
     { username: 'budi', password: 'budi123', name: 'Budi Santoso', role: 'Karyawan' },
@@ -59,354 +55,189 @@ export default function Login() {
     setError('');
   };
 
-  // Filter hanya user yang aktif untuk demo
   const activeDemoAccounts = demoAccounts.filter(account => {
     const user = userData.find(u => u.username === account.username);
     return user && user.status === 'active';
   });
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #0f172a, #1e293b, #0f172a)',
-      padding: '1rem'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '28rem',
-        background: 'white',
-        borderRadius: '1rem',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        overflow: 'hidden'
-      }}>
-        {/* Header */}
-        <div style={{
-          background: 'linear-gradient(to right, #1e293b, #334155)',
-          padding: '1.5rem',
-          textAlign: 'center'
-        }}>
-          <h1 style={{
-            fontSize: '1.875rem',
-            fontWeight: 'bold',
-            color: 'white'
-          }}>Garment V.0.08.4</h1>
-          <p style={{
-            color: '#cbd5e1',
-            fontSize: '0.875rem',
-            marginTop: '0.25rem'
-          }}>Sistem Manufaktur Terintegrasi</p>
-        </div>
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* ==================== MAIN CONTENT WITH SCALE TRANSFORM ==================== */}
+      <div 
+        className="transition-all duration-300"
+        style={{
+          transform: 'scale(0.85)',
+          transformOrigin: 'top left',
+          width: '117.65%',
+          minHeight: '100vh',
+          paddingBottom: '100px'
+        }}
+      >
+        <div className="flex flex-col items-center justify-center min-h-screen px-4 py-6">
+          {/* Login Card */}
+          <div className="w-full max-w-md">
+            {/* Card */}
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-8 py-6 text-center">
+                <div className="flex justify-center mb-3">
+                  <div className="bg-white/10 p-3 rounded-full">
+                    <Building2 size={32} className="text-white" />
+                  </div>
+                </div>
+                <h1 className="text-2xl font-bold text-white">GarmentTrackPro</h1>
+                <p className="text-slate-300 text-sm mt-1">Sistem Manufaktur Terintegrasi</p>
+                <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                  <span className="text-xs text-slate-300">V.0.08.4</span>
+                </div>
+              </div>
 
-        {/* Form */}
-        <div style={{ padding: '2rem' }}>
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* Username */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: '#334155',
-                textTransform: 'uppercase',
-                marginBottom: '0.5rem'
-              }}>
-                USERNAME
-              </label>
-              <input
-                type="text"
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  outline: 'none',
-                  transition: 'border-color 0.2s'
-                }}
-                placeholder="Masukkan username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-              />
-            </div>
+              {/* Form */}
+              <div className="px-8 py-6">
+                <form onSubmit={handleLogin} className="space-y-5">
+                  {/* Username */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+                      placeholder="Masukkan username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                    />
+                  </div>
 
-            {/* Password */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: '#334155',
-                textTransform: 'uppercase',
-                marginBottom: '0.5rem'
-              }}>
-                PASSWORD
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 1rem',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
-                    paddingRight: '3rem'
-                  }}
-                  placeholder="Masukkan password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '0.75rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#64748b'
-                  }}
-                >
-                  {showPassword ? (
-                    <EyeOff size={20} />
-                  ) : (
-                    <Eye size={20} />
+                  {/* Password */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm pr-11"
+                        placeholder="Masukkan password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">Password minimal 6 karakter</p>
+                  </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded-lg animate-fadeIn">
+                      <p className="text-red-600 text-sm">{error}</p>
+                    </div>
                   )}
-                </button>
+
+                  {/* Login Button */}
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold py-2.5 rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all duration-200 text-sm uppercase tracking-wide shadow-md hover:shadow-lg"
+                  >
+                    Masuk ke Sistem
+                  </button>
+                </form>
+
+                {/* Demo Accounts */}
+                <div className="mt-8 pt-6 border-t border-slate-200">
+                  <div className="text-center mb-4">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Akun Demo
+                    </span>
+                  </div>
+                  
+                  {activeDemoAccounts.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-3">
+                      {activeDemoAccounts.map((account, index) => {
+                        const user = userData.find(u => u.username === account.username);
+                        return (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => fillDemoAccount(account)}
+                            className="group p-3 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-xl hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+                          >
+                            <div className="flex flex-col items-center">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
+                                user?.role === 'Admin' 
+                                  ? 'bg-gradient-to-r from-purple-500 to-purple-600' 
+                                  : 'bg-gradient-to-r from-slate-600 to-slate-700'
+                              }`}>
+                                <span className="text-white font-bold text-sm">
+                                  {account.name.charAt(0)}
+                                </span>
+                              </div>
+                              <span className="font-medium text-slate-800 text-xs">{account.name}</span>
+                              <div className="flex items-center gap-1 mt-1">
+                                <span className={`text-xs font-medium ${
+                                  user?.role === 'Admin' ? 'text-purple-600' : 'text-slate-500'
+                                }`}>
+                                  {user?.role || 'Karyawan'}
+                                </span>
+                                <span className="text-xs text-slate-300">•</span>
+                                <span className="text-xs text-slate-400">{account.username}</span>
+                              </div>
+                              <span className="text-xs text-slate-400 font-mono mt-1">
+                                {account.password.replace(/./g, '•')}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      <p className="text-slate-500 text-sm">Tidak ada akun demo aktif</p>
+                    </div>
+                  )}
+
+                  <div className="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                    <div className="flex items-center gap-2 justify-center">
+                      <span className="text-blue-500 text-sm">ℹ️</span>
+                      <p className="text-xs text-blue-700 text-center">
+                        Password ditambahkan melalui Manajemen Pengguna. Akun nonaktif tidak dapat login.
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-center text-xs text-slate-400 mt-4">
+                    Gunakan akun demo di atas untuk mencoba sistem
+                  </p>
+                </div>
               </div>
-              <p style={{
-                fontSize: '0.75rem',
-                color: '#64748b',
-                marginTop: '0.25rem'
-              }}>
-                Password minimal 6 karakter
-              </p>
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div style={{
-                background: '#fef2f2',
-                borderLeft: '4px solid #ef4444',
-                padding: '0.75rem',
-                borderRadius: '0.375rem',
-                animation: 'fadeIn 0.3s ease-in'
-              }}>
-                <p style={{ color: '#dc2626', fontSize: '0.875rem' }}>{error}</p>
-              </div>
-            )}
-
-            {/* Login Button */}
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                background: 'linear-gradient(to right, #1e40af, #3b82f6)',
-                color: 'white',
-                fontWeight: 'bold',
-                padding: '0.75rem',
-                borderRadius: '0.5rem',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                transition: 'background 0.2s',
-                marginTop: '0.5rem'
-              }}
-              onMouseEnter={(e) => e.target.style.background = 'linear-gradient(to right, #1e3a8a, #2563eb)'}
-              onMouseLeave={(e) => e.target.style.background = 'linear-gradient(to right, #1e40af, #3b82f6)'}
-            >
-              MASUK KE SISTEM
-            </button>
-          </form>
-
-          {/* Demo Accounts */}
-          <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid #e2e8f0' }}>
-            <h3 style={{
-              textAlign: 'center',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#475569',
-              textTransform: 'uppercase',
-              marginBottom: '1rem'
-            }}>
-              Akun Demo Tersedia:
-            </h3>
-            
-            {activeDemoAccounts.length > 0 ? (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '0.75rem'
-              }}>
-                {activeDemoAccounts.map((account, index) => {
-                  const user = userData.find(u => u.username === account.username);
-                  return (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => fillDemoAccount(account)}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '1rem',
-                        background: 'linear-gradient(to bottom right, #f8fafc, white)',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '0.75rem',
-                        cursor: 'pointer',
-                        transition: 'transform 0.2s, box-shadow 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = 'none';
-                      }}
-                    >
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '2.5rem',
-                        height: '2.5rem',
-                        background: user?.role === 'Admin' 
-                          ? 'linear-gradient(to right, #7c3aed, #8b5cf6)' 
-                          : 'linear-gradient(to right, #1e293b, #334155)',
-                        borderRadius: '9999px',
-                        marginBottom: '0.5rem'
-                      }}>
-                        <span style={{
-                          color: 'white',
-                          fontWeight: 'bold',
-                          fontSize: '0.875rem'
-                        }}>
-                          {account.name.charAt(0)}
-                        </span>
-                      </div>
-                      <span style={{
-                        fontWeight: 'bold',
-                        color: '#1e293b',
-                        fontSize: '0.875rem'
-                      }}>{account.name}</span>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem',
-                        marginTop: '0.25rem'
-                      }}>
-                        <span style={{
-                          fontSize: '0.75rem',
-                          color: user?.role === 'Admin' ? '#7c3aed' : '#64748b',
-                          fontWeight: user?.role === 'Admin' ? '600' : 'normal'
-                        }}>
-                          {user?.role || 'Karyawan'}
-                        </span>
-                        <span style={{
-                          fontSize: '0.75rem',
-                          color: '#94a3b8'
-                        }}>
-                          •
-                        </span>
-                        <span style={{
-                          fontSize: '0.75rem',
-                          color: '#64748b'
-                        }}>
-                          {account.username}
-                        </span>
-                      </div>
-                      <span style={{
-                        fontSize: '0.75rem',
-                        color: '#94a3b8',
-                        marginTop: '0.25rem',
-                        fontFamily: 'monospace'
-                      }}>
-                        {account.password.replace(/./g, '•')}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div style={{
-                textAlign: 'center',
-                padding: '1.5rem',
-                background: '#f8fafc',
-                borderRadius: '0.75rem',
-                border: '1px dashed #cbd5e1'
-              }}>
-                <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
-                  Tidak ada akun demo aktif. Hubungi administrator.
-                </p>
-              </div>
-            )}
-
-            <div style={{
-              marginTop: '1.5rem',
-              padding: '1rem',
-              background: '#f0f9ff',
-              borderRadius: '0.75rem',
-              border: '1px solid #bae6fd'
-            }}>
-              <p style={{
-                textAlign: 'center',
-                fontSize: '0.75rem',
-                color: '#0369a1',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem'
-              }}>
-                <span style={{ fontSize: '1rem' }}>ℹ️</span>
-                <span>
-                  Password ditambahkan melalui Manajemen Pengguna. Akun nonaktif tidak dapat login.
-                </span>
-              </p>
+            {/* Footer */}
+            <div className="text-center mt-6">
+              <p className="text-slate-400 text-xs">© 2024 GarmentTrackPro. All rights reserved.</p>
+              <p className="text-slate-500 text-xs mt-1">Version 2.0 | Password Security Enabled</p>
             </div>
-
-            <p style={{
-              textAlign: 'center',
-              fontSize: '0.75rem',
-              color: '#94a3b8',
-              marginTop: '1.5rem'
-            }}>
-              Gunakan akun demo di atas untuk mencoba sistem
-            </p>
           </div>
         </div>
       </div>
 
-      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-        <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
-          © 2024 GarmentTrackPro. All rights reserved.
-        </p>
-        <p style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.5rem' }}>
-          Version 2.0 | Password Security Enabled
-        </p>
-      </div>
-
-      <style jsx>{`
+      {/* Animations */}
+      <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-10px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-in;
         }
       `}</style>
     </div>

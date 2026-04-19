@@ -537,6 +537,7 @@ export default function CreateOrder() {
     if (savedProducts) {
       setProducts(JSON.parse(savedProducts));
     } else {
+      // Produk dengan variasi lengkap
       const defaultProducts = [
         { 
           id: 1, 
@@ -546,9 +547,16 @@ export default function CreateOrder() {
           variations: [
             { id: '1-S-Merah', size: 'S', color: 'Merah', price: 150000, stock: 50 },
             { id: '1-S-Biru', size: 'S', color: 'Biru', price: 150000, stock: 45 },
+            { id: '1-S-Hitam', size: 'S', color: 'Hitam', price: 150000, stock: 40 },
             { id: '1-M-Merah', size: 'M', color: 'Merah', price: 155000, stock: 60 },
             { id: '1-M-Biru', size: 'M', color: 'Biru', price: 155000, stock: 55 },
-            { id: '1-L-Merah', size: 'L', color: 'Merah', price: 160000, stock: 40 }
+            { id: '1-M-Hitam', size: 'M', color: 'Hitam', price: 155000, stock: 50 },
+            { id: '1-L-Merah', size: 'L', color: 'Merah', price: 160000, stock: 40 },
+            { id: '1-L-Biru', size: 'L', color: 'Biru', price: 160000, stock: 35 },
+            { id: '1-L-Hitam', size: 'L', color: 'Hitam', price: 160000, stock: 30 },
+            { id: '1-XL-Merah', size: 'XL', color: 'Merah', price: 165000, stock: 25 },
+            { id: '1-XL-Biru', size: 'XL', color: 'Biru', price: 165000, stock: 20 },
+            { id: '1-XL-Hitam', size: 'XL', color: 'Hitam', price: 165000, stock: 15 }
           ]
         },
         { 
@@ -557,9 +565,20 @@ export default function CreateOrder() {
           basePrice: 250000, 
           category: 'Celana', 
           variations: [
+            { id: '2-28-Biru', size: '28', color: 'Biru Tua', price: 250000, stock: 30 },
+            { id: '2-29-Biru', size: '29', color: 'Biru Tua', price: 255000, stock: 28 },
             { id: '2-30-Biru', size: '30', color: 'Biru Tua', price: 260000, stock: 35 },
+            { id: '2-31-Biru', size: '31', color: 'Biru Tua', price: 265000, stock: 32 },
             { id: '2-32-Biru', size: '32', color: 'Biru Tua', price: 270000, stock: 30 },
-            { id: '2-30-Hitam', size: '30', color: 'Hitam', price: 260000, stock: 28 }
+            { id: '2-33-Biru', size: '33', color: 'Biru Tua', price: 275000, stock: 25 },
+            { id: '2-34-Biru', size: '34', color: 'Biru Tua', price: 280000, stock: 20 },
+            { id: '2-28-Hitam', size: '28', color: 'Hitam', price: 250000, stock: 25 },
+            { id: '2-29-Hitam', size: '29', color: 'Hitam', price: 255000, stock: 23 },
+            { id: '2-30-Hitam', size: '30', color: 'Hitam', price: 260000, stock: 28 },
+            { id: '2-31-Hitam', size: '31', color: 'Hitam', price: 265000, stock: 25 },
+            { id: '2-32-Hitam', size: '32', color: 'Hitam', price: 270000, stock: 22 },
+            { id: '2-33-Hitam', size: '33', color: 'Hitam', price: 275000, stock: 18 },
+            { id: '2-34-Hitam', size: '34', color: 'Hitam', price: 280000, stock: 15 }
           ]
         },
         { 
@@ -568,8 +587,74 @@ export default function CreateOrder() {
           basePrice: 300000, 
           category: 'Jaket', 
           variations: [
+            { id: '3-S-Abu', size: 'S', color: 'Abu-abu', price: 300000, stock: 40 },
+            { id: '3-S-Hitam', size: 'S', color: 'Hitam', price: 300000, stock: 38 },
+            { id: '3-S-Navy', size: 'S', color: 'Navy', price: 305000, stock: 35 },
             { id: '3-M-Abu', size: 'M', color: 'Abu-abu', price: 310000, stock: 45 },
-            { id: '3-M-Hitam', size: 'M', color: 'Hitam', price: 310000, stock: 42 }
+            { id: '3-M-Hitam', size: 'M', color: 'Hitam', price: 310000, stock: 42 },
+            { id: '3-M-Navy', size: 'M', color: 'Navy', price: 315000, stock: 40 },
+            { id: '3-L-Abu', size: 'L', color: 'Abu-abu', price: 320000, stock: 35 },
+            { id: '3-L-Hitam', size: 'L', color: 'Hitam', price: 320000, stock: 32 },
+            { id: '3-L-Navy', size: 'L', color: 'Navy', price: 325000, stock: 30 },
+            { id: '3-XL-Abu', size: 'XL', color: 'Abu-abu', price: 330000, stock: 25 },
+            { id: '3-XL-Hitam', size: 'XL', color: 'Hitam', price: 330000, stock: 22 },
+            { id: '3-XL-Navy', size: 'XL', color: 'Navy', price: 335000, stock: 20 }
+          ]
+        },
+        { 
+          id: 4, 
+          name: 'Kemeja Wanita Formal', 
+          basePrice: 180000, 
+          category: 'Kemeja', 
+          variations: [
+            { id: '4-S-Putih', size: 'S', color: 'Putih', price: 180000, stock: 50 },
+            { id: '4-S-Cream', size: 'S', color: 'Cream', price: 180000, stock: 45 },
+            { id: '4-S-Pink', size: 'S', color: 'Pink', price: 185000, stock: 40 },
+            { id: '4-M-Putih', size: 'M', color: 'Putih', price: 185000, stock: 55 },
+            { id: '4-M-Cream', size: 'M', color: 'Cream', price: 185000, stock: 50 },
+            { id: '4-M-Pink', size: 'M', color: 'Pink', price: 190000, stock: 45 },
+            { id: '4-L-Putih', size: 'L', color: 'Putih', price: 190000, stock: 40 },
+            { id: '4-L-Cream', size: 'L', color: 'Cream', price: 190000, stock: 35 },
+            { id: '4-L-Pink', size: 'L', color: 'Pink', price: 195000, stock: 30 }
+          ]
+        },
+        { 
+          id: 5, 
+          name: 'Blouse Wanita', 
+          basePrice: 120000, 
+          category: 'Blouse', 
+          variations: [
+            { id: '5-S-Kuning', size: 'S', color: 'Kuning', price: 120000, stock: 60 },
+            { id: '5-S-Merah', size: 'S', color: 'Merah', price: 120000, stock: 55 },
+            { id: '5-S-Ungu', size: 'S', color: 'Ungu', price: 125000, stock: 50 },
+            { id: '5-M-Kuning', size: 'M', color: 'Kuning', price: 125000, stock: 65 },
+            { id: '5-M-Merah', size: 'M', color: 'Merah', price: 125000, stock: 60 },
+            { id: '5-M-Ungu', size: 'M', color: 'Ungu', price: 130000, stock: 55 },
+            { id: '5-L-Kuning', size: 'L', color: 'Kuning', price: 130000, stock: 50 },
+            { id: '5-L-Merah', size: 'L', color: 'Merah', price: 130000, stock: 45 },
+            { id: '5-L-Ungu', size: 'L', color: 'Ungu', price: 135000, stock: 40 }
+          ]
+        },
+        { 
+          id: 6, 
+          name: 'Celana Chino', 
+          basePrice: 200000, 
+          category: 'Celana', 
+          variations: [
+            { id: '6-28-Khaki', size: '28', color: 'Khaki', price: 200000, stock: 35 },
+            { id: '6-29-Khaki', size: '29', color: 'Khaki', price: 205000, stock: 32 },
+            { id: '6-30-Khaki', size: '30', color: 'Khaki', price: 210000, stock: 40 },
+            { id: '6-31-Khaki', size: '31', color: 'Khaki', price: 215000, stock: 38 },
+            { id: '6-32-Khaki', size: '32', color: 'Khaki', price: 220000, stock: 35 },
+            { id: '6-33-Khaki', size: '33', color: 'Khaki', price: 225000, stock: 30 },
+            { id: '6-34-Khaki', size: '34', color: 'Khaki', price: 230000, stock: 25 },
+            { id: '6-28-Coklat', size: '28', color: 'Coklat', price: 200000, stock: 30 },
+            { id: '6-29-Coklat', size: '29', color: 'Coklat', price: 205000, stock: 28 },
+            { id: '6-30-Coklat', size: '30', color: 'Coklat', price: 210000, stock: 35 },
+            { id: '6-31-Coklat', size: '31', color: 'Coklat', price: 215000, stock: 32 },
+            { id: '6-32-Coklat', size: '32', color: 'Coklat', price: 220000, stock: 30 },
+            { id: '6-33-Coklat', size: '33', color: 'Coklat', price: 225000, stock: 25 },
+            { id: '6-34-Coklat', size: '34', color: 'Coklat', price: 230000, stock: 20 }
           ]
         }
       ];
@@ -946,10 +1031,10 @@ export default function CreateOrder() {
 
   const isOrderOverdue = isDeadlineOverdue(dueDate);
 
-  // ================== RENDER COMPONENT DENGAN SCALING 85% YANG TIDAK TERPOTONG ==================
+  // ================== RENDER COMPONENT DENGAN SCALING 85% ==================
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
-      <div className="scale-container" style={{
+      <div className="transition-all duration-300" style={{
         transform: 'scale(0.85)',
         transformOrigin: 'top left',
         width: '117.65%',
@@ -1321,12 +1406,12 @@ export default function CreateOrder() {
             </div>
           </div>
 
-          {/* ==================== MODALS DENGAN BACKGROUND PUTIH/BLUR ==================== */}
+          {/* ==================== MODALS DENGAN POSISI LEBIH KE ATAS ==================== */}
 
           {/* Modal Tambah Pelanggan */}
           {showAddCustomerModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200 mt-8 md:mt-12">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
                   <div className="flex items-center gap-2">
                     <Users size={20} className="text-blue-600" />
@@ -1402,8 +1487,8 @@ export default function CreateOrder() {
 
           {/* Modal Kelola Pelanggan */}
           {showManageCustomersModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col border border-gray-200">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
                     <Users size={20} className="text-blue-600" />
@@ -1527,8 +1612,8 @@ export default function CreateOrder() {
 
           {/* Modal Tambah Kategori */}
           {showCategoryModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200 mt-8 md:mt-12">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
                   <div className="flex items-center gap-2">
                     <Tag size={20} className="text-purple-600" />
@@ -1566,8 +1651,8 @@ export default function CreateOrder() {
 
           {/* Modal Kelola Kategori */}
           {showManageCategoriesModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
                     <Tag size={20} className="text-purple-600" />
@@ -1659,43 +1744,43 @@ export default function CreateOrder() {
             </div>
           )}
 
-          {/* Modal Daftar Produk */}
+          {/* Modal Daftar Produk - DIPERBAIKI POSISINYA LEBIH KE ATAS */}
           {showProductListModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-green-50 to-white sticky top-0 z-10">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
+                <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-green-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
-                    <Package size={22} className="text-green-600" />
-                    <h3 className="font-bold text-xl text-gray-800">Daftar Produk</h3>
+                    <Package size={20} className="text-green-600" />
+                    <h3 className="font-bold text-lg text-gray-800">Daftar Produk</h3>
                   </div>
-                  <button onClick={() => setShowProductListModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <button onClick={() => setShowProductListModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
                     <X size={20} />
                   </button>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto p-6">
-                  <div className="flex justify-between items-center mb-5">
+                <div className="flex-1 overflow-y-auto p-5">
+                  <div className="flex justify-between items-center mb-4">
                     <p className="text-sm text-gray-500">Total {products.length} produk</p>
                     <button
                       onClick={() => {
                         setShowProductListModal(false);
                         setShowAddProductModal(true);
                       }}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
                     >
-                      <Plus size={16} /> Tambah Produk Baru
+                      <Plus size={14} /> Tambah Produk Baru
                     </button>
                   </div>
                   
-                  <div className="space-y-5">
+                  <div className="space-y-4">
                     {products.map((product) => (
-                      <div key={product.id} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-                        <div className="p-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
+                      <div key={product.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                        <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center">
                           <div>
                             <h4 className="font-semibold text-gray-800 text-lg">{product.name}</h4>
                             <div className="flex flex-wrap gap-2 mt-1">
-                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{product.category || 'Tanpa Kategori'}</span>
-                              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">Harga Dasar: Rp {formatCurrency(product.basePrice)}</span>
+                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{product.category || 'Tanpa Kategori'}</span>
+                              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">Harga Dasar: Rp {formatCurrency(product.basePrice)}</span>
                             </div>
                           </div>
                           <div className="flex gap-2">
@@ -1707,31 +1792,32 @@ export default function CreateOrder() {
                               className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                               title="Edit Produk"
                             >
-                              <Edit size={18} />
+                              <Edit size={16} />
                             </button>
                             <button
                               onClick={() => handleDeleteProduct(product)}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                               title="Hapus Produk"
                             >
-                              <Trash size={18} />
+                              <Trash size={16} />
                             </button>
                           </div>
                         </div>
                         
+                        {/* Tabel Variasi Produk */}
                         {product.variations && product.variations.length > 0 && (
                           <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                               <thead className="bg-gray-100">
                                 <tr>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Ukuran</th>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Warna</th>
-                                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600">Harga</th>
-                                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600">Stok</th>
+                                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Ukuran</th>
+                                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Warna</th>
+                                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-600">Harga</th>
+                                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-600">Stok</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100">
-                                {product.variations.map((variant) => (
+                                {product.variations.slice(0, 8).map((variant, idx) => (
                                   <tr key={variant.id} className="hover:bg-gray-50">
                                     <td className="px-4 py-2 text-gray-700 font-medium">{variant.size}</td>
                                     <td className="px-4 py-2">
@@ -1768,13 +1854,18 @@ export default function CreateOrder() {
                                 ))}
                               </tbody>
                             </table>
+                            {product.variations.length > 8 && (
+                              <div className="px-4 py-2 text-center text-xs text-gray-500 bg-gray-50">
+                                + {product.variations.length - 8} variasi lainnya
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
                     ))}
                     
                     {products.length === 0 && (
-                      <div className="text-center py-12 border-2 border-dashed rounded-xl">
+                      <div className="text-center py-12 border-2 border-dashed rounded-lg">
                         <Package size={48} className="text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-500">Belum ada produk</p>
                         <button
@@ -1791,8 +1882,8 @@ export default function CreateOrder() {
                   </div>
                 </div>
                 
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-                  <button onClick={() => setShowProductListModal(false)} className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors">
+                <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                  <button onClick={() => setShowProductListModal(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
                     Tutup
                   </button>
                 </div>
@@ -1802,8 +1893,8 @@ export default function CreateOrder() {
 
           {/* Modal Tambah Produk Baru */}
           {showAddProductModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-green-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
                     <PlusCircle size={22} className="text-green-600" />
@@ -1857,6 +1948,7 @@ export default function CreateOrder() {
                         type="button"
                         onClick={() => setShowManageCategoriesModal(true)}
                         className="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-1 whitespace-nowrap"
+                        title="Kelola Kategori"
                       >
                         <Tag size={14} /> Kelola
                       </button>
@@ -1924,7 +2016,7 @@ export default function CreateOrder() {
                   </div>
                 </div>
                 
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl sticky bottom-0">
                   <button onClick={() => setShowAddProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
                   <button onClick={handleSaveNewProductSimple} className="px-5 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
                     Simpan Produk
@@ -1936,8 +2028,8 @@ export default function CreateOrder() {
 
           {/* Modal Edit Produk */}
           {showEditProductModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-yellow-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
                     <Edit2 size={22} className="text-yellow-600" />
@@ -1988,6 +2080,7 @@ export default function CreateOrder() {
                         type="button"
                         onClick={() => setShowManageCategoriesModal(true)}
                         className="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-1 whitespace-nowrap"
+                        title="Kelola Kategori"
                       >
                         <Tag size={14} /> Kelola
                       </button>
@@ -2076,7 +2169,7 @@ export default function CreateOrder() {
                   </div>
                 </div>
                 
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl sticky bottom-0">
                   <button onClick={() => setShowEditProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
                   <button onClick={handleSaveEditedProduct} className="px-5 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700">
                     Simpan Perubahan
@@ -2088,9 +2181,9 @@ export default function CreateOrder() {
 
           {/* Modal Notes */}
           {notesModal.isOpen && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-yellow-50 to-white">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col border border-gray-200 mt-8 md:mt-12">
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-yellow-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
                     <MessageSquare size={18} className="text-yellow-600" />
                     <h3 className="font-bold text-lg text-gray-800">Catatan Item</h3>
@@ -2150,8 +2243,8 @@ export default function CreateOrder() {
 
           {/* Modal CSV Import */}
           {csvModal.isOpen && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-gray-200">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-gray-200 mt-8 md:mt-12">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
                     <FileText size={20} className="text-green-600" />

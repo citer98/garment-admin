@@ -357,6 +357,8 @@ export default function EditOrder() {
     setNewCategoryName('');
   };
 
+  // ================== FUNGSI UNTUK PRODUK ==================
+  
   // Load categories dari localStorage
   useEffect(() => {
     const savedCategories = localStorage.getItem('productCategories');
@@ -1097,11 +1099,9 @@ export default function EditOrder() {
   const currentStatus = statusOptions.find(s => s.value === formData.status) || statusOptions[0];
   const isOrderOverdue = isDeadlineOverdue(formData.dueDate);
 
-  // ================== RENDER COMPONENT DENGAN SCALING 85% YANG TIDAK TERPOTONG ==================
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
-      {/* Wrapper untuk scaling - menggunakan pendekatan yang lebih aman */}
-      <div className="scale-container" style={{
+      <div className="transition-all duration-300" style={{
         transform: 'scale(0.85)',
         transformOrigin: 'top left',
         width: '117.65%',
@@ -1583,22 +1583,22 @@ export default function EditOrder() {
             </div>
           </div>
 
-          {/* ================== MODAL DAFTAR PRODUK ================== */}
+          {/* ================== MODAL DAFTAR PRODUK - DIPERBAIKI POSISINYA LEBIH KE ATAS ================== */}
           {showProductListModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
+                <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-green-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
-                    <Package size={22} className="text-blue-600" />
-                    <h3 className="font-bold text-xl text-gray-800">Daftar Produk</h3>
+                    <Package size={20} className="text-green-600" />
+                    <h3 className="font-bold text-lg text-gray-800">Daftar Produk</h3>
                   </div>
-                  <button onClick={() => setShowProductListModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <button onClick={() => setShowProductListModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
                     <X size={20} />
                   </button>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto p-6">
-                  <div className="flex justify-between items-center mb-5">
+                <div className="flex-1 overflow-y-auto p-5">
+                  <div className="flex justify-between items-center mb-4">
                     <p className="text-sm text-gray-500">Total {products.length} produk</p>
                     <button
                       type="button"
@@ -1606,21 +1606,21 @@ export default function EditOrder() {
                         setShowProductListModal(false);
                         setShowAddProductModal(true);
                       }}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
                     >
-                      <Plus size={16} /> Tambah Produk Baru
+                      <Plus size={14} /> Tambah Produk Baru
                     </button>
                   </div>
                   
-                  <div className="space-y-5">
+                  <div className="space-y-4">
                     {products.map((product) => (
-                      <div key={product.id} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-                        <div className="p-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
+                      <div key={product.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                        <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center">
                           <div>
                             <h4 className="font-semibold text-gray-800 text-lg">{product.name}</h4>
                             <div className="flex flex-wrap gap-2 mt-1">
-                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{product.category || 'Tanpa Kategori'}</span>
-                              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">Harga Dasar: Rp {formatCurrency(product.basePrice)}</span>
+                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{product.category || 'Tanpa Kategori'}</span>
+                              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">Harga Dasar: Rp {formatCurrency(product.basePrice)}</span>
                             </div>
                           </div>
                           <div className="flex gap-2">
@@ -1633,7 +1633,7 @@ export default function EditOrder() {
                               className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                               title="Edit Produk"
                             >
-                              <Edit size={18} />
+                              <Edit size={16} />
                             </button>
                             <button
                               type="button"
@@ -1641,24 +1641,25 @@ export default function EditOrder() {
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                               title="Hapus Produk"
                             >
-                              <Trash size={18} />
+                              <Trash size={16} />
                             </button>
                           </div>
                         </div>
                         
+                        {/* Tabel Variasi Produk */}
                         {product.variations && product.variations.length > 0 && (
                           <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                               <thead className="bg-gray-100">
                                 <tr>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Ukuran</th>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Warna</th>
-                                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600">Harga</th>
-                                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600">Stok</th>
+                                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Ukuran</th>
+                                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Warna</th>
+                                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-600">Harga</th>
+                                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-600">Stok</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100">
-                                {product.variations.map((variant) => (
+                                {product.variations.slice(0, 8).map((variant, idx) => (
                                   <tr key={variant.id} className="hover:bg-gray-50">
                                     <td className="px-4 py-2 text-gray-700 font-medium">{variant.size}</td>
                                     <td className="px-4 py-2">
@@ -1695,13 +1696,18 @@ export default function EditOrder() {
                                 ))}
                               </tbody>
                             </table>
+                            {product.variations.length > 8 && (
+                              <div className="px-4 py-2 text-center text-xs text-gray-500 bg-gray-50">
+                                + {product.variations.length - 8} variasi lainnya
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
                     ))}
                     
                     {products.length === 0 && (
-                      <div className="text-center py-12 border-2 border-dashed rounded-xl">
+                      <div className="text-center py-12 border-2 border-dashed rounded-lg">
                         <Package size={48} className="text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-500">Belum ada produk</p>
                         <button
@@ -1719,8 +1725,8 @@ export default function EditOrder() {
                   </div>
                 </div>
                 
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-                  <button onClick={() => setShowProductListModal(false)} className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors">
+                <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                  <button onClick={() => setShowProductListModal(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
                     Tutup
                   </button>
                 </div>
@@ -1730,8 +1736,8 @@ export default function EditOrder() {
 
           {/* ================== MODAL TAMBAH PRODUK BARU ================== */}
           {showAddProductModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-green-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
                     <PlusCircle size={22} className="text-green-600" />
@@ -1785,6 +1791,7 @@ export default function EditOrder() {
                         type="button"
                         onClick={() => setShowManageCategoriesModal(true)}
                         className="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-1 whitespace-nowrap"
+                        title="Kelola Kategori"
                       >
                         <Tag size={14} /> Kelola
                       </button>
@@ -1853,9 +1860,9 @@ export default function EditOrder() {
                   </div>
                 </div>
                 
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-                  <button onClick={() => setShowAddProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 transition-colors">Batal</button>
-                  <button onClick={handleSaveNewProductSimple} className="px-5 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl sticky bottom-0">
+                  <button onClick={() => setShowAddProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
+                  <button onClick={handleSaveNewProductSimple} className="px-5 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
                     Simpan Produk
                   </button>
                 </div>
@@ -1865,8 +1872,8 @@ export default function EditOrder() {
 
           {/* ================== MODAL EDIT PRODUK ================== */}
           {showEditProductModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-yellow-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
                     <Edit2 size={22} className="text-yellow-600" />
@@ -1917,6 +1924,7 @@ export default function EditOrder() {
                         type="button"
                         onClick={() => setShowManageCategoriesModal(true)}
                         className="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-1 whitespace-nowrap"
+                        title="Kelola Kategori"
                       >
                         <Tag size={14} /> Kelola
                       </button>
@@ -2006,9 +2014,9 @@ export default function EditOrder() {
                   </div>
                 </div>
                 
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-                  <button onClick={() => setShowEditProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 transition-colors">Batal</button>
-                  <button onClick={handleSaveEditedProduct} className="px-5 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 transition-colors">
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl sticky bottom-0">
+                  <button onClick={() => setShowEditProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
+                  <button onClick={handleSaveEditedProduct} className="px-5 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700">
                     Simpan Perubahan
                   </button>
                 </div>
@@ -2016,16 +2024,232 @@ export default function EditOrder() {
             </div>
           )}
 
-          {/* ================== MODAL KELOLA PELANGGAN ================== */}
+          {/* Modal Tambah Kategori */}
+          {showCategoryModal && (
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200 mt-8 md:mt-12">
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
+                  <div className="flex items-center gap-2">
+                    <Tag size={20} className="text-purple-600" />
+                    <h3 className="font-bold text-lg text-gray-800">Tambah Kategori Produk</h3>
+                  </div>
+                  <button onClick={() => setShowCategoryModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kategori *</label>
+                    <input 
+                      type="text" 
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Contoh: Baju Atasan, Bawahan, Outer, dll"
+                      autoFocus
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Kategori akan muncul di dropdown pilihan produk</p>
+                  </div>
+                </div>
+                
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+                  <button onClick={() => setShowCategoryModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
+                  <button onClick={handleAddCategory} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700">
+                    Simpan Kategori
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Kelola Kategori */}
+          {showManageCategoriesModal && (
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white sticky top-0 z-10">
+                  <div className="flex items-center gap-2">
+                    <Tag size={20} className="text-purple-600" />
+                    <h3 className="font-bold text-lg text-gray-800">Kelola Kategori Produk</h3>
+                  </div>
+                  <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  {editingCategory ? (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Edit Kategori</label>
+                      <input 
+                        type="text" 
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                        value={editCategoryName}
+                        onChange={(e) => setEditCategoryName(e.target.value)}
+                        placeholder="Nama kategori"
+                        autoFocus
+                      />
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          type="button"
+                          onClick={() => { setEditingCategory(null); setEditCategoryName(''); }}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleEditCategory}
+                          className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                        >
+                          Simpan Perubahan
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <p className="text-sm text-gray-600">Daftar semua kategori produk yang tersedia</p>
+                        <button
+                          type="button"
+                          onClick={openAddCategoryFromManage}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
+                        >
+                          <Plus size={14} /> Tambah
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {productCategories.map((category) => {
+                          const productCount = products.filter(p => p.category === category).length;
+                          return (
+                            <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div>
+                                <p className="font-medium text-gray-800">{category}</p>
+                                <p className="text-xs text-gray-500">{productCount} produk</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => openEditCategoryModal(category)}
+                                  className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                                  title="Edit Kategori"
+                                >
+                                  <Edit size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCategory(category)}
+                                  className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                                  title="Hapus Kategori"
+                                  disabled={productCount > 0}
+                                >
+                                  <Trash size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                  <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Tambah Pelanggan */}
+          {showAddCustomerModal && (
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200 mt-8 md:mt-12">
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
+                  <div className="flex items-center gap-2">
+                    <Users size={20} className="text-blue-600" />
+                    <h3 className="font-bold text-lg text-gray-800">Tambah Pelanggan Baru</h3>
+                  </div>
+                  <button onClick={() => setShowAddCustomerModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan *</label>
+                    <input 
+                      type="text" 
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                      value={customerFormData.name}
+                      onChange={(e) => setCustomerFormData({...customerFormData, name: e.target.value})}
+                      placeholder="Contoh: Toko Maju Jaya"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
+                    <div className="relative">
+                      <Phone size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input 
+                        type="text" 
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                        value={customerFormData.phone}
+                        onChange={(e) => setCustomerFormData({...customerFormData, phone: e.target.value})}
+                        placeholder="08123456789"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                    <div className="relative">
+                      <MapPin size={16} className="absolute left-3 top-3 text-gray-400" />
+                      <textarea 
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                        rows="2"
+                        value={customerFormData.address}
+                        onChange={(e) => setCustomerFormData({...customerFormData, address: e.target.value})}
+                        placeholder="Jl. Contoh No. 123"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <div className="relative">
+                      <Mail size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input 
+                        type="email" 
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                        value={customerFormData.email}
+                        onChange={(e) => setCustomerFormData({...customerFormData, email: e.target.value})}
+                        placeholder="email@example.com"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+                  <button onClick={() => setShowAddCustomerModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
+                  <button onClick={handleAddCustomer} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                    Simpan Pelanggan
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Kelola Pelanggan */}
           {showManageCustomersModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col border border-gray-200">
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
-                    <Users size={22} className="text-blue-600" />
-                    <h3 className="font-bold text-xl text-gray-800">Kelola Pelanggan</h3>
+                    <Users size={20} className="text-blue-600" />
+                    <h3 className="font-bold text-lg text-gray-800">Kelola Pelanggan</h3>
                   </div>
-                  <button onClick={() => { setShowManageCustomersModal(false); setEditingCustomer(null); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <button onClick={() => { setShowManageCustomersModal(false); setEditingCustomer(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
                     <X size={20} />
                   </button>
                 </div>
@@ -2138,7 +2362,7 @@ export default function EditOrder() {
                 </div>
                 
                 <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-                  <button onClick={() => { setShowManageCustomersModal(false); setEditingCustomer(null); }} className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors">
+                  <button onClick={() => { setShowManageCustomersModal(false); setEditingCustomer(null); }} className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
                     Tutup
                   </button>
                 </div>
@@ -2146,223 +2370,7 @@ export default function EditOrder() {
             </div>
           )}
 
-          {/* ================== MODAL TAMBAH PELANGGAN ================== */}
-          {showAddCustomerModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
-                  <div className="flex items-center gap-2">
-                    <Users size={20} className="text-blue-600" />
-                    <h3 className="font-bold text-lg text-gray-800">Tambah Pelanggan Baru</h3>
-                  </div>
-                  <button onClick={() => setShowAddCustomerModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                    <X size={20} />
-                  </button>
-                </div>
-                
-                <div className="p-6 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan *</label>
-                    <input 
-                      type="text" 
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                      value={customerFormData.name}
-                      onChange={(e) => setCustomerFormData({...customerFormData, name: e.target.value})}
-                      placeholder="Contoh: Toko Maju Jaya"
-                      autoFocus
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
-                    <div className="relative">
-                      <Phone size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input 
-                        type="text" 
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                        value={customerFormData.phone}
-                        onChange={(e) => setCustomerFormData({...customerFormData, phone: e.target.value})}
-                        placeholder="08123456789"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
-                    <div className="relative">
-                      <MapPin size={16} className="absolute left-3 top-3 text-gray-400" />
-                      <textarea 
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                        rows="2"
-                        value={customerFormData.address}
-                        onChange={(e) => setCustomerFormData({...customerFormData, address: e.target.value})}
-                        placeholder="Jl. Contoh No. 123"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <div className="relative">
-                      <Mail size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input 
-                        type="email" 
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                        value={customerFormData.email}
-                        onChange={(e) => setCustomerFormData({...customerFormData, email: e.target.value})}
-                        placeholder="email@example.com"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-                  <button onClick={() => setShowAddCustomerModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
-                  <button onClick={handleAddCustomer} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
-                    Simpan Pelanggan
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ================== MODAL TAMBAH KATEGORI ================== */}
-          {showCategoryModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
-                  <div className="flex items-center gap-2">
-                    <Tag size={20} className="text-purple-600" />
-                    <h3 className="font-bold text-lg text-gray-800">Tambah Kategori Produk</h3>
-                  </div>
-                  <button onClick={() => setShowCategoryModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                    <X size={20} />
-                  </button>
-                </div>
-                
-                <div className="p-6 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kategori *</label>
-                    <input 
-                      type="text" 
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                      placeholder="Contoh: Baju Atasan, Bawahan, Outer, dll"
-                      autoFocus
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Kategori akan muncul di dropdown pilihan produk</p>
-                  </div>
-                </div>
-                
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-                  <button onClick={() => setShowCategoryModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
-                  <button onClick={handleAddCategory} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700">
-                    Simpan Kategori
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ================== MODAL KELOLA KATEGORI ================== */}
-          {showManageCategoriesModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white sticky top-0 z-10">
-                  <div className="flex items-center gap-2">
-                    <Tag size={20} className="text-purple-600" />
-                    <h3 className="font-bold text-lg text-gray-800">Kelola Kategori Produk</h3>
-                  </div>
-                  <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
-                    <X size={20} />
-                  </button>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                  {editingCategory ? (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Edit Kategori</label>
-                      <input 
-                        type="text" 
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
-                        value={editCategoryName}
-                        onChange={(e) => setEditCategoryName(e.target.value)}
-                        placeholder="Nama kategori"
-                        autoFocus
-                      />
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          type="button"
-                          onClick={() => { setEditingCategory(null); setEditCategoryName(''); }}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-                        >
-                          Batal
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleEditCategory}
-                          className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                        >
-                          Simpan Perubahan
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex justify-between items-center mb-4">
-                        <p className="text-sm text-gray-600">Daftar semua kategori produk yang tersedia</p>
-                        <button
-                          type="button"
-                          onClick={openAddCategoryFromManage}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
-                        >
-                          <Plus size={14} /> Tambah
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        {productCategories.map((category) => {
-                          const productCount = products.filter(p => p.category === category).length;
-                          return (
-                            <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div>
-                                <p className="font-medium text-gray-800">{category}</p>
-                                <p className="text-xs text-gray-500">{productCount} produk</p>
-                              </div>
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => openEditCategoryModal(category)}
-                                  className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                                  title="Edit Kategori"
-                                >
-                                  <Edit size={14} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteCategory(category)}
-                                  className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                                  title="Hapus Kategori"
-                                  disabled={productCount > 0}
-                                >
-                                  <Trash size={14} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-                  <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
-                    Tutup
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ================== PHOTO PREVIEW MODAL ================== */}
+          {/* Photo Preview Modal - tetap di tengah karena ini preview gambar */}
           {showPhotoPreview && selectedPhoto && (
             <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4">
               <div className="w-full max-w-6xl max-h-[90vh] flex flex-col">

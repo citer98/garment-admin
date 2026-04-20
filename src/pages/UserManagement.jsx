@@ -1,8 +1,7 @@
 // src/pages/UserManagement.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit2, Trash2, UserPlus, Filter, XCircle, CheckCircle, X, Eye, EyeOff, Users, Shield, UserCheck } from 'lucide-react';
-import { DataTable } from '../components/ui/DataTable';
+import { Edit2, Trash2, UserPlus, Filter, XCircle, CheckCircle, X, Eye, EyeOff, Users, Shield, UserCheck, Search, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 
 // Simpan data users di luar component agar bisa diakses oleh EditUser.jsx
@@ -80,6 +79,10 @@ export default function UserManagement() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
+  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
   const [newUser, setNewUser] = useState({
     name: '',
     username: '',
@@ -92,105 +95,37 @@ export default function UserManagement() {
     password: ''
   });
 
-  const columns = [
-    { 
-      key: 'name', 
-      label: 'NAMA', 
-      sortable: true,
-      render: (value, row) => (
-        <div className="flex items-center">
-          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-            <span className="font-bold text-blue-600 text-sm">
-              {value.charAt(0)}
-            </span>
-          </div>
-          <div>
-            <p className="font-medium text-gray-800">{value}</p>
-            <p className="text-xs text-gray-500">{row.email}</p>
-          </div>
-        </div>
-      )
-    },
-    { 
-      key: 'username', 
-      label: 'USERNAME', 
-      sortable: true 
-    },
-    { 
-      key: 'role', 
-      label: 'ROLE', 
-      sortable: true,
-      render: (value) => (
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-          value === 'Admin' 
-            ? 'bg-purple-100 text-purple-800' 
-            : value === 'Manager'
-            ? 'bg-yellow-100 text-yellow-800'
-            : 'bg-blue-100 text-blue-800'
-        }`}>
-          {value}
-        </span>
-      )
-    },
-    { 
-      key: 'department', 
-      label: 'DEPARTEMEN', 
-      sortable: true 
-    },
-    { 
-      key: 'status', 
-      label: 'STATUS', 
-      sortable: true,
-      render: (value) => (
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-          value === 'active' 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
-          {value === 'active' ? 'Aktif' : 'Nonaktif'}
-        </span>
-      )
-    },
-    { 
-      key: 'joinDate', 
-      label: 'TGL GABUNG', 
-      sortable: true,
-      render: (value) => new Date(value).toLocaleDateString('id-ID')
-    },
-    { 
-      key: 'actions', 
-      label: 'AKSI',
-      render: (_, row) => (
-        <div className="flex items-center space-x-3">
-          <Link
-            to={`/users/edit/${row.id}`}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-            title="Edit Pengguna"
-          >
-            <Edit2 size={18} />
-          </Link>
-          <button
-            onClick={() => handleDelete(row.id)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-            title="Hapus Pengguna"
-          >
-            <Trash2 size={18} />
-          </button>
-          <button
-            onClick={() => toggleStatus(row.id)}
-            className={`p-2 rounded-lg transition ${
-              row.status === 'active' 
-                ? 'text-yellow-600 hover:bg-yellow-50' 
-                : 'text-green-600 hover:bg-green-50'
-            }`}
-            title={row.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
-          >
-            {row.status === 'active' ? <XCircle size={18} /> : <CheckCircle size={18} />}
-          </button>
-        </div>
-      )
-    },
-  ];
+  // Filter users based on search query
+  const filteredUsers = users.filter(user =>
+    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.department.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Sort users
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    if (a[sortConfig.key] < b[sortConfig.key]) {
+      return sortConfig.direction === 'asc' ? -1 : 1;
+    }
+    if (a[sortConfig.key] > b[sortConfig.key]) {
+      return sortConfig.direction === 'asc' ? 1 : -1;
+    }
+    return 0;
+  });
+
+  // Pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentUsers = sortedUsers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
+
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
 
   const handleDelete = (id) => {
     setSelectedUser(users.find(user => user.id === id));
@@ -268,15 +203,46 @@ export default function UserManagement() {
     }
   };
 
+  const exportToCSV = () => {
+    const headers = ['Nama', 'Username', 'Email', 'Role', 'Departemen', 'Status', 'Tanggal Bergabung'];
+    const csvData = users.map(user => [
+      user.name,
+      user.username,
+      user.email,
+      user.role,
+      user.department,
+      user.status === 'active' ? 'Aktif' : 'Nonaktif',
+      new Date(user.joinDate).toLocaleDateString('id-ID')
+    ]);
+    
+    const csvContent = [headers.join(','), ...csvData.map(row => row.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const totalUsers = users.length;
   const activeUsers = users.filter(u => u.status === 'active').length;
   const inactiveUsers = users.filter(u => u.status === 'inactive').length;
   const adminCount = users.filter(u => u.role === 'Admin').length;
   const employeeCount = users.filter(u => u.role === 'Karyawan').length;
 
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) {
+      return <ChevronUp size={14} className="opacity-30" />;
+    }
+    return sortConfig.direction === 'asc' 
+      ? <ChevronUp size={14} className="text-blue-600" />
+      : <ChevronDown size={14} className="text-blue-600" />;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
-      {/* ==================== MAIN CONTENT WITH SCALE TRANSFORM ==================== */}
+      {/* ==================== MAIN CONTENT WITH SCALE 85% ==================== */}
       <div 
         className="transition-all duration-300"
         style={{
@@ -289,21 +255,24 @@ export default function UserManagement() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Header */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-800">Manajemen Pengguna</h2>
-              <p className="text-gray-600">Kelola akses dan data karyawan</p>
+              <p className="text-gray-600 mt-1">Kelola akses dan data karyawan</p>
             </div>
             
-            <div className="flex space-x-3">
-              <button className="flex items-center px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                <Filter size={18} className="mr-2" />
-                Filter
+            <div className="flex flex-wrap gap-3">
+              <button 
+                onClick={exportToCSV}
+                className="flex items-center px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              >
+                <Download size={18} className="mr-2" />
+                Ekspor CSV
               </button>
               
               <button 
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className="flex items-center px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
               >
                 <UserPlus size={18} className="mr-2" />
                 Tambah User
@@ -312,69 +281,290 @@ export default function UserManagement() {
           </div>
 
           {/* Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center justify-between">
                 <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users size={20} className="text-blue-600" />
+                  <Users size={18} className="text-blue-600" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-gray-800 mt-3">{totalUsers}</p>
+              <p className="text-2xl font-bold text-gray-800 mt-2">{totalUsers}</p>
               <p className="text-xs text-gray-500">Total Pengguna</p>
             </div>
             
-            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all">
+            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center justify-between">
                 <div className="p-2 bg-green-100 rounded-lg">
-                  <UserCheck size={20} className="text-green-600" />
+                  <CheckCircle size={18} className="text-green-600" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-green-600 mt-3">{activeUsers}</p>
+              <p className="text-2xl font-bold text-green-600 mt-2">{activeUsers}</p>
               <p className="text-xs text-gray-500">Aktif</p>
             </div>
             
-            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all">
+            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center justify-between">
                 <div className="p-2 bg-red-100 rounded-lg">
-                  <XCircle size={20} className="text-red-600" />
+                  <XCircle size={18} className="text-red-600" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-red-600 mt-3">{inactiveUsers}</p>
+              <p className="text-2xl font-bold text-red-600 mt-2">{inactiveUsers}</p>
               <p className="text-xs text-gray-500">Nonaktif</p>
             </div>
             
-            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all">
+            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center justify-between">
                 <div className="p-2 bg-purple-100 rounded-lg">
-                  <Shield size={20} className="text-purple-600" />
+                  <Shield size={18} className="text-purple-600" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-purple-600 mt-3">{adminCount}</p>
+              <p className="text-2xl font-bold text-purple-600 mt-2">{adminCount}</p>
               <p className="text-xs text-gray-500">Admin</p>
             </div>
             
-            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all">
+            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center justify-between">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users size={20} className="text-blue-600" />
+                <div className="p-2 bg-cyan-100 rounded-lg">
+                  <UserCheck size={18} className="text-cyan-600" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-blue-600 mt-3">{employeeCount}</p>
+              <p className="text-2xl font-bold text-cyan-600 mt-2">{employeeCount}</p>
               <p className="text-xs text-gray-500">Karyawan</p>
             </div>
           </div>
 
-          {/* Data Table */}
-          <DataTable
-            columns={columns}
-            data={users}
-            pageSize={8}
-            searchable={true}
-            downloadable={true}
-          />
+          {/* Search Bar */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Cari berdasarkan nama, username, email, atau departemen..."
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+              <div className="text-sm text-gray-500 flex items-center">
+                Menampilkan {sortedUsers.length} dari {users.length} pengguna
+              </div>
+            </div>
+          </div>
 
-          <div className="mt-4 text-sm text-gray-600">
-            💡 Klik pada kolom header untuk mengurutkan data. Gunakan icon aksi untuk mengelola pengguna.
+          {/* Data Table */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition" onClick={() => handleSort('name')}>
+                      <div className="flex items-center justify-center gap-1">
+                        NAMA {getSortIcon('name')}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition" onClick={() => handleSort('username')}>
+                      <div className="flex items-center justify-center gap-1">
+                        USERNAME {getSortIcon('username')}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition" onClick={() => handleSort('role')}>
+                      <div className="flex items-center justify-center gap-1">
+                        ROLE {getSortIcon('role')}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition" onClick={() => handleSort('department')}>
+                      <div className="flex items-center justify-center gap-1">
+                        DEPARTEMEN {getSortIcon('department')}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition" onClick={() => handleSort('status')}>
+                      <div className="flex items-center justify-center gap-1">
+                        STATUS {getSortIcon('status')}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition" onClick={() => handleSort('joinDate')}>
+                      <div className="flex items-center justify-center gap-1">
+                        TGL GABUNG {getSortIcon('joinDate')}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      AKSI
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {currentUsers.length > 0 ? (
+                    currentUsers.map((user) => (
+                      <tr key={user.id} className="hover:bg-gray-50 transition-colors group">
+                        {/* Kolom NAMA - Sejajar ke kiri */}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mr-3 shadow-sm flex-shrink-0">
+                              <span className="font-bold text-white text-sm uppercase">
+                                {user.name.charAt(0)}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-800">{user.name}</p>
+                              <p className="text-xs text-gray-500">{user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        {/* USERNAME - Tengah */}
+                        <td className="px-6 py-4 text-center">
+                          <span className="text-sm font-mono text-gray-700">{user.username}</span>
+                        </td>
+                        {/* ROLE - Tengah */}
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            user.role === 'Admin' 
+                              ? 'bg-purple-100 text-purple-800' 
+                              : user.role === 'Manager'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {user.role === 'Admin' && <Shield size={10} className="mr-1" />}
+                            {user.role}
+                          </span>
+                        </td>
+                        {/* DEPARTEMEN - Tengah */}
+                        <td className="px-6 py-4 text-center">
+                          <span className="text-sm text-gray-700">{user.department}</span>
+                        </td>
+                        {/* STATUS - Tengah */}
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            user.status === 'active' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {user.status === 'active' ? (
+                              <><CheckCircle size={10} className="mr-1" /> Aktif</>
+                            ) : (
+                              <><XCircle size={10} className="mr-1" /> Nonaktif</>
+                            )}
+                          </span>
+                        </td>
+                        {/* TGL GABUNG - Tengah */}
+                        <td className="px-6 py-4 text-center">
+                          <span className="text-sm text-gray-600">
+                            {new Date(user.joinDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        </td>
+                        {/* AKSI - Tengah */}
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Link
+                              to={`/users/edit/${user.id}`}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              title="Edit Pengguna"
+                            >
+                              <Edit2 size={16} />
+                            </Link>
+                            <button
+                              onClick={() => handleDelete(user.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                              title="Hapus Pengguna"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                            <button
+                              onClick={() => toggleStatus(user.id)}
+                              className={`p-2 rounded-lg transition ${
+                                user.status === 'active' 
+                                  ? 'text-yellow-600 hover:bg-yellow-50' 
+                                  : 'text-green-600 hover:bg-green-50'
+                              }`}
+                              title={user.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
+                            >
+                              {user.status === 'active' ? <XCircle size={16} /> : <CheckCircle size={16} />}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <Users size={48} className="text-gray-300 mb-3" />
+                          <p className="text-gray-500 font-medium">Tidak ada pengguna ditemukan</p>
+                          <p className="text-sm text-gray-400 mt-1">Coba ubah kata kunci pencarian</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {sortedUsers.length > 0 && (
+              <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div className="text-sm text-gray-600">
+                  Menampilkan {indexOfFirstItem + 1} sampai {Math.min(indexOfLastItem, sortedUsers.length)} dari {sortedUsers.length} data
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <div className="flex gap-1">
+                    {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      if (pageNum > 0 && pageNum <= totalPages) {
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-8 h-8 rounded-lg text-sm font-medium transition ${
+                              currentPage === pageNum
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <p className="text-xs text-blue-800">
+              💡 <span className="font-medium">Tips:</span> Klik pada kolom header untuk mengurutkan data. 
+              Gunakan fitur pencarian untuk menemukan pengguna dengan cepat. 
+              Status pengguna dapat diubah dengan tombol aksi.
+            </p>
           </div>
 
           {/* Confirmation Modal */}
@@ -388,10 +578,10 @@ export default function UserManagement() {
             type="danger"
           />
 
-          {/* ==================== MODAL TAMBAH PENGGUNA (DENGAN BACKGROUND PUTIH/BLUR) ==================== */}
+          {/* ==================== MODAL TAMBAH PENGGUNA ==================== */}
           {isAddModalOpen && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[85vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
                     <UserPlus size={22} className="text-blue-600" />
@@ -559,3 +749,16 @@ export default function UserManagement() {
     </div>
   );
 }
+
+// Helper components for sorting icons
+const ChevronDown = ({ size, className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="6 9 12 15 18 9"></polyline>
+  </svg>
+);
+
+const ChevronUp = ({ size, className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="18 15 12 9 6 15"></polyline>
+  </svg>
+);

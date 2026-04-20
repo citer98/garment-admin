@@ -89,7 +89,7 @@ export default function Login() {
                 <p className="text-slate-300 text-sm mt-1">Sistem Manufaktur Terintegrasi</p>
                 <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full">
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                  <span className="text-xs text-slate-300">V.0.08.6</span>
+                  <span className="text-xs text-slate-300">V.0.08.7</span>
                 </div>
               </div>
 

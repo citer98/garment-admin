@@ -1571,7 +1571,7 @@ export default function EditOrder() {
                           >
                             <X size={12} />
                           </button>
-                          <div className="absolute bottom-1 left-1 right-1 bg-black/50 text-white text-xs p-1 rounded truncate">
+                          <div className="absolute bottom-1 left-1 right-1 bg-white/50 text-white text-xs p-1 rounded truncate">
                             {formatDateTime(photo.timestamp)}
                           </div>
                         </div>
@@ -1583,10 +1583,14 @@ export default function EditOrder() {
             </div>
           </div>
 
-          {/* ================== MODAL DAFTAR PRODUK - DIPERBAIKI POSISINYA LEBIH KE ATAS ================== */}
+          {/* ==================== MODALS DENGAN HIERARKI Z-INDEX ==================== */}
+          
+          {/* ========== LEVEL 1: MODAL UTAMA (z-40) ========== */}
+          
+          {/* Modal Daftar Produk - Level 1 */}
           {showProductListModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
+            <div className="fixed inset-0 bg-white/50 backdrop-blur-sm z-40 flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col border border-gray-200">
                 <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-green-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
                     <Package size={20} className="text-green-600" />
@@ -1646,7 +1650,6 @@ export default function EditOrder() {
                           </div>
                         </div>
                         
-                        {/* Tabel Variasi Produk */}
                         {product.variations && product.variations.length > 0 && (
                           <div className="overflow-x-auto">
                             <table className="w-full text-sm">
@@ -1734,516 +1737,10 @@ export default function EditOrder() {
             </div>
           )}
 
-          {/* ================== MODAL TAMBAH PRODUK BARU ================== */}
-          {showAddProductModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-green-50 to-white sticky top-0 z-10">
-                  <div className="flex items-center gap-2">
-                    <PlusCircle size={22} className="text-green-600" />
-                    <h3 className="font-bold text-xl text-gray-800">Tambah Produk Baru</h3>
-                  </div>
-                  <button onClick={() => setShowAddProductModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                    <X size={20} />
-                  </button>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto p-6 space-y-5">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Nama Produk *</label>
-                      <input 
-                        type="text" 
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
-                        value={productNameInput}
-                        onChange={(e) => setProductNameInput(e.target.value)}
-                        placeholder="Contoh: Kemeja Batik Pria"
-                        autoFocus
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Harga Dasar (Rp) *</label>
-                      <input 
-                        type="text"
-                        inputMode="numeric"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
-                        value={productBasePriceInput}
-                        onChange={(e) => setProductBasePriceInput(e.target.value.replace(/[^0-9]/g, ''))}
-                        placeholder="Contoh: 150000"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Kategori</label>
-                    <div className="flex gap-2">
-                      <select 
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
-                        value={productCategoryInput}
-                        onChange={(e) => setProductCategoryInput(e.target.value)}
-                      >
-                        <option value="">Pilih Kategori</option>
-                        {productCategories.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => setShowManageCategoriesModal(true)}
-                        className="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-1 whitespace-nowrap"
-                        title="Kelola Kategori"
-                      >
-                        <Tag size={14} /> Kelola
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">Variasi Produk (Ukuran & Warna)</label>
-                    
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      <div>
-                        <input 
-                          type="text" 
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
-                          placeholder="Ukuran (S, M, L, XL)"
-                          value={variationSizeInput}
-                          onChange={(e) => setVariationSizeInput(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <input 
-                          type="text" 
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
-                          placeholder="Warna (Merah, Biru, Hitam)"
-                          value={variationColorInput}
-                          onChange={(e) => setVariationColorInput(e.target.value)}
-                        />
-                      </div>
-                      <div className="flex gap-1">
-                        <input 
-                          type="text"
-                          inputMode="numeric"
-                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" 
-                          placeholder="Harga"
-                          value={variationPriceInput}
-                          onChange={(e) => setVariationPriceInput(e.target.value.replace(/[^0-9]/g, ''))}
-                        />
-                        <button 
-                          type="button"
-                          onClick={handleAddVariationSimple}
-                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {tempVariationsList.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        <p className="text-xs text-gray-500">Variasi yang sudah ditambahkan:</p>
-                        {tempVariationsList.map((v) => (
-                          <div key={v.id} className="flex justify-between items-center bg-gray-50 p-2 rounded-lg">
-                            <div className="flex gap-3 text-sm">
-                              <span className="font-medium">{v.size}</span>
-                              <span className="text-gray-500">•</span>
-                              <span>{v.color}</span>
-                              <span className="text-blue-600">Rp {formatPriceDisplay(v.price)}</span>
-                            </div>
-                            <button type="button" onClick={() => handleRemoveVariationSimple(v.id)} className="text-red-500 hover:text-red-700">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl sticky bottom-0">
-                  <button onClick={() => setShowAddProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
-                  <button onClick={handleSaveNewProductSimple} className="px-5 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
-                    Simpan Produk
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ================== MODAL EDIT PRODUK ================== */}
-          {showEditProductModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-yellow-50 to-white sticky top-0 z-10">
-                  <div className="flex items-center gap-2">
-                    <Edit2 size={22} className="text-yellow-600" />
-                    <h3 className="font-bold text-xl text-gray-800">Edit Produk</h3>
-                  </div>
-                  <button onClick={() => setShowEditProductModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                    <X size={20} />
-                  </button>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto p-6 space-y-5">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Nama Produk *</label>
-                      <input 
-                        type="text" 
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:border-transparent" 
-                        value={productNameInput}
-                        onChange={(e) => setProductNameInput(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Harga Dasar (Rp) *</label>
-                      <input 
-                        type="text"
-                        inputMode="numeric"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:border-transparent" 
-                        value={productBasePriceInput}
-                        onChange={(e) => setProductBasePriceInput(e.target.value.replace(/[^0-9]/g, ''))}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Kategori</label>
-                    <div className="flex gap-2">
-                      <select 
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:border-transparent" 
-                        value={productCategoryInput}
-                        onChange={(e) => setProductCategoryInput(e.target.value)}
-                      >
-                        <option value="">Pilih Kategori</option>
-                        {productCategories.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => setShowManageCategoriesModal(true)}
-                        className="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-1 whitespace-nowrap"
-                        title="Kelola Kategori"
-                      >
-                        <Tag size={14} /> Kelola
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">Variasi Produk (Ukuran & Warna)</label>
-                    
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      <div>
-                        <input 
-                          type="text" 
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
-                          placeholder="Ukuran (S, M, L, XL)"
-                          value={editVariationSizeInput}
-                          onChange={(e) => setEditVariationSizeInput(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <input 
-                          type="text" 
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
-                          placeholder="Warna (Merah, Biru, Hitam)"
-                          value={editVariationColorInput}
-                          onChange={(e) => setEditVariationColorInput(e.target.value)}
-                        />
-                      </div>
-                      <div className="flex gap-1">
-                        <input 
-                          type="text"
-                          inputMode="numeric"
-                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" 
-                          placeholder="Harga"
-                          value={editVariationPriceInput}
-                          onChange={(e) => setEditVariationPriceInput(e.target.value.replace(/[^0-9]/g, ''))}
-                        />
-                        <button 
-                          type="button"
-                          onClick={handleAddEditVariation}
-                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {editVariationsList.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        <p className="text-xs text-gray-500">Variasi yang sudah ditambahkan:</p>
-                        {editVariationsList.map((v) => (
-                          <div key={v.id} className="flex justify-between items-center bg-gray-50 p-2 rounded-lg">
-                            <div className="flex gap-2 flex-1">
-                              <input 
-                                type="text" 
-                                className="w-20 border border-gray-200 rounded px-2 py-1 text-sm"
-                                value={v.size}
-                                onChange={(e) => handleUpdateEditVariation(v.id, 'size', e.target.value)}
-                              />
-                              <input 
-                                type="text" 
-                                className="w-24 border border-gray-200 rounded px-2 py-1 text-sm"
-                                value={v.color}
-                                onChange={(e) => handleUpdateEditVariation(v.id, 'color', e.target.value)}
-                              />
-                              <input 
-                                type="text" 
-                                inputMode="numeric"
-                                className="w-28 border border-gray-200 rounded px-2 py-1 text-sm"
-                                value={v.price}
-                                onChange={(e) => handleUpdateEditVariation(v.id, 'price', e.target.value)}
-                              />
-                            </div>
-                            <button type="button" onClick={() => handleRemoveEditVariation(v.id)} className="text-red-500 hover:text-red-700 ml-2">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {editVariationsList.length === 0 && (
-                      <p className="text-sm text-yellow-600 bg-yellow-50 p-2 rounded-lg">
-                        ⚠️ Produk harus memiliki minimal satu variasi
-                      </p>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl sticky bottom-0">
-                  <button onClick={() => setShowEditProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
-                  <button onClick={handleSaveEditedProduct} className="px-5 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700">
-                    Simpan Perubahan
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Modal Tambah Kategori */}
-          {showCategoryModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200 mt-8 md:mt-12">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
-                  <div className="flex items-center gap-2">
-                    <Tag size={20} className="text-purple-600" />
-                    <h3 className="font-bold text-lg text-gray-800">Tambah Kategori Produk</h3>
-                  </div>
-                  <button onClick={() => setShowCategoryModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                    <X size={20} />
-                  </button>
-                </div>
-                
-                <div className="p-6 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kategori *</label>
-                    <input 
-                      type="text" 
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                      placeholder="Contoh: Baju Atasan, Bawahan, Outer, dll"
-                      autoFocus
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Kategori akan muncul di dropdown pilihan produk</p>
-                  </div>
-                </div>
-                
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-                  <button onClick={() => setShowCategoryModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
-                  <button onClick={handleAddCategory} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700">
-                    Simpan Kategori
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Modal Kelola Kategori */}
-          {showManageCategoriesModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white sticky top-0 z-10">
-                  <div className="flex items-center gap-2">
-                    <Tag size={20} className="text-purple-600" />
-                    <h3 className="font-bold text-lg text-gray-800">Kelola Kategori Produk</h3>
-                  </div>
-                  <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
-                    <X size={20} />
-                  </button>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                  {editingCategory ? (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Edit Kategori</label>
-                      <input 
-                        type="text" 
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
-                        value={editCategoryName}
-                        onChange={(e) => setEditCategoryName(e.target.value)}
-                        placeholder="Nama kategori"
-                        autoFocus
-                      />
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          type="button"
-                          onClick={() => { setEditingCategory(null); setEditCategoryName(''); }}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-                        >
-                          Batal
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleEditCategory}
-                          className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                        >
-                          Simpan Perubahan
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex justify-between items-center mb-4">
-                        <p className="text-sm text-gray-600">Daftar semua kategori produk yang tersedia</p>
-                        <button
-                          type="button"
-                          onClick={openAddCategoryFromManage}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
-                        >
-                          <Plus size={14} /> Tambah
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        {productCategories.map((category) => {
-                          const productCount = products.filter(p => p.category === category).length;
-                          return (
-                            <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div>
-                                <p className="font-medium text-gray-800">{category}</p>
-                                <p className="text-xs text-gray-500">{productCount} produk</p>
-                              </div>
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => openEditCategoryModal(category)}
-                                  className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                                  title="Edit Kategori"
-                                >
-                                  <Edit size={14} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteCategory(category)}
-                                  className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                                  title="Hapus Kategori"
-                                  disabled={productCount > 0}
-                                >
-                                  <Trash size={14} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-                  <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
-                    Tutup
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Modal Tambah Pelanggan */}
-          {showAddCustomerModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200 mt-8 md:mt-12">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
-                  <div className="flex items-center gap-2">
-                    <Users size={20} className="text-blue-600" />
-                    <h3 className="font-bold text-lg text-gray-800">Tambah Pelanggan Baru</h3>
-                  </div>
-                  <button onClick={() => setShowAddCustomerModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                    <X size={20} />
-                  </button>
-                </div>
-                
-                <div className="p-6 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan *</label>
-                    <input 
-                      type="text" 
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                      value={customerFormData.name}
-                      onChange={(e) => setCustomerFormData({...customerFormData, name: e.target.value})}
-                      placeholder="Contoh: Toko Maju Jaya"
-                      autoFocus
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
-                    <div className="relative">
-                      <Phone size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input 
-                        type="text" 
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                        value={customerFormData.phone}
-                        onChange={(e) => setCustomerFormData({...customerFormData, phone: e.target.value})}
-                        placeholder="08123456789"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
-                    <div className="relative">
-                      <MapPin size={16} className="absolute left-3 top-3 text-gray-400" />
-                      <textarea 
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                        rows="2"
-                        value={customerFormData.address}
-                        onChange={(e) => setCustomerFormData({...customerFormData, address: e.target.value})}
-                        placeholder="Jl. Contoh No. 123"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <div className="relative">
-                      <Mail size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input 
-                        type="email" 
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                        value={customerFormData.email}
-                        onChange={(e) => setCustomerFormData({...customerFormData, email: e.target.value})}
-                        placeholder="email@example.com"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-                  <button onClick={() => setShowAddCustomerModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
-                  <button onClick={handleAddCustomer} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
-                    Simpan Pelanggan
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Modal Kelola Pelanggan */}
+          {/* Modal Kelola Pelanggan - Level 1 */}
           {showManageCustomersModal && (
-            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
+            <div className="fixed inset-0 bg-white/50 backdrop-blur-sm z-40 flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col border border-gray-200">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">
                     <Users size={20} className="text-blue-600" />
@@ -2370,9 +1867,517 @@ export default function EditOrder() {
             </div>
           )}
 
-          {/* Photo Preview Modal - tetap di tengah karena ini preview gambar */}
+          {/* ========== LEVEL 2: MODAL ANAK (z-50) ========== */}
+          
+          {/* Modal Tambah Produk Baru - Level 2 */}
+          {showAddProductModal && (
+            <div className="fixed inset-0 bg-white/50 backdrop-blur-sm z-50 flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-green-50 to-white sticky top-0 z-10">
+                  <div className="flex items-center gap-2">
+                    <PlusCircle size={22} className="text-green-600" />
+                    <h3 className="font-bold text-xl text-gray-800">Tambah Produk Baru</h3>
+                  </div>
+                  <button onClick={() => setShowAddProductModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Nama Produk *</label>
+                      <input 
+                        type="text" 
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                        value={productNameInput}
+                        onChange={(e) => setProductNameInput(e.target.value)}
+                        placeholder="Contoh: Kemeja Batik Pria"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Harga Dasar (Rp) *</label>
+                      <input 
+                        type="text"
+                        inputMode="numeric"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                        value={productBasePriceInput}
+                        onChange={(e) => setProductBasePriceInput(e.target.value.replace(/[^0-9]/g, ''))}
+                        placeholder="Contoh: 150000"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Kategori</label>
+                    <div className="flex gap-2">
+                      <select 
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                        value={productCategoryInput}
+                        onChange={(e) => setProductCategoryInput(e.target.value)}
+                      >
+                        <option value="">Pilih Kategori</option>
+                        {productCategories.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => setShowManageCategoriesModal(true)}
+                        className="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-1 whitespace-nowrap"
+                      >
+                        <Tag size={14} /> Kelola
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Variasi Produk (Ukuran & Warna)</label>
+                    
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      <div>
+                        <input 
+                          type="text" 
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                          placeholder="Ukuran (S, M, L, XL)"
+                          value={variationSizeInput}
+                          onChange={(e) => setVariationSizeInput(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <input 
+                          type="text" 
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                          placeholder="Warna (Merah, Biru, Hitam)"
+                          value={variationColorInput}
+                          onChange={(e) => setVariationColorInput(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex gap-1">
+                        <input 
+                          type="text"
+                          inputMode="numeric"
+                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                          placeholder="Harga"
+                          value={variationPriceInput}
+                          onChange={(e) => setVariationPriceInput(e.target.value.replace(/[^0-9]/g, ''))}
+                        />
+                        <button 
+                          type="button"
+                          onClick={handleAddVariationSimple}
+                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {tempVariationsList.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs text-gray-500">Variasi yang sudah ditambahkan:</p>
+                        {tempVariationsList.map((v) => (
+                          <div key={v.id} className="flex justify-between items-center bg-gray-50 p-2 rounded-lg">
+                            <div className="flex gap-3 text-sm">
+                              <span className="font-medium">{v.size}</span>
+                              <span className="text-gray-500">•</span>
+                              <span>{v.color}</span>
+                              <span className="text-blue-600">Rp {formatPriceDisplay(v.price)}</span>
+                            </div>
+                            <button type="button" onClick={() => handleRemoveVariationSimple(v.id)} className="text-red-500 hover:text-red-700">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl sticky bottom-0">
+                  <button onClick={() => setShowAddProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
+                  <button onClick={handleSaveNewProductSimple} className="px-5 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
+                    Simpan Produk
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Tambah Pelanggan Baru - Level 2 */}
+          {showAddCustomerModal && (
+            <div className="fixed inset-0 bg-white/50 backdrop-blur-sm z-50 flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
+                  <div className="flex items-center gap-2">
+                    <Users size={20} className="text-blue-600" />
+                    <h3 className="font-bold text-lg text-gray-800">Tambah Pelanggan Baru</h3>
+                  </div>
+                  <button onClick={() => setShowAddCustomerModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan *</label>
+                    <input 
+                      type="text" 
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                      value={customerFormData.name}
+                      onChange={(e) => setCustomerFormData({...customerFormData, name: e.target.value})}
+                      placeholder="Contoh: Toko Maju Jaya"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
+                    <div className="relative">
+                      <Phone size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input 
+                        type="text" 
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                        value={customerFormData.phone}
+                        onChange={(e) => setCustomerFormData({...customerFormData, phone: e.target.value})}
+                        placeholder="08123456789"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                    <div className="relative">
+                      <MapPin size={16} className="absolute left-3 top-3 text-gray-400" />
+                      <textarea 
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                        rows="2"
+                        value={customerFormData.address}
+                        onChange={(e) => setCustomerFormData({...customerFormData, address: e.target.value})}
+                        placeholder="Jl. Contoh No. 123"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <div className="relative">
+                      <Mail size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input 
+                        type="email" 
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                        value={customerFormData.email}
+                        onChange={(e) => setCustomerFormData({...customerFormData, email: e.target.value})}
+                        placeholder="email@example.com"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+                  <button onClick={() => setShowAddCustomerModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
+                  <button onClick={handleAddCustomer} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                    Simpan Pelanggan
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Edit Produk - Level 2 */}
+          {showEditProductModal && (
+            <div className="fixed inset-0 bg-white/50 backdrop-blur-sm z-50 flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-yellow-50 to-white sticky top-0 z-10">
+                  <div className="flex items-center gap-2">
+                    <Edit2 size={22} className="text-yellow-600" />
+                    <h3 className="font-bold text-xl text-gray-800">Edit Produk</h3>
+                  </div>
+                  <button onClick={() => setShowEditProductModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Nama Produk *</label>
+                      <input 
+                        type="text" 
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:border-transparent" 
+                        value={productNameInput}
+                        onChange={(e) => setProductNameInput(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Harga Dasar (Rp) *</label>
+                      <input 
+                        type="text"
+                        inputMode="numeric"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:border-transparent" 
+                        value={productBasePriceInput}
+                        onChange={(e) => setProductBasePriceInput(e.target.value.replace(/[^0-9]/g, ''))}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Kategori</label>
+                    <div className="flex gap-2">
+                      <select 
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:border-transparent" 
+                        value={productCategoryInput}
+                        onChange={(e) => setProductCategoryInput(e.target.value)}
+                      >
+                        <option value="">Pilih Kategori</option>
+                        {productCategories.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => setShowManageCategoriesModal(true)}
+                        className="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-1 whitespace-nowrap"
+                      >
+                        <Tag size={14} /> Kelola
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Variasi Produk (Ukuran & Warna)</label>
+                    
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      <div>
+                        <input 
+                          type="text" 
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                          placeholder="Ukuran (S, M, L, XL)"
+                          value={editVariationSizeInput}
+                          onChange={(e) => setEditVariationSizeInput(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <input 
+                          type="text" 
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                          placeholder="Warna (Merah, Biru, Hitam)"
+                          value={editVariationColorInput}
+                          onChange={(e) => setEditVariationColorInput(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex gap-1">
+                        <input 
+                          type="text"
+                          inputMode="numeric"
+                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" 
+                          placeholder="Harga"
+                          value={editVariationPriceInput}
+                          onChange={(e) => setEditVariationPriceInput(e.target.value.replace(/[^0-9]/g, ''))}
+                        />
+                        <button 
+                          type="button"
+                          onClick={handleAddEditVariation}
+                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {editVariationsList.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs text-gray-500">Variasi yang sudah ditambahkan:</p>
+                        {editVariationsList.map((v) => (
+                          <div key={v.id} className="flex justify-between items-center bg-gray-50 p-2 rounded-lg">
+                            <div className="flex gap-2 flex-1">
+                              <input 
+                                type="text" 
+                                className="w-20 border border-gray-200 rounded px-2 py-1 text-sm"
+                                value={v.size}
+                                onChange={(e) => handleUpdateEditVariation(v.id, 'size', e.target.value)}
+                              />
+                              <input 
+                                type="text" 
+                                className="w-24 border border-gray-200 rounded px-2 py-1 text-sm"
+                                value={v.color}
+                                onChange={(e) => handleUpdateEditVariation(v.id, 'color', e.target.value)}
+                              />
+                              <input 
+                                type="text" 
+                                inputMode="numeric"
+                                className="w-28 border border-gray-200 rounded px-2 py-1 text-sm"
+                                value={v.price}
+                                onChange={(e) => handleUpdateEditVariation(v.id, 'price', e.target.value)}
+                              />
+                            </div>
+                            <button type="button" onClick={() => handleRemoveEditVariation(v.id)} className="text-red-500 hover:text-red-700 ml-2">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {editVariationsList.length === 0 && (
+                      <p className="text-sm text-yellow-600 bg-yellow-50 p-2 rounded-lg">
+                        ⚠️ Produk harus memiliki minimal satu variasi
+                      </p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl sticky bottom-0">
+                  <button onClick={() => setShowEditProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
+                  <button onClick={handleSaveEditedProduct} className="px-5 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700">
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========== LEVEL 3: MODAL CUCU (z-[100]) - TAMPIL DI DEPAN ========== */}
+          
+          {/* Modal Kelola Kategori - Level 3 */}
+          {showManageCategoriesModal && (
+            <div className="fixed inset-0 bg-white/50 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col border border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white sticky top-0 z-10">
+                  <div className="flex items-center gap-2">
+                    <Tag size={20} className="text-purple-600" />
+                    <h3 className="font-bold text-lg text-gray-800">Kelola Kategori Produk</h3>
+                  </div>
+                  <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  {editingCategory ? (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Edit Kategori</label>
+                      <input 
+                        type="text" 
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                        value={editCategoryName}
+                        onChange={(e) => setEditCategoryName(e.target.value)}
+                        placeholder="Nama kategori"
+                        autoFocus
+                      />
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          type="button"
+                          onClick={() => { setEditingCategory(null); setEditCategoryName(''); }}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleEditCategory}
+                          className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                        >
+                          Simpan Perubahan
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <p className="text-sm text-gray-600">Daftar semua kategori produk yang tersedia</p>
+                        <button
+                          type="button"
+                          onClick={openAddCategoryFromManage}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700"
+                        >
+                          <Plus size={14} /> Tambah
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {productCategories.map((category) => {
+                          const productCount = products.filter(p => p.category === category).length;
+                          return (
+                            <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div>
+                                <p className="font-medium text-gray-800">{category}</p>
+                                <p className="text-xs text-gray-500">{productCount} produk</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => openEditCategoryModal(category)}
+                                  className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                                  title="Edit Kategori"
+                                >
+                                  <Edit size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCategory(category)}
+                                  className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                                  title="Hapus Kategori"
+                                  disabled={productCount > 0}
+                                >
+                                  <Trash size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                  <button onClick={() => { setShowManageCategoriesModal(false); setEditingCategory(null); }} className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Tambah Kategori - Level 3 */}
+          {showCategoryModal && (
+            <div className="fixed inset-0 bg-white/50 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
+                  <div className="flex items-center gap-2">
+                    <Tag size={20} className="text-purple-600" />
+                    <h3 className="font-bold text-lg text-gray-800">Tambah Kategori Produk</h3>
+                  </div>
+                  <button onClick={() => setShowCategoryModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kategori *</label>
+                    <input 
+                      type="text" 
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Contoh: Baju Atasan, Bawahan, Outer, dll"
+                      autoFocus
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Kategori akan muncul di dropdown pilihan produk</p>
+                  </div>
+                </div>
+                
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+                  <button onClick={() => setShowCategoryModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Batal</button>
+                  <button onClick={handleAddCategory} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700">
+                    Simpan Kategori
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Photo Preview Modal */}
           {showPhotoPreview && selectedPhoto && (
-            <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-white/90 z-[200] flex items-center justify-center p-4">
               <div className="w-full max-w-6xl max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center text-white mb-4">
                   <div>

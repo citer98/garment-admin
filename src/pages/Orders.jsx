@@ -29,7 +29,7 @@ export default function Orders() {
     { value: 'cutting', label: '✂️ Potong', color: 'bg-amber-100 text-amber-800' },
     { value: 'sewing', label: '🧵 Jahit', color: 'bg-orange-100 text-orange-800' },
     { value: 'finishing', label: '✨ Finishing', color: 'bg-lime-100 text-lime-800' },
-    { value: 'packing', label: '📦 Packing', color: 'bg-emerald-100 text-emerald-800' },
+    { value: 'packing', label: '📦 Pengemasan', color: 'bg-emerald-100 text-emerald-800' },
     { value: 'qc', label: '✅ QC', color: 'bg-teal-100 text-teal-800' },
     { value: 'completed', label: '🎉 Selesai', color: 'bg-green-100 text-green-800' },
     { value: 'delivered', label: '🚚 Terkirim', color: 'bg-purple-100 text-purple-800' },
@@ -77,6 +77,7 @@ export default function Orders() {
             items: 3,
             totalAmount: 850000,
             status: 'completed',
+            dueDate: '2024-01-20',
             itemsDetail: [
               { product: 'Kemeja Pria Slimfit', qty: 2, price: 150000 },
               { product: 'Celana Jeans Denim', qty: 1, price: 250000 }
@@ -89,6 +90,7 @@ export default function Orders() {
             items: 5,
             totalAmount: 1200000,
             status: 'cutting',
+            dueDate: '2024-01-25',
             itemsDetail: [
               { product: 'Blouse Wanita', qty: 3, price: 120000 },
               { product: 'Kemeja Wanita Formal', qty: 2, price: 180000 }
@@ -101,6 +103,7 @@ export default function Orders() {
             items: 2,
             totalAmount: 600000,
             status: 'sewing',
+            dueDate: '2024-01-22',
             itemsDetail: [
               { product: 'Jaket Hoodie', qty: 2, price: 300000 }
             ]
@@ -112,6 +115,7 @@ export default function Orders() {
             items: 4,
             totalAmount: 950000,
             status: 'delivered',
+            dueDate: '2024-01-19',
             itemsDetail: [
               { product: 'Celana Chino', qty: 2, price: 200000 },
               { product: 'Kemeja Pria Slimfit', qty: 2, price: 150000 }
@@ -200,41 +204,7 @@ export default function Orders() {
   return (
     <div className="relative">
       {/* ==================== ZOOM CONTROLS - FLOATING BUTTON ==================== */}
-      {/*<div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-        <button
-          onClick={() => setShowZoomControls(!showZoomControls)}
-          className="w-10 h-10 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
-          title="Zoom Controls"
-        >
-          <span className="text-sm font-bold">{Math.round(zoomLevel * 100)}%</span>
-        </button>
-        
-        {showZoomControls && (
-          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex flex-col gap-2">
-            <button
-              onClick={handleZoomIn}
-              className="w-10 h-10 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center justify-center"
-              title="Perbesar (Zoom In)"
-            >
-              <ZoomIn size={18} />
-            </button>
-            <button
-              onClick={handleZoomReset}
-              className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 flex items-center justify-center"
-              title="Reset ke 80%"
-            >
-              <RotateCcw size={18} />
-            </button>
-            <button
-              onClick={handleZoomOut}
-              className="w-10 h-10 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center justify-center"
-              title="Perkecil (Zoom Out)"
-            >
-              <ZoomOut size={18} />
-            </button>
-          </div>
-        )}
-      </div>*/}
+      {/* Zoom controls are commented out as requested */}
 
       {/* ==================== MAIN CONTENT WITH SCALE TRANSFORM ==================== */}
       <div 
@@ -255,10 +225,10 @@ export default function Orders() {
               </div>
               <button 
                 onClick={handleCreateNew}
-                className="flex items-center bg-blue-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                    className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
               >
                 <Plus size={20} className="mr-2" />
-                Pesanan Baru
+                Buat Pesanan Baru
               </button>
             </div>
           </div>
@@ -323,112 +293,171 @@ export default function Orders() {
             </div>
           </div>
 
-          {/* Orders Table */}
+          {/* Orders Table - UPDATED WITH NEW STYLES */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-gray-50/80 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold tracking-wider">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ID Pesanan</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Pelanggan</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tanggal</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Jumlah Item</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Total</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Aksi</th>
+                    {/* ID PESANAN - Tengah */}
+                    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+                      ID PESANAN
+                    </th>
+                    {/* PELANGGAN - Tengah */}
+                    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+                      PELANGGAN
+                    </th>
+                    {/* PRODUK - Tengah */}
+                    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+                      PRODUK
+                    </th>
+                    {/* TANGGAL - Tengah */}
+                    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+                      TANGGAL
+                    </th>
+                    {/* DEADLINE - Tengah */}
+                    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+                      DEADLINE
+                    </th>
+                    {/* TOTAL HARGA - Kanan */}
+                    <th className="px-6 py-4 whitespace-nowrap text-right cursor-pointer hover:bg-gray-100/50 transition-colors group">
+                      TOTAL HARGA
+                    </th>
+                    {/* STATUS - Tengah */}
+                    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+                      STATUS
+                    </th>
+                    {/* AKSI - Tengah */}
+                    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+                      AKSI
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredOrders.map((order) => {
-                    const status = statusOptions.find(s => s.value === order.status) || statusOptions[0];
-                    return (
-                      <tr key={order.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4">
-                          <span className="font-medium text-gray-900">{order.id}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div>
-                            <p className="font-medium text-gray-900">{order.customerName}</p>
-                            <p className="text-sm text-gray-500">{order.items} item</p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {formatDate(order.orderDate)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {order.items} item
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-gray-900">
-                          Rp {formatCurrency(order.totalAmount)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${status.color}`}>
-                            {status.label}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex space-x-2">
-                            <button 
-                              onClick={() => handleViewOrder(order.id)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="Lihat Detail"
-                            >
-                              <Eye size={18} />
-                            </button>
-                            <button 
-                              onClick={() => handleEditOrder(order.id)}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                              title="Edit"
-                            >
-                              <Edit size={18} />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteOrder(order.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Hapus"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                            <button 
-                              onClick={() => handleDownloadInvoice(order.id)}
-                              className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                              title="Download"
-                            >
-                              <Download size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                <tbody className="divide-y divide-gray-200/80">
+                  {filteredOrders.length > 0 ? (
+                    filteredOrders.map((order) => {
+                      const status = statusOptions.find(s => s.value === order.status) || statusOptions[0];
+                      // Tentukan deadline text
+                      let deadlineText = '';
+                      let isOverdue = false;
+                      if (order.dueDate) {
+                        const today = new Date().toISOString().split('T')[0];
+                        if (order.dueDate < today) {
+                          deadlineText = 'Terlambat';
+                          isOverdue = true;
+                        } else {
+                          const dueDateObj = new Date(order.dueDate);
+                          const todayObj = new Date();
+                          const diffDays = Math.ceil((dueDateObj - todayObj) / (1000 * 60 * 60 * 24));
+                          deadlineText = `${diffDays} hari`;
+                        }
+                      }
+                      
+                      return (
+                        <tr key={order.id} className="hover:bg-blue-50/50 transition-colors duration-200 group">
+                          {/* ID PESANAN - Tengah */}
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span className="font-mono text-sm font-medium text-gray-800">{order.id}</span>
+                          </td>
+                          {/* PELANGGAN - Kiri */}
+                          <td className="px-6 py-4 whitespace-nowrap text-left">
+                            <p className="font-medium text-gray-800">{order.customerName}</p>
+                            <p className="text-xs text-gray-500">{order.items} item</p>
+                          </td>
+                          {/* PRODUK - Kiri */}
+                          <td className="px-6 py-4 whitespace-nowrap text-left">
+                            <p className="text-sm text-gray-700 truncate max-w-[200px]">
+                              {order.itemsDetail?.[0]?.productName || order.itemsDetail?.[0]?.product || '-'}
+                            </p>
+                            {order.itemsDetail?.length > 1 && (
+                              <p className="text-xs text-gray-400">+{order.itemsDetail.length - 1} produk lainnya</p>
+                            )}
+                          </td>
+                          {/* TANGGAL - Tengah */}
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span className="text-sm text-gray-600">{formatDate(order.orderDate)}</span>
+                          </td>
+                          {/* DEADLINE - Tengah */}
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            {order.dueDate ? (
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${isOverdue ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                                {isOverdue ? '⚠️ ' : ''}{deadlineText}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-gray-400">-</span>
+                            )}
+                          </td>
+                          {/* TOTAL HARGA - Kanan */}
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <span className="font-semibold text-gray-900">Rp {formatCurrency(order.totalAmount)}</span>
+                          </td>
+                          {/* STATUS - Tengah */}
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${status.color}`}>
+                              {status.label}
+                            </span>
+                          </td>
+                          {/* AKSI - Tengah */}
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <div className="flex justify-center gap-2">
+                              <button 
+                                onClick={() => handleViewOrder(order.id)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Lihat Detail"
+                              >
+                                <Eye size={16} />
+                              </button>
+                              <button 
+                                onClick={() => handleEditOrder(order.id)}
+                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteOrder(order.id)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Hapus"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                              <button 
+                                onClick={() => handleDownloadInvoice(order.id)}
+                                className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                                title="Download"
+                              >
+                                <Download size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <Package className="text-gray-300 mb-3" size={48} />
+                          <p className="text-gray-500 font-medium">Tidak ada pesanan ditemukan</p>
+                          <p className="text-sm text-gray-400 mt-1">
+                            {searchQuery || statusFilter !== 'all' 
+                              ? 'Coba ubah filter atau kata kunci pencarian' 
+                              : 'Mulai dengan membuat pesanan baru'}
+                          </p>
+                          <button 
+                            onClick={handleCreateNew}
+                            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                          >
+                            Buat Pesanan Pertama
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
             
-            {/* Empty State */}
-            {filteredOrders.length === 0 && (
-              <div className="text-center py-12">
-                <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <Package className="text-gray-400" size={40} />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada pesanan ditemukan</h3>
-                <p className="text-gray-600 mb-6">
-                  {searchQuery || statusFilter !== 'all' 
-                    ? 'Coba ubah filter atau kata kunci pencarian' 
-                    : 'Mulai dengan membuat pesanan baru'}
-                </p>
-                <button 
-                  onClick={handleCreateNew}
-                  className="inline-flex items-center bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                >
-                  <Plus size={18} className="mr-2" />
-                  Buat Pesanan Pertama
-                </button>
-              </div>
-            )}
-
             {/* Footer */}
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
               <p className="text-sm text-gray-600">

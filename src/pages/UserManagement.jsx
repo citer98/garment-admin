@@ -580,7 +580,7 @@ export default function UserManagement() {
 
           {/* ==================== MODAL TAMBAH PENGGUNA ==================== */}
           {isAddModalOpen && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center p-4">
+            <div className="fixed inset-0 bg-white/50 backdrop-blur-sm z-50 flex items-start justify-center p-4">
               <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[85vh] overflow-hidden flex flex-col border border-gray-200 mt-8 md:mt-12">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
                   <div className="flex items-center gap-2">

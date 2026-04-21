@@ -1,5 +1,5 @@
 // src/pages/Dashboard.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
@@ -22,7 +22,8 @@ import {
   BarChart3,
   Calendar,
   DollarSign,
-  CalendarDays
+  CalendarDays,
+  RefreshCw
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -35,7 +36,8 @@ import { formatCurrency, formatDate } from '../utils/formatters';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [showAllAlerts, setShowAllAlerts] = useState(false);
+  const [showItemStuckModal, setShowItemStuckModal] = useState(false);
+  const [showLowStockModal, setShowLowStockModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
@@ -62,6 +64,10 @@ export default function Dashboard() {
   const [stuckItems, setStuckItems] = useState([]);
   const [selectedStuckOrder, setSelectedStuckOrder] = useState(null);
   const [showStuckDetailModal, setShowStuckDetailModal] = useState(false);
+  
+  // State untuk LAST UPDATE timestamp
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // ================== STATISTIK CEPAT YANG REAL-TIME ==================
   const [quickStats, setQuickStats] = useState({
@@ -151,48 +157,16 @@ export default function Dashboard() {
   // Data stok menipis
   const [lowStockItems, setLowStockItems] = useState([]);
 
-  useEffect(() => {
-    const loadStockData = () => {
-      const savedStock = localStorage.getItem('stockItems');
-      if (savedStock) {
-        const stock = JSON.parse(savedStock);
-        const criticalAndWarning = stock.filter(item => 
-          item.status === 'critical' || item.status === 'warning'
-        );
-        setLowStockItems(criticalAndWarning);
-      }
-    };
-    
-    loadStockData();
-    const interval = setInterval(loadStockData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Deteksi ukuran layar
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // ================== FUNGSI UNTUK MENDAPATKAN PESANAN AKTIF ==================
-  const getActiveOrders = () => {
-    try {
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      const activeStatuses = [
-        'cutting', 'sewing', 'finishing', 'packing', 'qc', 
-        'processing', 'production', 'draft'
-      ];
-      const active = orders.filter(order => activeStatuses.includes(order.status));
-      return active;
-    } catch (error) {
-      console.error('Error getting active orders:', error);
-      return [];
+  const loadStockData = useCallback(() => {
+    const savedStock = localStorage.getItem('stockItems');
+    if (savedStock) {
+      const stock = JSON.parse(savedStock);
+      const criticalAndWarning = stock.filter(item => 
+        item.status === 'critical' || item.status === 'warning'
+      );
+      setLowStockItems(criticalAndWarning);
     }
-  };
+  }, []);
 
   // Helper function untuk mendapatkan departemen dari status
   const getDepartmentFromStatus = (status) => {
@@ -237,8 +211,24 @@ export default function Dashboard() {
     }
   };
 
+  // ================== FUNGSI UNTUK MENDAPATKAN PESANAN AKTIF ==================
+  const getActiveOrders = useCallback(() => {
+    try {
+      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+      const activeStatuses = [
+        'cutting', 'sewing', 'finishing', 'packing', 'qc', 
+        'processing', 'production', 'draft'
+      ];
+      const active = orders.filter(order => activeStatuses.includes(order.status));
+      return active;
+    } catch (error) {
+      console.error('Error getting active orders:', error);
+      return [];
+    }
+  }, []);
+
   // ================== FUNGSI UNTUK MENGHITUNG PESANAN PENDING ==================
-  const calculatePendingOrders = (orders) => {
+  const calculatePendingOrders = useCallback((orders) => {
     const pending = orders.filter(order => 
       order.status === 'cutting' && 
       order.status !== 'cancelled' &&
@@ -246,10 +236,10 @@ export default function Dashboard() {
       order.status !== 'delivered'
     );
     return pending.length;
-  };
+  }, []);
 
   // ================== FUNGSI UNTUK MENGHITUNG EFISIENSI ==================
-  const calculateEfficiency = (orders) => {
+  const calculateEfficiency = useCallback((orders) => {
     const completedOrdersList = orders.filter(o => o.status === 'completed' || o.status === 'delivered');
     if (completedOrdersList.length === 0) return 85;
     
@@ -260,10 +250,10 @@ export default function Dashboard() {
     
     const efficiency = (onTimeOrders.length / completedOrdersList.length) * 100;
     return Math.round(efficiency);
-  };
+  }, []);
 
   // ================== FUNGSI UNTUK MENGHITUNG ITEM STUCK ==================
-  const calculateStuckItems = (ordersFromParam = null) => {
+  const calculateStuckItems = useCallback((ordersFromParam = null) => {
     try {
       const orders = ordersFromParam || JSON.parse(localStorage.getItem('orders') || '[]');
       const today = new Date().toISOString().split('T')[0];
@@ -311,10 +301,10 @@ export default function Dashboard() {
       console.error('Error calculating stuck items:', error);
       return 0;
     }
-  };
+  }, []);
 
   // ================== FUNGSI UNTUK LOAD DATA PESANAN TERBARU ==================
-  const loadRecentOrders = (orders) => {
+  const loadRecentOrders = useCallback((orders) => {
     try {
       const activeStatuses = [
         'cutting', 'sewing', 'finishing', 'packing', 'qc', 
@@ -356,10 +346,11 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error loading recent orders:', error);
     }
-  };
+  }, []);
 
   // ================== FUNGSI UTAMA LOAD PRODUCTION DATA DARI ORDERS ==================
-  const loadProductionData = () => {
+  const loadProductionData = useCallback(async () => {
+    setIsRefreshing(true);
     try {
       const orders = JSON.parse(localStorage.getItem('orders') || '[]');
       
@@ -534,11 +525,80 @@ export default function Dashboard() {
       setCancelledCount(cancelledCount_);
       
       loadRecentOrders(orders);
+      setLastUpdate(new Date());
       
     } catch (error) {
       console.error('Error loading production data:', error);
+    } finally {
+      setIsRefreshing(false);
     }
-  };
+  }, [calculatePendingOrders, calculateStuckItems, calculateEfficiency, loadRecentOrders]);
+
+  // ================== EVENT LISTENER UNTUK REALTIME SYNC ==================
+  useEffect(() => {
+    // Fungsi untuk menangani perubahan storage (dari tab lain atau komponen lain)
+    const handleStorageChange = (event) => {
+      if (event.key === 'orders') {
+        console.log('📦 Orders changed in another tab, refreshing dashboard...');
+        loadProductionData();
+      }
+      if (event.key === 'stockItems') {
+        console.log('📦 Stock changed in another tab, refreshing stock data...');
+        loadStockData();
+      }
+    };
+    
+    // Custom event listener untuk perubahan dari dalam aplikasi yang sama
+    const handleOrdersUpdated = () => {
+      console.log('🔄 Orders updated event received, refreshing dashboard...');
+      loadProductionData();
+    };
+    
+    // Custom event listener untuk job updates
+    const handleJobsUpdated = () => {
+      console.log('🔧 Jobs updated event received, refreshing stuck items...');
+      loadProductionData();
+    };
+    
+    // Custom event listener untuk stock updates
+    const handleStockUpdated = () => {
+      console.log('📦 Stock updated event received, refreshing stock data...');
+      loadStockData();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('ordersUpdated', handleOrdersUpdated);
+    window.addEventListener('jobsUpdated', handleJobsUpdated);
+    window.addEventListener('stockUpdated', handleStockUpdated);
+    
+    // Initial load
+    loadProductionData();
+    loadStockData();
+    
+    // Auto-refresh setiap 30 detik (untuk memastikan data selalu up-to-date)
+    const interval = setInterval(() => {
+      loadProductionData();
+      loadStockData();
+    }, 30000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('ordersUpdated', handleOrdersUpdated);
+      window.removeEventListener('jobsUpdated', handleJobsUpdated);
+      window.removeEventListener('stockUpdated', handleStockUpdated);
+      clearInterval(interval);
+    };
+  }, [loadProductionData, loadStockData]);
+
+  // Deteksi ukuran layar
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Handler untuk klik stage produksi
   const handleStageClick = (stageName, ordersFromState) => {
@@ -635,12 +695,14 @@ export default function Dashboard() {
     }
   };
 
-  // Load data saat mount dan setiap ada perubahan
-  useEffect(() => {
+  // Manual refresh handler
+  const handleManualRefresh = () => {
     loadProductionData();
-    const interval = setInterval(loadProductionData, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    loadStockData();
+    // Trigger event untuk memberitahu komponen lain
+    window.dispatchEvent(new CustomEvent('ordersUpdated'));
+    window.dispatchEvent(new CustomEvent('stockUpdated'));
+  };
 
   // Helper untuk color classes
   const getColorClass = (color) => {
@@ -661,10 +723,7 @@ export default function Dashboard() {
       'sewing': { label: 'Jahit', color: 'bg-orange-100 text-orange-800' },
       'finishing': { label: 'Finishing', color: 'bg-lime-100 text-lime-800' },
       'packing': { label: 'Pengemasan', color: 'bg-emerald-100 text-emerald-800' },
-      'qc': { label: 'Quality Control', color: 'bg-teal-100 text-teal-800' },
-      'processing': { label: 'Diproses', color: 'bg-blue-100 text-blue-800' },
-      'production': { label: 'Produksi', color: 'bg-yellow-100 text-yellow-800' },
-      'draft': { label: 'Draft', color: 'bg-gray-100 text-gray-800' },
+      'qc': { label: 'QC', color: 'bg-teal-100 text-teal-800' },
       'completed': { label: 'Selesai', color: 'bg-green-100 text-green-800' },
       'delivered': { label: 'Terkirim', color: 'bg-purple-100 text-purple-800' },
       'cancelled': { label: 'Dibatalkan', color: 'bg-red-100 text-red-800' }
@@ -674,13 +733,26 @@ export default function Dashboard() {
 
   return (
     <div className={`space-y-3 md:space-y-6 mt-2 ${isFullscreen ? 'fixed inset-0 bg-white z-40 overflow-auto p-2 md:p-4' : ''}`}>
-      {/* Header */}
+      {/* Header with Refresh Button */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800">Dashboard Produksi</h2>
-          <p className="text-xs md:text-sm text-gray-600 mt-0.5">Ringkasan aktivitas produksi terkini</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-xs md:text-sm text-gray-600">Ringkasan aktivitas produksi terkini</p>
+            <span className="text-[10px] text-gray-400">
+              Last update: {lastUpdate.toLocaleTimeString('id-ID')}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
+          <button 
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className={`p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors ${isRefreshing ? 'animate-spin' : ''}`}
+            title="Refresh data"
+          >
+            <RefreshCw size={18} />
+          </button>
           {isMobile ? (
             <>
               <button onClick={() => setIsFullscreen(!isFullscreen)} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
@@ -755,7 +827,7 @@ export default function Dashboard() {
           </div>
 
           <button
-            onClick={() => setShowAllAlerts(true)}
+            onClick={() => setShowItemStuckModal(true)}
             className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-red-600 hover:text-red-800 font-medium"
           >
             Lihat semua {stuckItems.length} item stuck
@@ -800,12 +872,12 @@ export default function Dashboard() {
             ))}
           </div>
 
-          <Link 
-            to="/stock"
-            className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-yellow-600 hover:text-yellow-800 font-medium block"
+          <button
+            onClick={() => setShowLowStockModal(true)}
+            className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-yellow-600 hover:text-yellow-800 font-medium"
           >
             Lihat semua {lowStockItems.length} bahan menipis
-          </Link>
+          </button>
         </div>
 
         {/* Quick Stats - REAL-TIME */}
@@ -842,7 +914,8 @@ export default function Dashboard() {
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">Stuck</div>
             </div>
           </div>
-          <button onClick={loadProductionData} className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-blue-600 hover:text-blue-800 font-medium">
+          <button onClick={handleManualRefresh} className="w-full mt-2 md:mt-3 text-center text-xs md:text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center justify-center gap-1">
+            <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : ''} />
             Refresh data
           </button>
         </div>
@@ -966,62 +1039,156 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardBody className="p-0">
-            <div className="divide-y divide-gray-100">
-              {recentOrders.length > 0 ? (
-                recentOrders.map((order) => {
-                  const statusBadge = getStatusBadge(order.status);
-                  return (
-                    <Link 
-                      key={order.id} 
-                      to={`/orders/${order.id}`}
-                      className="block p-4 hover:bg-gray-50 transition-colors group"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="font-bold text-blue-600 text-sm">{order.id}</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${statusBadge.color}`}>
+            {recentOrders.length > 0 ? (
+              <>
+                {/* Desktop Table View - Hidden on mobile */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-gray-50/80 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold tracking-wider">
+                      <tr>
+                        <th className="px-6 py-4 whitespace-nowrap text-left">ID PESANAN</th>
+                        <th className="px-6 py-4 whitespace-nowrap text-left">PELANGGAN</th>
+                        <th className="px-6 py-4 whitespace-nowrap text-left">TANGGAL</th>
+                        <th className="px-6 py-4 whitespace-nowrap text-left">STATUS</th>
+                        <th className="px-6 py-4 whitespace-nowrap text-left">DEADLINE</th>
+                        <th className="px-6 py-4 whitespace-nowrap text-center">AKSI</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200/80">
+                      {recentOrders.map((order) => {
+                        const statusBadge = getStatusBadge(order.status);
+                        let deadlineText = '';
+                        let isOverdue = false;
+                        if (order.deadline) {
+                          if (order.deadline === 'Terlambat') {
+                            deadlineText = 'Terlambat';
+                            isOverdue = true;
+                          } else {
+                            deadlineText = order.deadline;
+                          }
+                        }
+                        
+                        return (
+                          <tr key={order.id} className="hover:bg-blue-50/50 transition-colors duration-200 group cursor-pointer" onClick={() => navigate(`/orders/${order.id}`)}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="font-mono text-sm font-medium text-gray-800">{order.id}</span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <p className="font-medium text-gray-800 text-sm">{order.customer}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{order.items} item</p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="text-sm text-gray-500">{formatDate(order.orderDate)}</span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
+                                {statusBadge.label}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {deadlineText ? (
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${isOverdue ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                                  {isOverdue ? '⚠️ ' : ''}{deadlineText}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-gray-400">-</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/orders/${order.id}`);
+                                }}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Lihat Detail"
+                              >
+                                <Eye size={16} />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View - Visible on mobile */}
+                <div className="md:hidden divide-y divide-gray-100">
+                  {recentOrders.map((order) => {
+                    const statusBadge = getStatusBadge(order.status);
+                    let deadlineText = '';
+                    let isOverdue = false;
+                    if (order.deadline) {
+                      if (order.deadline === 'Terlambat') {
+                        deadlineText = 'Terlambat';
+                        isOverdue = true;
+                      } else {
+                        deadlineText = order.deadline;
+                      }
+                    }
+                    
+                    return (
+                      <div
+                        key={order.id}
+                        className="p-4 hover:bg-blue-50/50 transition-colors duration-200 cursor-pointer"
+                        onClick={() => navigate(`/orders/${order.id}`)}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <span className="font-mono text-sm font-bold text-blue-600">{order.id}</span>
+                            <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge.color}`}>
                               {statusBadge.label}
                             </span>
-                            {order.isOverdue && (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
-                                ⚠️ Terlambat
-                              </span>
-                            )}
                           </div>
-                          <p className="font-medium text-gray-800 text-sm">{order.customer}</p>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <Package size={12} /> {order.items} item
+                          {deadlineText && (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${isOverdue ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                              {isOverdue ? '⚠️ ' : ''}{deadlineText}
                             </span>
-                            {order.deadline && (
-                              <span className={`flex items-center gap-1 ${order.isOverdue ? 'text-red-500' : 'text-gray-500'}`}>
-                                <Clock size={12} /> Deadline: {order.deadline}
-                              </span>
-                            )}
-                          </div>
+                          )}
                         </div>
-                        <ChevronRight size={16} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
+                        <p className="font-medium text-gray-800 text-sm">{order.customer}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Package size={12} /> {order.items} item
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} /> {formatDate(order.orderDate)}
+                          </span>
+                        </div>
                       </div>
-                    </Link>
-                  );
-                })
-              ) : (
-                <div className="text-center py-8">
-                  <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                    <Package className="text-gray-400" size={24} />
-                  </div>
-                  <p className="text-gray-500 text-sm">Belum ada pesanan aktif</p>
-                  <Link to="/orders/create" className="mt-3 inline-block text-blue-600 text-sm hover:text-blue-700">
-                    Buat pesanan pertama →
+                    );
+                  })}
+                </div>
+
+                {/* Footer with View All Orders Button */}
+                <div className="border-t border-gray-200 bg-gray-50/50 p-3">
+                  <Link
+                    to="/orders"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+                  >
+                    Lihat Semua Pesanan
+                    <ChevronRight size={16} />
                   </Link>
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                  <Package className="text-gray-400" size={24} />
+                </div>
+                <p className="text-gray-500 text-sm">Belum ada pesanan aktif</p>
+                <Link to="/orders/create" className="mt-3 inline-block text-blue-600 text-sm hover:text-blue-700">
+                  Buat pesanan pertama →
+                </Link>
+              </div>
+            )}
           </CardBody>
         </Card>
 
-        {/* Production Status */}
+        {/* Production Status - REALTIME SYNC */}
         <Card className="enterprise-card animate-enter-fade delay-300 h-full">
           <CardHeader className="border-b border-gray-100 pb-3">
             <div className="flex justify-between items-center">
@@ -1030,9 +1197,9 @@ export default function Dashboard() {
                   <Grid size={16} className="text-green-500" />
                   Status Produksi
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">Jumlah pesanan dalam setiap tahap produksi</p>
+                <p className="text-xs text-gray-500 mt-0.5">Jumlah pesanan dalam setiap tahap produksi (Real-time)</p>
               </div>
-              <Link to="/joblist" className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+              <Link to="/orders" className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
                 Lihat semua <ChevronRight size={12} />
               </Link>
             </div>
@@ -1280,6 +1447,232 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* ================== MODAL ITEM STUCK ================== */}
+      {showItemStuckModal && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm md:max-w-md max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-red-50 to-white sticky top-0 z-10">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-base md:text-lg font-bold text-gray-800">Item Stuck dalam Produksi</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Pesanan yang melewati jatuh tempo</p>
+                </div>
+                <button onClick={() => setShowItemStuckModal(false)} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="mb-3 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-red-500" />
+                  <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                    {stuckItems.length} item
+                  </span>
+                </div>
+                <button 
+                  onClick={() => {
+                    loadProductionData();
+                  }}
+                  className="text-blue-600 hover:text-blue-800 text-xs flex items-center gap-1"
+                >
+                  <RefreshCw size={12} /> Refresh
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {stuckItems.length > 0 ? (
+                  stuckItems.map((item, index) => (
+                    <div 
+                      key={index} 
+                      className="p-3 bg-red-50 border border-red-200 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => { setShowItemStuckModal(false); handleStuckItemClick(item); }}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="font-bold text-gray-800 text-sm">{item.orderId}</span>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded ${getPriorityBadge(item.priority)}`}>
+                          {item.priority?.toUpperCase() || 'MEDIUM'}
+                        </span>
+                      </div>
+                      <p className="font-medium text-gray-800 text-sm mb-1">{item.product}</p>
+                      <p className="text-xs text-gray-600">Pelanggan: {item.customerName}</p>
+                      <div className="flex items-center gap-2 mt-2 text-xs">
+                        <Clock size={12} className="text-red-500" />
+                        <span className="text-red-600 font-semibold">Terlambat {item.stuckFor}</span>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-gray-500">Deadline: {formatDate(item.dueDate)}</span>
+                      </div>
+                      <div className="flex gap-3 mt-3 pt-2 border-t border-red-100">
+                        <Link 
+                          to={`/orders/${item.orderId}`} 
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Lihat Detail Order
+                        </Link>
+                        <Link 
+                          to={`/orders/edit/${item.orderId}`} 
+                          className="text-xs text-gray-600 hover:text-gray-700"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Edit Order
+                        </Link>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10 text-gray-500 text-sm bg-gray-50 rounded-lg">
+                    <CheckCircle size={32} className="mx-auto text-green-500 mb-2" />
+                    Tidak ada item stuck
+                    <p className="text-xs text-gray-400 mt-1">Semua pesanan berjalan sesuai jadwal</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+              <div className="text-xs text-gray-500">
+                Total {stuckItems.length} item stuck
+              </div>
+              <button 
+                onClick={() => setShowItemStuckModal(false)} 
+                className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================== MODAL STOK MENIPIS ================== */}
+      {showLowStockModal && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm md:max-w-md max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-white sticky top-0 z-10">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-base md:text-lg font-bold text-gray-800">Stok Bahan Menipis</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Material dengan stok di bawah kebutuhan minimal</p>
+                </div>
+                <button onClick={() => setShowLowStockModal(false)} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="mb-3 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={16} className="text-yellow-500" />
+                  <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                    {lowStockItems.filter(item => item.status === 'critical').length} kritis
+                  </span>
+                  <span className="bg-yellow-100 text-yellow-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                    {lowStockItems.filter(item => item.status === 'warning').length} menipis
+                  </span>
+                </div>
+                <button 
+                  onClick={() => {
+                    loadStockData();
+                  }}
+                  className="text-blue-600 hover:text-blue-800 text-xs flex items-center gap-1"
+                >
+                  <RefreshCw size={12} /> Refresh
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {lowStockItems.length > 0 ? (
+                  // Urutkan: Critical (status='critical') di atas, lalu Warning (status='warning')
+                  [...lowStockItems]
+                    .sort((a, b) => {
+                      // Critical (3) > Warning (2) > Normal (1)
+                      const statusOrder = { 'critical': 3, 'warning': 2, 'normal': 1 };
+                      return (statusOrder[b.status] || 0) - (statusOrder[a.status] || 0);
+                    })
+                    .map((item, index) => {
+                      const stockStatus = getStockStatus(item.currentStock, item.minStock);
+                      const percentage = Math.min(100, Math.round((item.currentStock / item.minStock) * 100));
+                      const isCritical = stockStatus.status === 'critical';
+                      
+                      return (
+                        <div key={index} className={`p-3 rounded-lg border ${isCritical ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'}`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <span className="font-bold text-gray-800 text-sm">{item.code}</span>
+                              <span className={`ml-2 text-xs font-semibold px-2 py-0.5 rounded ${isCritical ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800'}`}>
+                                {stockStatus.status.toUpperCase()}
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-500">{item.unit}</span>
+                          </div>
+                          
+                          <p className="font-medium text-gray-800 text-sm mb-2">{item.material}</p>
+                          
+                          <div className="grid grid-cols-2 gap-3 mt-2 text-xs">
+                            <div className="bg-white/50 rounded p-1.5">
+                              <span className="text-gray-500">Stok Saat Ini</span>
+                              <p className="font-bold text-gray-800">{item.currentStock}</p>
+                            </div>
+                            <div className="bg-white/50 rounded p-1.5">
+                              <span className="text-gray-500">Stok Minimal</span>
+                              <p className="font-bold text-gray-800">{item.minStock}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-2">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-gray-500">Tingkat Stok</span>
+                              <span className={`font-bold ${isCritical ? 'text-red-600' : 'text-yellow-600'}`}>{percentage}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full ${isCritical ? 'bg-red-500' : 'bg-yellow-500'}`}
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Tombol Kelola Stok */}
+                          <button 
+                            onClick={() => {
+                              setShowLowStockModal(false);
+                              navigate('/stock');
+                            }}
+                            className="w-full mt-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            Kelola Stok
+                          </button>
+                        </div>
+                      );
+                    })
+                ) : (
+                  <div className="text-center py-10 text-gray-500 text-sm bg-gray-50 rounded-lg">
+                    <CheckCircle size={32} className="mx-auto text-green-500 mb-2" />
+                    Semua stok dalam kondisi normal
+                    <p className="text-xs text-gray-400 mt-1">Tidak ada material yang perlu segera dipesan</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+              <div className="text-xs text-gray-500">
+                Total {lowStockItems.length} material bermasalah
+              </div>
+              <button 
+                onClick={() => setShowLowStockModal(false)} 
+                className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ================== MODAL STUCK ITEM DETAIL ================== */}
       {showStuckDetailModal && selectedStuckOrder && (
         <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
@@ -1377,109 +1770,6 @@ export default function Dashboard() {
               <p className="text-xs text-gray-600 text-center">
                 Segera tindak lanjuti pesanan yang melewati deadline untuk menghindari keterlambatan lebih lanjut.
               </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================== MODAL ALL ALERTS ================== */}
-      {showAllAlerts && (
-        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
-          <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-xs md:max-w-lg lg:max-w-4xl max-h-[90vh] overflow-hidden mt-8 md:mt-12">
-            <div className="p-3 md:p-6 border-b border-gray-200 bg-gradient-to-r from-red-50 to-white sticky top-0 z-10">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg md:text-xl font-bold text-gray-800">Semua Alert & Notifikasi</h3>
-                  <p className="text-xs md:text-sm text-gray-600 mt-0.5 md:mt-1">Monitoring item stuck dan stok bahan</p>
-                </div>
-                <button onClick={() => setShowAllAlerts(false)} className="p-1.5 hover:bg-gray-100 rounded-full"><X size={18} /></button>
-              </div>
-            </div>
-
-            <div className="overflow-y-auto max-h-[60vh] md:max-h-[70vh]">
-              <div className="p-3 md:p-6 border-b border-gray-200">
-                <div className="flex items-center mb-3 md:mb-4">
-                  <AlertTriangle size={18} className="text-red-500 mr-1.5 md:mr-2" />
-                  <h4 className="font-semibold text-gray-800 text-sm md:text-base">Item Stuck dalam Produksi</h4>
-                  <span className="ml-1.5 md:ml-2 bg-red-100 text-red-800 text-xs font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-full">{stuckItems.length} item</span>
-                </div>
-                <div className="space-y-2 md:space-y-3">
-                  {stuckItems.length > 0 ? (
-                    stuckItems.map((item, index) => (
-                      <div key={index} className="p-3 md:p-4 bg-red-50 border border-red-200 rounded-lg cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setShowAllAlerts(false); handleStuckItemClick(item); }}>
-                        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2">
-                          <div className="flex-1">
-                            <div className="flex flex-col md:flex-row md:items-center gap-1 mb-1">
-                              <span className="font-bold text-gray-800 text-sm">{item.orderId}</span>
-                              <span className="px-2 py-0.5 bg-white border border-red-300 text-red-700 text-xs font-semibold rounded w-fit">{item.department}</span>
-                            </div>
-                            <p className="text-gray-800 font-medium text-sm mt-1">{item.product}</p>
-                            <p className="text-xs md:text-sm text-gray-600 mt-0.5 md:mt-1">Pelanggan: {item.customerName}</p>
-                            <div className="flex flex-col md:flex-row md:items-center mt-1 md:mt-2 text-xs md:text-sm gap-1">
-                              <div className="flex items-center"><Clock size={12} className="text-red-500 mr-1" /><span className="text-red-600 font-semibold">Terlambat {item.stuckFor}</span></div>
-                              <span className="hidden md:block mx-1">•</span>
-                              <span className="text-gray-600">Deadline: {formatDate(item.dueDate)}</span>
-                            </div>
-                          </div>
-                          <div className="text-right md:text-left">
-                            <span className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-bold ${getPriorityBadge(item.priority)} inline-block mb-1 md:mb-2`}>
-                              {item.priority?.toUpperCase() || 'MEDIUM'}
-                            </span>
-                            <div className="flex gap-2 mt-2">
-                              <Link to={`/orders/${item.orderId}`} className="px-2 md:px-3 py-1 md:py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">Lihat Order</Link>
-                              <Link to={`/orders/edit/${item.orderId}`} className="px-2 md:px-3 py-1 md:py-1.5 border border-gray-300 text-gray-700 text-xs rounded hover:bg-gray-50">Edit</Link>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">Tidak ada item stuck</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="p-3 md:p-6">
-                <div className="flex items-center mb-3 md:mb-4">
-                  <AlertCircle size={18} className="text-yellow-500 mr-1.5 md:mr-2" />
-                  <h4 className="font-semibold text-gray-800 text-sm md:text-base">Stok Bahan Menipis</h4>
-                  <span className="ml-1.5 md:ml-2 bg-yellow-100 text-yellow-800 text-xs font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-full">{lowStockItems.filter(item => item.status === 'critical').length} kritis</span>
-                </div>
-                <div className="space-y-2 md:space-y-3">
-                  {lowStockItems.map((item, index) => {
-                    const stockStatus = getStockStatus(item.currentStock, item.minStock);
-                    return (
-                      <div key={index} className="p-3 md:p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2">
-                          <div className="flex-1">
-                            <div className="flex flex-col md:flex-row md:items-center gap-1 mb-1">
-                              <span className="font-bold text-gray-800 text-sm">{item.id}</span>
-                              <span className={`px-2 py-0.5 text-xs font-semibold rounded w-fit ${stockStatus.bg} ${stockStatus.color}`}>{stockStatus.status.toUpperCase()}</span>
-                            </div>
-                            <p className="text-gray-800 font-medium text-sm mt-1">{item.material}</p>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 md:gap-4 mt-2 md:mt-3">
-                              <div><div className="text-xs text-gray-600">Stok Saat Ini</div><div className="font-bold text-gray-800 text-sm">{item.currentStock} {item.unit}</div></div>
-                              <div><div className="text-xs text-gray-600">Stok Minimal</div><div className="font-bold text-gray-800 text-sm">{item.minStock} {item.unit}</div></div>
-                            </div>
-                            <div className="mt-2 md:mt-3"><div className="flex justify-between text-xs mb-0.5"><span className="text-gray-600">Tingkat Stok</span><span className="font-bold">{Math.round((item.currentStock / item.minStock) * 100)}%</span></div><div className="w-full bg-gray-200 rounded-full h-1.5"><div className={`h-1.5 rounded-full ${stockStatus.status === 'critical' ? 'bg-red-500' : 'bg-yellow-500'}`} style={{ width: `${Math.min((item.currentStock / item.minStock) * 100, 100)}%` }}></div></div></div>
-                          </div>
-                          <div className="mt-2 md:mt-0"><button className="px-3 md:px-4 py-1.5 md:py-2 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 w-full">Pesan Bahan</button></div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 md:p-6 border-t border-gray-200 bg-gray-50">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-2">
-                <div className="text-xs md:text-sm text-gray-600">Terakhir diperbarui: {new Date().toLocaleTimeString('id-ID')}</div>
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                  <button onClick={() => setShowAllAlerts(false)} className="px-3 md:px-4 py-1.5 md:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm w-full sm:w-auto">Tutup</button>
-                  <button className="px-3 md:px-4 py-1.5 md:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm w-full sm:w-auto">Ekspor Laporan</button>
-                </div>
-              </div>
             </div>
           </div>
         </div>

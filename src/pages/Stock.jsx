@@ -2104,110 +2104,142 @@ export default function Stock() {
           </div>
 
           {/* Stock Table */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kode</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Material</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kategori</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Stok</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Supplier</th>
-                    <th className="px-5 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredItems.length > 0 ? (
-                    filteredItems.map((item) => {
-                      const statusBadge = getStatusBadge(item.status);
-                      const percentage = getStockPercentage(item.currentStock, item.minStock);
-                      const progressWidth = getProgressBarWidth(item.currentStock, item.minStock);
-                      
-                      return (
-                        <tr key={item.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => openDetailModal(item)}>
-                          <td className="px-5 py-4">
-                            <span className="font-mono text-sm font-medium text-gray-800">{item.code}</span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <p className="font-medium text-gray-800">{item.material}</p>
-                            <p className="text-xs text-gray-400">Lokasi: {item.location || '-'}</p>
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">{item.category}</span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <div className="min-w-[140px]">
-                              <div className="flex justify-between text-sm mb-1">
-                                <span className="font-medium">{item.currentStock}</span>
-                                <span className="text-gray-400 text-xs">/ {item.minStock} {item.unit}</span>
-                                <span className={`text-xs font-medium ${getStatusColor(item.status)}`}>
-                                  ({percentage}%)
-                                </span>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                <div 
-                                  className={`h-1.5 rounded-full ${getProgressBarColor(item.status)} transition-all duration-500`} 
-                                  style={{ width: `${progressWidth}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                           </td>
-                          <td className="px-5 py-4">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
-                              {statusBadge.icon} {statusBadge.label}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <p className="text-sm text-gray-600 truncate max-w-[150px]">{item.supplier || '-'}</p>
-                          </td>
-                          <td className="px-5 py-4 text-center">
-                            <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                onClick={() => openEditModal(item)}
-                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="Edit"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteItem(item)}
-                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Hapus"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan="7" className="px-5 py-12 text-center">
-                        <div className="flex flex-col items-center">
-                          <Package className="text-gray-300 mb-3" size={48} />
-                          <p className="text-gray-500 font-medium">Tidak ada data stok</p>
-                          <p className="text-gray-400 text-sm mt-1">Coba ubah filter atau tambahkan material baru</p>
-                          <button onClick={() => setShowAddModal(true)} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Tambah Material</button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+<div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+  <div className="overflow-x-auto">
+    <table className="w-full text-left border-collapse">
+      <thead className="bg-gray-50/80 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold tracking-wider">
+  <tr>
+    {/* KODE - Tengah */}
+    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+      KODE
+    </th>
+    {/* MATERIAL - Tengah */}
+    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+      MATERIAL
+    </th>
+    {/* KATEGORI - Tengah */}
+    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+      KATEGORI
+    </th>
+    {/* STOK - Tengah */}
+    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+      STOK
+    </th>
+    {/* STATUS - Tengah */}
+    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+      STATUS
+    </th>
+    {/* SUPPLIER - Tengah */}
+    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+      SUPPLIER
+    </th>
+    {/* AKSI - Tengah */}
+    <th className="px-6 py-4 whitespace-nowrap text-center cursor-pointer hover:bg-gray-100/50 transition-colors group">
+      AKSI
+    </th>
+  </tr>
+</thead>
+<tbody className="divide-y divide-gray-200/80">
+  {filteredItems.length > 0 ? (
+    filteredItems.map((item) => {
+      const statusBadge = getStatusBadge(item.status);
+      const percentage = getStockPercentage(item.currentStock, item.minStock);
+      const progressWidth = getProgressBarWidth(item.currentStock, item.minStock);
+      
+      return (
+        <tr key={item.id} className="hover:bg-blue-50/50 transition-colors duration-200 group cursor-pointer" onClick={() => openDetailModal(item)}>
+          {/* KODE - Tengah */}
+          <td className="px-6 py-4 whitespace-nowrap text-center">
+            <span className="font-mono text-sm font-medium text-gray-800">{item.code}</span>
+          </td>
+          {/* MATERIAL - KIRI (pengecualian) */}
+          <td className="px-6 py-4 whitespace-nowrap text-left">
+            <p className="font-medium text-gray-800">{item.material}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Lokasi: {item.location || '-'}</p>
+          </td>
+          {/* KATEGORI - Tengah */}
+          <td className="px-6 py-4 whitespace-nowrap text-center">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+              {item.category}
+            </span>
+          </td>
+          {/* STOK - Tengah */}
+          <td className="px-6 py-4 whitespace-nowrap text-center">
+            <div className="min-w-[160px]">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="font-medium text-gray-800">{item.currentStock}</span>
+                <span className="text-gray-400 text-xs">/ {item.minStock} {item.unit}</span>
+                <span className={`text-xs font-medium ${getStatusColor(item.status)}`}>
+                  ({percentage}%)
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div 
+                  className={`h-1.5 rounded-full ${getProgressBarColor(item.status)} transition-all duration-500`} 
+                  style={{ width: `${progressWidth}%` }}
+                ></div>
+              </div>
             </div>
-            
-            <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
-              <p className="text-sm text-gray-600">
-                Menampilkan <span className="font-semibold">{filteredItems.length}</span> dari <span className="font-semibold">{stockItems.length}</span> material
-              </p>
-              <button onClick={loadStockData} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors">
-                <RefreshCw size={14} /> Refresh
+          </td>
+          {/* STATUS - Tengah */}
+          <td className="px-6 py-4 whitespace-nowrap text-center">
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
+              {statusBadge.icon} {statusBadge.label}
+            </span>
+          </td>
+          {/* SUPPLIER - Tengah */}
+          <td className="px-6 py-4 whitespace-nowrap text-center">
+            <p className="text-sm text-gray-600 truncate max-w-[150px]">{item.supplier || '-'}</p>
+          </td>
+          {/* AKSI - Tengah */}
+          <td className="px-6 py-4 whitespace-nowrap text-center">
+            <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => openEditModal(item)}
+                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Edit"
+              >
+                <Edit2 size={16} />
+              </button>
+              <button
+                onClick={() => handleDeleteItem(item)}
+                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Hapus"
+              >
+                <Trash2 size={16} />
               </button>
             </div>
-          </div>
+          </td>
+        </tr>
+      );
+    })
+  ) : (
+    <tr>
+      <td colSpan="7" className="px-6 py-12 text-center">
+        <div className="flex flex-col items-center justify-center">
+          <Package className="text-gray-300 mb-3" size={48} />
+          <p className="text-gray-500 font-medium">Tidak ada data stok</p>
+          <p className="text-sm text-gray-400 mt-1">Coba ubah filter atau tambahkan material baru</p>
+          <button onClick={() => setShowAddModal(true)} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
+            Tambah Material
+          </button>
+        </div>
+      </td>
+    </tr>
+  )}
+</tbody>
+    </table>
+  </div>
+  
+  <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+    <p className="text-sm text-gray-600">
+      Menampilkan <span className="font-semibold">{filteredItems.length}</span> dari <span className="font-semibold">{stockItems.length}</span> material
+    </p>
+    <button onClick={loadStockData} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors">
+      <RefreshCw size={14} /> Refresh
+    </button>
+  </div>
+</div>
 
           {/* Low Stock Alert Banner */}
           {criticalItems > 0 && (

@@ -65,6 +65,9 @@ export default function Dashboard() {
   const [activeOrdersCount, setActiveOrdersCount] = useState(0);
   const [showActiveOrdersModal, setShowActiveOrdersModal] = useState(false);
 
+  // ================== STATE UNTUK PESANAN TERBARU (AKTIF) ==================
+  const [recentActiveOrders, setRecentActiveOrders] = useState([]);
+
   // State untuk ITEM STUCK
   const [stuckItems, setStuckItems] = useState([]);
   const [selectedStuckOrder, setSelectedStuckOrder] = useState(null);
@@ -117,9 +120,6 @@ export default function Dashboard() {
       link: "/finance"
     },
   ]);
-
-  // Data untuk Pesanan Terbaru
-  const [recentOrders, setRecentOrders] = useState([]);
 
   // Data untuk Status Produksi - 5 tahap
   const [productionStatus, setProductionStatus] = useState([
@@ -309,26 +309,39 @@ export default function Dashboard() {
     }
   }, []);
 
-  // ================== FUNGSI UNTUK LOAD DATA PESANAN TERBARU ==================
-  const loadRecentOrders = useCallback((orders) => {
+  // ================== FUNGSI UNTUK LOAD PESANAN TERBARU (AKTIF) ==================
+  // DIPERBAIKI: Menambahkan sorting DESCENDING berdasarkan tanggal
+  const loadRecentActiveOrders = useCallback((orders) => {
     try {
-      const activeStatuses = [
-        'cutting', 'sewing', 'finishing', 'qc', 'delivering'
-      ];
-
-      const activeOrdersOnly = orders.filter(order => activeStatuses.includes(order.status));
-
-      const sortedOrders = [...activeOrdersOnly].sort((a, b) =>
-        new Date(b.orderDate) - new Date(a.orderDate)
-      ).slice(0, 5);
-
-      const formattedOrders = sortedOrders.map(order => {
+      // Status yang dianggap aktif (belum selesai dan belum dibatalkan)
+      const activeStatuses = ['cutting', 'sewing', 'finishing', 'qc', 'delivering'];
+      
+      // ========== 3 TAHAP MANIPULASI DATA YANG BENAR ==========
+      // 1. FILTER: Hanya pesanan dengan status aktif
+      const activeOrders = orders.filter(order => activeStatuses.includes(order.status));
+      
+      // 2. SORT: Urutkan berdasarkan orderDate (DESCENDING - terbaru di ATAS)
+      //    Penting: Gunakan b.orderDate - a.orderDate agar yang lebih baru muncul pertama
+      const sortedActiveOrders = [...activeOrders].sort((a, b) => {
+        const dateA = new Date(a.orderDate);
+        const dateB = new Date(b.orderDate);
+        return dateB - dateA; // DESCENDING: tanggal terbaru di atas
+      });
+      
+      // 3. SLICE: Ambil maksimal 5 data teratas (5 pesanan TERBARU)
+      const top5ActiveOrders = sortedActiveOrders.slice(0, 5);
+      
+      // Format data untuk ditampilkan di tabel
+      const formattedOrders = top5ActiveOrders.map(order => {
         const dueDate = order.dueDate;
         const today = new Date().toISOString().split('T')[0];
         let deadlineText = '';
+        let isOverdue = false;
+        
         if (dueDate) {
           if (dueDate < today) {
             deadlineText = 'Terlambat';
+            isOverdue = true;
           } else {
             const dueDateObj = new Date(dueDate);
             const todayObj = new Date();
@@ -336,21 +349,30 @@ export default function Dashboard() {
             deadlineText = `${diffDays} hari`;
           }
         }
-
+        
         return {
           id: order.id,
           customer: order.customerName || 'Pelanggan',
           items: order.items || order.itemsDetail?.length || 0,
           status: order.status,
           deadline: deadlineText,
-          isOverdue: dueDate && dueDate < today,
-          orderDate: order.orderDate
+          isOverdue: isOverdue,
+          orderDate: order.orderDate,
+          totalAmount: order.totalAmount || 0
         };
       });
-
-      setRecentOrders(formattedOrders);
+      
+      setRecentActiveOrders(formattedOrders);
+      
+      // Debug: Tampilkan di console untuk verifikasi
+      console.log('📋 Recent Active Orders (Sorted Descending by Date):', 
+        formattedOrders.map(o => ({ id: o.id, date: o.orderDate }))
+      );
+      
+      return formattedOrders;
     } catch (error) {
-      console.error('Error loading recent orders:', error);
+      console.error('Error loading recent active orders:', error);
+      setRecentActiveOrders([]);
     }
   }, []);
 
@@ -547,7 +569,8 @@ export default function Dashboard() {
       setCompletedCount(completedCount_);
       setCancelledCount(cancelledCount_);
 
-      loadRecentOrders(orders);
+      // Load recent active orders (dengan sorting yang benar)
+      loadRecentActiveOrders(orders);
       setLastUpdate(new Date());
 
     } catch (error) {
@@ -555,7 +578,7 @@ export default function Dashboard() {
     } finally {
       setIsRefreshing(false);
     }
-  }, [calculatePendingOrders, calculateStuckItems, calculateEfficiency, loadRecentOrders]);
+  }, [calculatePendingOrders, calculateStuckItems, calculateEfficiency, loadRecentActiveOrders]);
 
   // ================== EVENT LISTENER UNTUK REALTIME SYNC ==================
   useEffect(() => {
@@ -1051,16 +1074,18 @@ export default function Dashboard() {
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent Orders - UPGRADED */}
+        {/* Recent Orders - ONLY ACTIVE ORDERS (MAX 5) - SORTED BY LATEST DATE */}
         <Card className="enterprise-card animate-enter-fade delay-200 h-full">
           <CardHeader className="border-b border-gray-100 pb-3">
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="font-semibold text-gray-800 text-sm md:text-base flex items-center gap-2">
                   <Clock size={16} className="text-blue-500" />
-                  Pesanan Terbaru
+                  Pesanan Terbaru (Aktif)
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">5 pesanan terakhir yang masuk (aktif)</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {recentActiveOrders.length} pesanan aktif terbaru
+                </p>
               </div>
               <Link to="/orders" className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
                 Lihat semua <ChevronRight size={12} />
@@ -1068,7 +1093,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardBody className="p-0">
-            {recentOrders.length > 0 ? (
+            {recentActiveOrders.length > 0 ? (
               <>
                 {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto">
@@ -1080,23 +1105,14 @@ export default function Dashboard() {
                         <th className="px-6 py-4 whitespace-nowrap text-left">TANGGAL</th>
                         <th className="px-6 py-4 whitespace-nowrap text-left">STATUS</th>
                         <th className="px-6 py-4 whitespace-nowrap text-left">DEADLINE</th>
+                        <th className="px-6 py-4 whitespace-nowrap text-right">TOTAL</th>
                         <th className="px-6 py-4 whitespace-nowrap text-center">AKSI</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200/80">
-                      {recentOrders.map((order) => {
+                      {recentActiveOrders.map((order) => {
                         const statusBadge = getStatusBadge(order.status);
-                        let deadlineText = '';
-                        let isOverdue = false;
-                        if (order.deadline) {
-                          if (order.deadline === 'Terlambat') {
-                            deadlineText = 'Terlambat';
-                            isOverdue = true;
-                          } else {
-                            deadlineText = order.deadline;
-                          }
-                        }
-
+                        
                         return (
                           <tr key={order.id} className="hover:bg-blue-50/50 transition-colors duration-200 group cursor-pointer" onClick={() => navigate(`/orders/${order.id}`)}>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -1117,13 +1133,16 @@ export default function Dashboard() {
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              {deadlineText ? (
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${isOverdue ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
-                                  {isOverdue ? '⚠️ ' : ''}{deadlineText}
+                              {order.deadline ? (
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${order.isOverdue ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                                  {order.isOverdue ? '⚠️ ' : ''}{order.deadline}
                                 </span>
                               ) : (
                                 <span className="text-sm text-gray-400">-</span>
                               )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <span className="font-semibold text-gray-900">Rp {formatCurrency(order.totalAmount)}</span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-center">
                               <button
@@ -1146,19 +1165,9 @@ export default function Dashboard() {
 
                 {/* Mobile Card View */}
                 <div className="md:hidden divide-y divide-gray-100">
-                  {recentOrders.map((order) => {
+                  {recentActiveOrders.map((order) => {
                     const statusBadge = getStatusBadge(order.status);
-                    let deadlineText = '';
-                    let isOverdue = false;
-                    if (order.deadline) {
-                      if (order.deadline === 'Terlambat') {
-                        deadlineText = 'Terlambat';
-                        isOverdue = true;
-                      } else {
-                        deadlineText = order.deadline;
-                      }
-                    }
-
+                    
                     return (
                       <div
                         key={order.id}
@@ -1172,9 +1181,9 @@ export default function Dashboard() {
                               {statusBadge.label}
                             </span>
                           </div>
-                          {deadlineText && (
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${isOverdue ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
-                              {isOverdue ? '⚠️ ' : ''}{deadlineText}
+                          {order.deadline && (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${order.isOverdue ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                              {order.isOverdue ? '⚠️ ' : ''}{order.deadline}
                             </span>
                           )}
                         </div>
@@ -1185,6 +1194,9 @@ export default function Dashboard() {
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock size={12} /> {formatDate(order.orderDate)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            💰 Rp {formatCurrency(order.totalAmount)}
                           </span>
                         </div>
                       </div>
@@ -1208,7 +1220,7 @@ export default function Dashboard() {
                 <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
                   <Package className="text-gray-400" size={24} />
                 </div>
-                <p className="text-gray-500 text-sm">Belum ada pesanan aktif</p>
+                <p className="text-gray-500 text-sm">Tidak ada pesanan aktif</p>
                 <Link to="/orders/create" className="mt-3 inline-block text-blue-600 text-sm hover:text-blue-700">
                   Buat pesanan pertama →
                 </Link>

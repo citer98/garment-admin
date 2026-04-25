@@ -119,7 +119,6 @@ export default function Orders() {
             status: 'completed', // ubah jadi completed sesuai flow
             dueDate: '2024-01-19',
             itemsDetail: [
-              { product: 'Celana Chino', qty: 2, price: 200000 },
               { product: 'Kemeja Pria Slimfit', qty: 2, price: 150000 }
             ]
           },

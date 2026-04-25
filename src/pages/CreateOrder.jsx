@@ -529,54 +529,171 @@ export default function CreateOrder() {
     setNewCategoryName('');
   };
 
-  // Load data
+  // Load data dengan Auto-Merge (CreateOrder.jsx)
   useEffect(() => {
     loadCustomers();
     
-    const savedProducts = localStorage.getItem('products');
-    if (savedProducts) {
-      setProducts(JSON.parse(savedProducts));
-    } else {
-      const defaultProducts = [
-        { 
-          id: 1, 
-          name: 'Kemeja Pria Slimfit', 
-          basePrice: 150000, 
-          category: 'Kemeja', 
-          variations: [
-            { id: '1-S-Merah', size: 'S', color: 'Merah', price: 150000, stock: 50 },
-            { id: '1-S-Biru', size: 'S', color: 'Biru', price: 150000, stock: 45 },
-            { id: '1-M-Merah', size: 'M', color: 'Merah', price: 155000, stock: 60 },
-            { id: '1-M-Biru', size: 'M', color: 'Biru', price: 155000, stock: 55 },
-            { id: '1-L-Merah', size: 'L', color: 'Merah', price: 160000, stock: 40 }
-          ]
-        },
-        { 
-          id: 2, 
-          name: 'Celana Jeans Denim', 
-          basePrice: 250000, 
-          category: 'Celana', 
-          variations: [
-            { id: '2-30-Biru', size: '30', color: 'Biru Tua', price: 260000, stock: 35 },
-            { id: '2-32-Biru', size: '32', color: 'Biru Tua', price: 270000, stock: 30 },
-            { id: '2-30-Hitam', size: '30', color: 'Hitam', price: 260000, stock: 28 }
-          ]
-        },
-        { 
-          id: 3, 
-          name: 'Jaket Hoodie', 
-          basePrice: 300000, 
-          category: 'Jaket', 
-          variations: [
-            { id: '3-M-Abu', size: 'M', color: 'Abu-abu', price: 310000, stock: 45 },
-            { id: '3-M-Hitam', size: 'M', color: 'Hitam', price: 310000, stock: 42 }
-          ]
-        }
-      ];
+    // ========== DATA PRODUK DEFAULT (9 PRODUK LENGKAP) ==========
+    const defaultProducts = [
+      // ========== 3 PRODUK LAMA ==========
+      { 
+        id: 1, 
+        name: 'Kemeja Pria Slimfit', 
+        basePrice: 150000, 
+        category: 'Kemeja', 
+        variations: [
+          { id: '1-S-Merah', size: 'S', color: 'Merah', price: 150000, stock: 50 },
+          { id: '1-S-Biru', size: 'S', color: 'Biru', price: 150000, stock: 45 },
+          { id: '1-M-Merah', size: 'M', color: 'Merah', price: 155000, stock: 60 },
+          { id: '1-M-Biru', size: 'M', color: 'Biru', price: 155000, stock: 55 },
+          { id: '1-L-Merah', size: 'L', color: 'Merah', price: 160000, stock: 40 }
+        ]
+      },
+      { 
+        id: 2, 
+        name: 'Celana Jeans Denim', 
+        basePrice: 250000, 
+        category: 'Celana', 
+        variations: [
+          { id: '2-30-Biru', size: '30', color: 'Biru Tua', price: 260000, stock: 35 },
+          { id: '2-32-Biru', size: '32', color: 'Biru Tua', price: 270000, stock: 30 },
+          { id: '2-30-Hitam', size: '30', color: 'Hitam', price: 260000, stock: 28 }
+        ]
+      },
+      { 
+        id: 3, 
+        name: 'Jaket Hoodie', 
+        basePrice: 300000, 
+        category: 'Jaket', 
+        variations: [
+          { id: '3-M-Abu', size: 'M', color: 'Abu-abu', price: 310000, stock: 45 },
+          { id: '3-M-Hitam', size: 'M', color: 'Hitam', price: 310000, stock: 42 }
+        ]
+      },
+      
+      // ========== 6 PRODUK BARU ==========
+      { 
+        id: 4, 
+        name: 'Blouse Wanita', 
+        basePrice: 120000, 
+        category: 'Blouse', 
+        variations: [
+          { id: '4-S-Pink', size: 'S', color: 'Pink', price: 120000, stock: 40 },
+          { id: '4-M-Pink', size: 'M', color: 'Pink', price: 125000, stock: 45 },
+          { id: '4-L-Pink', size: 'L', color: 'Pink', price: 130000, stock: 35 },
+          { id: '4-S-Putih', size: 'S', color: 'Putih', price: 120000, stock: 38 },
+          { id: '4-M-Putih', size: 'M', color: 'Putih', price: 125000, stock: 42 },
+          { id: '4-L-Putih', size: 'L', color: 'Putih', price: 130000, stock: 30 }
+        ]
+      },
+      { 
+        id: 5, 
+        name: 'Seragam Karyawan', 
+        basePrice: 85000, 
+        category: 'Seragam', 
+        variations: [
+          { id: '5-M-Navy', size: 'M', color: 'Navy', price: 85000, stock: 100 },
+          { id: '5-L-Navy', size: 'L', color: 'Navy', price: 85000, stock: 120 },
+          { id: '5-XL-Navy', size: 'XL', color: 'Navy', price: 85000, stock: 80 },
+          { id: '5-M-Khaki', size: 'M', color: 'Khaki', price: 85000, stock: 90 },
+          { id: '5-L-Khaki', size: 'L', color: 'Khaki', price: 85000, stock: 110 },
+          { id: '5-XL-Khaki', size: 'XL', color: 'Khaki', price: 85000, stock: 70 }
+        ]
+      },
+      { 
+        id: 6, 
+        name: 'Kemeja Sekolah', 
+        basePrice: 75000, 
+        category: 'Kemeja', 
+        variations: [
+          { id: '6-S-Putih', size: 'S', color: 'Putih', price: 75000, stock: 200 },
+          { id: '6-M-Putih', size: 'M', color: 'Putih', price: 75000, stock: 250 },
+          { id: '6-L-Putih', size: 'L', color: 'Putih', price: 75000, stock: 180 },
+          { id: '6-XL-Putih', size: 'XL', color: 'Putih', price: 75000, stock: 120 },
+          { id: '6-S-Biru', size: 'S', color: 'Biru', price: 75000, stock: 150 },
+          { id: '6-M-Biru', size: 'M', color: 'Biru', price: 75000, stock: 200 },
+          { id: '6-L-Biru', size: 'L', color: 'Biru', price: 75000, stock: 160 }
+        ]
+      },
+      { 
+        id: 7, 
+        name: 'Jaket Kantor', 
+        basePrice: 200000, 
+        category: 'Jaket', 
+        variations: [
+          { id: '7-M-Hitam', size: 'M', color: 'Hitam', price: 200000, stock: 60 },
+          { id: '7-L-Hitam', size: 'L', color: 'Hitam', price: 210000, stock: 55 },
+          { id: '7-XL-Hitam', size: 'XL', color: 'Hitam', price: 220000, stock: 45 },
+          { id: '7-M-Navy', size: 'M', color: 'Navy', price: 200000, stock: 50 },
+          { id: '7-L-Navy', size: 'L', color: 'Navy', price: 210000, stock: 48 },
+          { id: '7-XL-Navy', size: 'XL', color: 'Navy', price: 220000, stock: 40 }
+        ]
+      },
+      { 
+        id: 8, 
+        name: 'Rompi Lapangan', 
+        basePrice: 95000, 
+        category: 'Rompi', 
+        variations: [
+          { id: '8-M-Hijau', size: 'M', color: 'Hijau Tentara', price: 95000, stock: 80 },
+          { id: '8-L-Hijau', size: 'L', color: 'Hijau Tentara', price: 95000, stock: 100 },
+          { id: '8-XL-Hijau', size: 'XL', color: 'Hijau Tentara', price: 95000, stock: 70 },
+          { id: '8-M-Coklat', size: 'M', color: 'Coklat', price: 95000, stock: 60 },
+          { id: '8-L-Coklat', size: 'L', color: 'Coklat', price: 95000, stock: 75 },
+          { id: '8-XL-Coklat', size: 'XL', color: 'Coklat', price: 95000, stock: 55 }
+        ]
+      },
+      { 
+        id: 9, 
+        name: 'Kemeja Custom', 
+        basePrice: 180000, 
+        category: 'Kustom', 
+        variations: [
+          { id: '9-S-Custom', size: 'S', color: 'Custom', price: 180000, stock: 999 },
+          { id: '9-M-Custom', size: 'M', color: 'Custom', price: 185000, stock: 999 },
+          { id: '9-L-Custom', size: 'L', color: 'Custom', price: 190000, stock: 999 },
+          { id: '9-XL-Custom', size: 'XL', color: 'Custom', price: 195000, stock: 999 },
+          { id: '9-XXL-Custom', size: 'XXL', color: 'Custom', price: 200000, stock: 999 }
+        ]
+      }
+    ];
+
+    // ========== LOGIKA AUTO-MERGE ==========
+    const savedProductsStr = localStorage.getItem('products');
+    
+    if (!savedProductsStr) {
+      // Kasus 1: localStorage kosong → simpan defaultProducts langsung
       setProducts(defaultProducts);
       localStorage.setItem('products', JSON.stringify(defaultProducts));
+      console.log('✅ Auto-Merge: localStorage kosong, menyimpan 9 produk default');
+    } else {
+      // Kasus 2: localStorage sudah ada isinya → lakukan merge
+      const currentProducts = JSON.parse(savedProductsStr);
+      
+      // Buat Set untuk ID produk yang sudah ada (pencarian cepat)
+      const existingIds = new Set(currentProducts.map(p => p.id));
+      
+      // Filter produk default yang BELUM ada di currentProducts
+      const newProductsToAdd = defaultProducts.filter(dp => !existingIds.has(dp.id));
+      
+      if (newProductsToAdd.length > 0) {
+        // Gabungkan produk lama dengan produk baru yang belum ada
+        const mergedProducts = [...currentProducts, ...newProductsToAdd];
+        
+        // Simpan hasil merge ke localStorage
+        localStorage.setItem('products', JSON.stringify(mergedProducts));
+        setProducts(mergedProducts);
+        
+        console.log(`✅ Auto-Merge: Menambahkan ${newProductsToAdd.length} produk baru ke localStorage`);
+        console.log('📦 Produk baru yang ditambahkan:', newProductsToAdd.map(p => p.name).join(', '));
+      } else {
+        // Tidak ada produk baru, gunakan data yang sudah ada
+        setProducts(currentProducts);
+        console.log('✅ Auto-Merge: Semua produk default sudah ada, tidak ada perubahan');
+      }
     }
     
+    // Load categories
     const savedCategories = localStorage.getItem('productCategories');
     if (savedCategories) {
       setProductCategories(JSON.parse(savedCategories));

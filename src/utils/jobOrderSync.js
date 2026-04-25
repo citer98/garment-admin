@@ -19,11 +19,6 @@ export const syncOrderWithJobs = (order) => {
     return [];
   }
   
-  // Jika order adalah draft, jangan generate jobs
-  if (order.status === 'draft') {
-    return [];
-  }
-  
   // Generate jobs berdasarkan order
   const jobs = generateJobsFromOrder(order);
   
@@ -55,35 +50,36 @@ const getEarliestItemDeadline = (order) => {
 };
 
 export const generateJobsFromOrder = (order) => {
-  if (!order || order.status === 'cancelled' || order.status === 'draft') {
+  if (!order || order.status === 'cancelled') {
     return [];
   }
 
   const jobs = [];
+  
+  // Production steps sesuai alur baru: Potong → Jahit → Finishing → QC → Mengirim
   const productionSteps = [
-    { department: 'Potong', priority: 'tinggi', order: 1 },
-    { department: 'Jahit', priority: 'sedang', order: 2 },
-    { department: 'Finishing', priority: 'sedang', order: 3 },
-    { department: 'Packing', priority: 'rendah', order: 4 },
-    { department: 'QC', priority: 'tinggi', order: 5 }
+    { department: 'Potong', priority: 'tinggi', order: 1, stepKey: 'cutting' },
+    { department: 'Jahit', priority: 'sedang', order: 2, stepKey: 'sewing' },
+    { department: 'Finishing', priority: 'sedang', order: 3, stepKey: 'finishing' },
+    { department: 'QC', priority: 'tinggi', order: 4, stepKey: 'qc' },
+    { department: 'Mengirim', priority: 'rendah', order: 5, stepKey: 'delivering' }
   ];
 
   const orderDate = new Date(order.orderDate || new Date());
   const dueDate = order.dueDate ? new Date(order.dueDate) : null;
   
   // Tentukan step mana yang perlu digenerate berdasarkan status order
+  // Urutan: cutting(0) → sewing(1) → finishing(2) → qc(3) → delivering(4) → completed(5)
   const statusStepMap = {
-    'cutting': [0],               // Hanya Potong
-    'sewing': [0, 1],             // Potong, Jahit
-    'finishing': [0, 1, 2],       // Potong, Jahit, Finishing
-    'packing': [0, 1, 2, 3],      // Potong, Jahit, Finishing, Packing
-    'qc': [0, 1, 2, 3, 4],        // Semua step
-    'completed': [0, 1, 2, 3, 4], // Semua step
-    'delivered': [0, 1, 2, 3, 4]  // Semua step
+    'cutting': [0],                    // Hanya Potong
+    'sewing': [0, 1],                  // Potong, Jahit
+    'finishing': [0, 1, 2],            // Potong, Jahit, Finishing
+    'qc': [0, 1, 2, 3],                // Potong, Jahit, Finishing, QC
+    'delivering': [0, 1, 2, 3, 4],     // Semua step produksi (Potong → Mengirim)
+    'completed': [0, 1, 2, 3, 4],      // Semua step (untuk arsip)
   };
   
   const stepsToGenerate = statusStepMap[order.status] || [0];
-  const earliestDeadline = getEarliestItemDeadline(order);
 
   productionSteps.forEach((step, index) => {
     const shouldGenerate = stepsToGenerate.includes(index);
@@ -143,8 +139,8 @@ export const updateOrderTimelineFromJob = (orderId, job) => {
     'Potong': 'Cutting',
     'Jahit': 'Sewing',
     'Finishing': 'Finishing',
-    'Packing': 'Packing',
-    'QC': 'Quality Control'
+    'QC': 'Quality Control',
+    'Mengirim': 'Delivering'
   };
 
   const timelineStep = order.timeline.find(step => step.department === job.department);
@@ -189,19 +185,19 @@ export const updateOrderTimelineFromJob = (orderId, job) => {
 export const updateOrderStatus = (order) => {
   if (!order.timeline || order.timeline.length === 0) return;
 
+  // Urutan step: Potong(1) → Jahit(2) → Finishing(3) → QC(4) → Mengirim(5)
   const completedSteps = order.timeline.filter(step => step.isCompleted).length;
-  const totalSteps = 5; // Potong, Jahit, Finishing, Packing, QC
 
-  if (completedSteps === totalSteps) {
-    order.status = 'delivered';
+  if (completedSteps >= 5) {
+    order.status = 'delivering';
   } else if (completedSteps >= 4) {
-    order.status = 'completed';
+    order.status = 'qc';
   } else if (completedSteps >= 3) {
-    order.status = 'packing';
-  } else if (completedSteps >= 2) {
     order.status = 'finishing';
+  } else if (completedSteps >= 2) {
+    order.status = 'sewing';
   } else if (completedSteps >= 1) {
-    order.status = 'production';
+    order.status = 'cutting';
   }
 };
 

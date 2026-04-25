@@ -23,7 +23,8 @@ import {
   Calendar,
   DollarSign,
   CalendarDays,
-  RefreshCw
+  RefreshCw,
+  Eye
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -42,11 +43,14 @@ export default function Dashboard() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
   const [stageOrders, setStageOrders] = useState([]);
+  
+  // Production counts untuk 5 tahap produksi
   const [productionCounts, setProductionCounts] = useState({
     'Potong': 0,
     'Jahit': 0,
     'Finishing': 0,
-    'Pengemasan': 0
+    'QC': 0,
+    'Mengirim': 0
   });
 
   // State untuk Pesanan Selesai dan Dibatalkan
@@ -77,7 +81,7 @@ export default function Dashboard() {
     stuckCount: 0
   });
 
-  // Stats untuk dashboard (4 card utama) - DATA STATIS
+  // Stats untuk dashboard (4 card utama)
   const [stats, setStats] = useState([
     {
       title: "Pesanan Aktif",
@@ -116,12 +120,13 @@ export default function Dashboard() {
   // Data untuk Pesanan Terbaru
   const [recentOrders, setRecentOrders] = useState([]);
 
-  // Data untuk Status Produksi
+  // Data untuk Status Produksi - 5 tahap
   const [productionStatus, setProductionStatus] = useState([
-    { stage: 'Potong', count: 0, totalItems: 0, icon: '✂️', color: 'amber', orders: [] },
-    { stage: 'Jahit', count: 0, totalItems: 0, icon: '🧵', color: 'orange', orders: [] },
-    { stage: 'Finishing', count: 0, totalItems: 0, icon: '✨', color: 'lime', orders: [] },
-    { stage: 'Pengemasan', count: 0, totalItems: 0, icon: '📦', color: 'emerald', orders: [] }
+    { stage: 'Potong', count: 0, totalItems: 0, icon: '✂️', color: 'amber', statusKey: 'cutting', orders: [] },
+    { stage: 'Jahit', count: 0, totalItems: 0, icon: '🧵', color: 'blue', statusKey: 'sewing', orders: [] },
+    { stage: 'Finishing', count: 0, totalItems: 0, icon: '✨', color: 'purple', statusKey: 'finishing', orders: [] },
+    { stage: 'QC', count: 0, totalItems: 0, icon: '🔍', color: 'indigo', statusKey: 'qc', orders: [] },
+    { stage: 'Mengirim', count: 0, totalItems: 0, icon: '🚚', color: 'cyan', statusKey: 'delivering', orders: [] }
   ]);
 
   // Data untuk Tren Pesanan (7 Hari) - DATA STATIS
@@ -145,14 +150,16 @@ export default function Dashboard() {
     { month: 'Jun', revenue: 61 },
   ];
 
+  // Production Mix Data untuk Pie Chart
   const productionMixData = [
-    { name: 'Potong', value: productionCounts.Potong || 0 },
-    { name: 'Jahit', value: productionCounts.Jahit || 0 },
-    { name: 'Finishing', value: productionCounts.Finishing || 0 },
-    { name: 'Pengemasan', value: productionCounts.Pengemasan || 0 },
+    { name: 'Potong', value: productionCounts.Potong || 0, color: '#f59e0b' },
+    { name: 'Jahit', value: productionCounts.Jahit || 0, color: '#3b82f6' },
+    { name: 'Finishing', value: productionCounts.Finishing || 0, color: '#8b5cf6' },
+    { name: 'QC', value: productionCounts.QC || 0, color: '#6366f1' },
+    { name: 'Mengirim', value: productionCounts.Mengirim || 0, color: '#06b6d4' }
   ];
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+  const COLORS = ['#f59e0b', '#3b82f6', '#8b5cf6', '#6366f1', '#06b6d4'];
 
   // Data stok menipis
   const [lowStockItems, setLowStockItems] = useState([]);
@@ -174,8 +181,8 @@ export default function Dashboard() {
       'cutting': 'Potong',
       'sewing': 'Jahit',
       'finishing': 'Finishing',
-      'packing': 'Pengemasan',
       'qc': 'QC',
+      'delivering': 'Mengirim',
       'production': 'Produksi',
       'processing': 'Processing',
       'draft': 'Draft'
@@ -216,8 +223,7 @@ export default function Dashboard() {
     try {
       const orders = JSON.parse(localStorage.getItem('orders') || '[]');
       const activeStatuses = [
-        'cutting', 'sewing', 'finishing', 'packing', 'qc', 
-        'processing', 'production', 'draft'
+        'cutting', 'sewing', 'finishing', 'qc', 'delivering'
       ];
       const active = orders.filter(order => activeStatuses.includes(order.status));
       return active;
@@ -232,15 +238,14 @@ export default function Dashboard() {
     const pending = orders.filter(order => 
       order.status === 'cutting' && 
       order.status !== 'cancelled' &&
-      order.status !== 'completed' &&
-      order.status !== 'delivered'
+      order.status !== 'completed'
     );
     return pending.length;
   }, []);
 
   // ================== FUNGSI UNTUK MENGHITUNG EFISIENSI ==================
   const calculateEfficiency = useCallback((orders) => {
-    const completedOrdersList = orders.filter(o => o.status === 'completed' || o.status === 'delivered');
+    const completedOrdersList = orders.filter(o => o.status === 'completed');
     if (completedOrdersList.length === 0) return 85;
     
     const onTimeOrders = completedOrdersList.filter(order => {
@@ -260,7 +265,7 @@ export default function Dashboard() {
       const stuck = [];
 
       orders.forEach(order => {
-        const completedStatuses = ['completed', 'delivered', 'cancelled'];
+        const completedStatuses = ['completed', 'cancelled'];
         if (completedStatuses.includes(order.status)) {
           return;
         }
@@ -307,8 +312,7 @@ export default function Dashboard() {
   const loadRecentOrders = useCallback((orders) => {
     try {
       const activeStatuses = [
-        'cutting', 'sewing', 'finishing', 'packing', 'qc', 
-        'processing', 'production', 'draft'
+        'cutting', 'sewing', 'finishing', 'qc', 'delivering'
       ];
       
       const activeOrdersOnly = orders.filter(order => activeStatuses.includes(order.status));
@@ -338,7 +342,8 @@ export default function Dashboard() {
           items: order.items || order.itemsDetail?.length || 0,
           status: order.status,
           deadline: deadlineText,
-          isOverdue: dueDate && dueDate < today
+          isOverdue: dueDate && dueDate < today,
+          orderDate: order.orderDate
         };
       });
       
@@ -355,7 +360,7 @@ export default function Dashboard() {
       const orders = JSON.parse(localStorage.getItem('orders') || '[]');
       
       // ========== UPDATE STATISTIK CEPAT (REAL-TIME) ==========
-      const completedCount_ = orders.filter(o => o.status === 'completed' || o.status === 'delivered').length;
+      const completedCount_ = orders.filter(o => o.status === 'completed').length;
       const pendingCount_ = calculatePendingOrders(orders);
       const stuckCount_ = calculateStuckItems(orders);
       const efficiency_ = calculateEfficiency(orders);
@@ -368,11 +373,11 @@ export default function Dashboard() {
       });
       
       // ========== UPDATE PESANAN AKTIF (REAL-TIME) ==========
-      const activeStatuses = ['cutting', 'sewing', 'finishing', 'packing', 'qc'];
+      const activeStatuses = ['cutting', 'sewing', 'finishing', 'qc', 'delivering'];
       const active = orders.filter(order => activeStatuses.includes(order.status));
       setActiveOrdersCount(active.length);
       
-      // Update stats hanya untuk Pesanan Aktif (REAL-TIME), sisanya tetap STATIS
+      // Update stats hanya untuk Pesanan Aktif (REAL-TIME)
       setStats(prevStats => 
         prevStats.map(stat => 
           stat.title === "Pesanan Aktif" 
@@ -381,30 +386,33 @@ export default function Dashboard() {
         )
       );
       
-      // ========== HITUNG PRODUCTION COUNTS (REAL-TIME) ==========
+      // ========== HITUNG PRODUCTION COUNTS UNTUK 5 TAHAP (REAL-TIME) ==========
       const ordersPerDept = {
         'Potong': 0,
         'Jahit': 0,
         'Finishing': 0,
-        'Pengemasan': 0
+        'QC': 0,
+        'Mengirim': 0
       };
       
       const totalItemsPerDept = {
         'Potong': 0,
         'Jahit': 0,
         'Finishing': 0,
-        'Pengemasan': 0
+        'QC': 0,
+        'Mengirim': 0
       };
       
       const deptOrdersDetail = {
         'Potong': [],
         'Jahit': [],
         'Finishing': [],
-        'Pengemasan': []
+        'QC': [],
+        'Mengirim': []
       };
       
       orders.forEach(order => {
-        if (order.status === 'completed' || order.status === 'delivered' || order.status === 'cancelled') {
+        if (order.status === 'completed' || order.status === 'cancelled') {
           return;
         }
         
@@ -454,10 +462,10 @@ export default function Dashboard() {
             status: orderStatus
           });
         }
-        else if (orderStatus === 'packing') {
-          ordersPerDept['Pengemasan']++;
-          totalItemsPerDept['Pengemasan'] += totalQty;
-          deptOrdersDetail['Pengemasan'].push({
+        else if (orderStatus === 'qc') {
+          ordersPerDept['QC']++;
+          totalItemsPerDept['QC'] += totalQty;
+          deptOrdersDetail['QC'].push({
             id: orderId,
             customerName: customerName,
             product: order.itemsDetail?.[0]?.productName || 'Produk',
@@ -467,10 +475,10 @@ export default function Dashboard() {
             status: orderStatus
           });
         }
-        else if (orderStatus === 'qc') {
-          ordersPerDept['Pengemasan']++;
-          totalItemsPerDept['Pengemasan'] += totalQty;
-          deptOrdersDetail['Pengemasan'].push({
+        else if (orderStatus === 'delivering') {
+          ordersPerDept['Mengirim']++;
+          totalItemsPerDept['Mengirim'] += totalQty;
+          deptOrdersDetail['Mengirim'].push({
             id: orderId,
             customerName: customerName,
             product: order.itemsDetail?.[0]?.productName || 'Produk',
@@ -491,6 +499,7 @@ export default function Dashboard() {
           totalItems: totalItemsPerDept['Potong'],
           icon: '✂️', 
           color: 'amber', 
+          statusKey: 'cutting',
           orders: deptOrdersDetail['Potong']
         },
         { 
@@ -498,7 +507,8 @@ export default function Dashboard() {
           count: ordersPerDept['Jahit'], 
           totalItems: totalItemsPerDept['Jahit'],
           icon: '🧵', 
-          color: 'orange', 
+          color: 'blue', 
+          statusKey: 'sewing',
           orders: deptOrdersDetail['Jahit']
         },
         { 
@@ -506,20 +516,31 @@ export default function Dashboard() {
           count: ordersPerDept['Finishing'], 
           totalItems: totalItemsPerDept['Finishing'],
           icon: '✨', 
-          color: 'lime', 
+          color: 'purple', 
+          statusKey: 'finishing',
           orders: deptOrdersDetail['Finishing']
         },
         { 
-          stage: 'Pengemasan', 
-          count: ordersPerDept['Pengemasan'], 
-          totalItems: totalItemsPerDept['Pengemasan'],
-          icon: '📦', 
-          color: 'emerald', 
-          orders: deptOrdersDetail['Pengemasan']
+          stage: 'QC', 
+          count: ordersPerDept['QC'], 
+          totalItems: totalItemsPerDept['QC'],
+          icon: '🔍', 
+          color: 'indigo', 
+          statusKey: 'qc',
+          orders: deptOrdersDetail['QC']
+        },
+        { 
+          stage: 'Mengirim', 
+          count: ordersPerDept['Mengirim'], 
+          totalItems: totalItemsPerDept['Mengirim'],
+          icon: '🚚', 
+          color: 'cyan', 
+          statusKey: 'delivering',
+          orders: deptOrdersDetail['Mengirim']
         }
       ]);
 
-      setCompletedOrders(orders.filter(order => order.status === 'completed' || order.status === 'delivered'));
+      setCompletedOrders(orders.filter(order => order.status === 'completed'));
       setCancelledOrders(orders.filter(order => order.status === 'cancelled'));
       setCompletedCount(completedCount_);
       setCancelledCount(cancelledCount_);
@@ -536,7 +557,6 @@ export default function Dashboard() {
 
   // ================== EVENT LISTENER UNTUK REALTIME SYNC ==================
   useEffect(() => {
-    // Fungsi untuk menangani perubahan storage (dari tab lain atau komponen lain)
     const handleStorageChange = (event) => {
       if (event.key === 'orders') {
         console.log('📦 Orders changed in another tab, refreshing dashboard...');
@@ -548,19 +568,16 @@ export default function Dashboard() {
       }
     };
     
-    // Custom event listener untuk perubahan dari dalam aplikasi yang sama
     const handleOrdersUpdated = () => {
       console.log('🔄 Orders updated event received, refreshing dashboard...');
       loadProductionData();
     };
     
-    // Custom event listener untuk job updates
     const handleJobsUpdated = () => {
       console.log('🔧 Jobs updated event received, refreshing stuck items...');
       loadProductionData();
     };
     
-    // Custom event listener untuk stock updates
     const handleStockUpdated = () => {
       console.log('📦 Stock updated event received, refreshing stock data...');
       loadStockData();
@@ -571,11 +588,9 @@ export default function Dashboard() {
     window.addEventListener('jobsUpdated', handleJobsUpdated);
     window.addEventListener('stockUpdated', handleStockUpdated);
     
-    // Initial load
     loadProductionData();
     loadStockData();
     
-    // Auto-refresh setiap 30 detik (untuk memastikan data selalu up-to-date)
     const interval = setInterval(() => {
       loadProductionData();
       loadStockData();
@@ -601,7 +616,7 @@ export default function Dashboard() {
   }, []);
 
   // Handler untuk klik stage produksi
-  const handleStageClick = (stageName, ordersFromState) => {
+  const handleStageClick = (stageName, ordersFromState, statusKey) => {
     if (ordersFromState && ordersFromState.length > 0) {
       setStageOrders(ordersFromState);
       setSelectedStage(stageName);
@@ -611,17 +626,9 @@ export default function Dashboard() {
     const orders = JSON.parse(localStorage.getItem('orders') || '[]');
     let filteredOrders = [];
     
-    const statusToDept = {
-      'Potong': 'cutting',
-      'Jahit': 'sewing',
-      'Finishing': 'finishing',
-      'Pengemasan': 'packing'
-    };
-    
-    const targetStatus = statusToDept[stageName];
-    if (targetStatus) {
+    if (statusKey) {
       filteredOrders = orders
-        .filter(order => order.status === targetStatus)
+        .filter(order => order.status === statusKey)
         .map(order => ({
           id: order.id,
           customerName: order.customerName,
@@ -699,7 +706,6 @@ export default function Dashboard() {
   const handleManualRefresh = () => {
     loadProductionData();
     loadStockData();
-    // Trigger event untuk memberitahu komponen lain
     window.dispatchEvent(new CustomEvent('ordersUpdated'));
     window.dispatchEvent(new CustomEvent('stockUpdated'));
   };
@@ -711,21 +717,23 @@ export default function Dashboard() {
       yellow: 'bg-yellow-100 text-yellow-600',
       purple: 'bg-purple-100 text-purple-600',
       green: 'bg-green-100 text-green-600',
-      red: 'bg-red-100 text-red-600'
+      red: 'bg-red-100 text-red-600',
+      amber: 'bg-amber-100 text-amber-600',
+      indigo: 'bg-indigo-100 text-indigo-600',
+      cyan: 'bg-cyan-100 text-cyan-600'
     };
     return colorMap[color] || 'bg-gray-100 text-gray-600';
   };
 
-  // Helper untuk mendapatkan badge status order
+  // Helper untuk mendapatkan badge status order - SESUAI ALUR BARU
   const getStatusBadge = (status) => {
     const statusMap = {
       'cutting': { label: 'Potong', color: 'bg-amber-100 text-amber-800' },
-      'sewing': { label: 'Jahit', color: 'bg-orange-100 text-orange-800' },
-      'finishing': { label: 'Finishing', color: 'bg-lime-100 text-lime-800' },
-      'packing': { label: 'Pengemasan', color: 'bg-emerald-100 text-emerald-800' },
-      'qc': { label: 'QC', color: 'bg-teal-100 text-teal-800' },
+      'sewing': { label: 'Jahit', color: 'bg-blue-100 text-blue-800' },
+      'finishing': { label: 'Finishing', color: 'bg-purple-100 text-purple-800' },
+      'qc': { label: 'QC', color: 'bg-indigo-100 text-indigo-800' },
+      'delivering': { label: 'Mengirim', color: 'bg-cyan-100 text-cyan-800' },
       'completed': { label: 'Selesai', color: 'bg-green-100 text-green-800' },
-      'delivered': { label: 'Terkirim', color: 'bg-purple-100 text-purple-800' },
       'cancelled': { label: 'Dibatalkan', color: 'bg-red-100 text-red-800' }
     };
     return statusMap[status] || { label: status, color: 'bg-gray-100 text-gray-800' };
@@ -921,7 +929,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats Grid - 4 Cards (Revenue, Profit Margin, Avg Order Value = STATIS, Pesanan Aktif = REAL-TIME) */}
+      {/* Stats Grid - 4 Cards */}
       <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {stats.map((stat, index) => (
           <div
@@ -972,32 +980,48 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* Production Mix Chart */}
+        {/* Production Mix Chart - 5 TAHAP PRODUKSI */}
         <Card className="enterprise-card p-4 md:p-6 animate-enter-fade delay-400">
           <div className="flex items-center justify-between mb-6">
-            <div><h3 className="text-lg font-bold text-gray-800 flex items-center"><Grid size={18} className="mr-2 text-purple-500" /> Distribusi Produksi</h3><p className="text-xs text-gray-500">Persentase pesanan tiap tahap</p></div>
+            <div><h3 className="text-lg font-bold text-gray-800 flex items-center"><Grid size={18} className="mr-2 text-purple-500" /> Distribusi Produksi</h3><p className="text-xs text-gray-500">Persentase pesanan tiap tahap (5 Tahap)</p></div>
             <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span><span className="text-[10px] text-gray-500 uppercase font-bold">Real-time</span></div>
           </div>
           <div className="h-64 w-full flex flex-col md:flex-row items-center">
             <div className="w-full md:w-1/2 h-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={productionMixData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                    {productionMixData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
+                  <Pie 
+                    data={productionMixData.filter(item => item.value > 0)} 
+                    cx="50%" 
+                    cy="50%" 
+                    innerRadius={50} 
+                    outerRadius={70} 
+                    paddingAngle={3} 
+                    dataKey="value"
+                    label={({ name, percent }) => percent > 0.05 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
+                    labelLine={false}
+                  >
+                    {productionMixData.filter(item => item.value > 0).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                    ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip formatter={(value, name) => [`${value} pesanan`, name]} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="w-full md:w-1/2 mt-4 md:mt-0 grid grid-cols-2 gap-3">
+            <div className="w-full md:w-1/2 mt-4 md:mt-0 grid grid-cols-2 gap-2">
               {productionMixData.map((entry, index) => (
                 <div key={entry.name} className="flex flex-col p-2 bg-gray-50 rounded-lg">
-                  <div className="flex items-center mb-1"><span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span><span className="text-xs font-medium text-gray-600">{entry.name}</span></div>
+                  <div className="flex items-center mb-1">
+                    <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: entry.color || COLORS[index % COLORS.length] }}></span>
+                    <span className="text-xs font-medium text-gray-600">{entry.name}</span>
+                  </div>
                   <span className="text-sm font-bold text-gray-800 pl-4">{entry.value} pesanan</span>
                 </div>
               ))}
             </div>
           </div>
+          <p className="text-xs text-gray-400 text-center mt-3 italic">*Menampilkan pesanan aktif berdasarkan tahap produksi</p>
         </Card>
 
         {/* Revenue Chart - DATA STATIS */}
@@ -1022,7 +1046,7 @@ export default function Dashboard() {
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent Orders */}
+        {/* Recent Orders - UPGRADED */}
         <Card className="enterprise-card animate-enter-fade delay-200 h-full">
           <CardHeader className="border-b border-gray-100 pb-3">
             <div className="flex justify-between items-center">
@@ -1041,7 +1065,7 @@ export default function Dashboard() {
           <CardBody className="p-0">
             {recentOrders.length > 0 ? (
               <>
-                {/* Desktop Table View - Hidden on mobile */}
+                {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead className="bg-gray-50/80 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold tracking-wider">
@@ -1115,7 +1139,7 @@ export default function Dashboard() {
                   </table>
                 </div>
 
-                {/* Mobile Card View - Visible on mobile */}
+                {/* Mobile Card View */}
                 <div className="md:hidden divide-y divide-gray-100">
                   {recentOrders.map((order) => {
                     const statusBadge = getStatusBadge(order.status);
@@ -1188,7 +1212,7 @@ export default function Dashboard() {
           </CardBody>
         </Card>
 
-        {/* Production Status - REALTIME SYNC */}
+        {/* Production Status - 5 TAHAP PRODUKSI */}
         <Card className="enterprise-card animate-enter-fade delay-300 h-full">
           <CardHeader className="border-b border-gray-100 pb-3">
             <div className="flex justify-between items-center">
@@ -1209,21 +1233,23 @@ export default function Dashboard() {
               {productionStatus.map((stage) => {
                 const colorMap = {
                   amber: 'bg-amber-50 border-amber-200 hover:border-amber-300',
-                  orange: 'bg-orange-50 border-orange-200 hover:border-orange-300',
-                  lime: 'bg-lime-50 border-lime-200 hover:border-lime-300',
-                  emerald: 'bg-emerald-50 border-emerald-200 hover:border-emerald-300'
+                  blue: 'bg-blue-50 border-blue-200 hover:border-blue-300',
+                  purple: 'bg-purple-50 border-purple-200 hover:border-purple-300',
+                  indigo: 'bg-indigo-50 border-indigo-200 hover:border-indigo-300',
+                  cyan: 'bg-cyan-50 border-cyan-200 hover:border-cyan-300'
                 };
                 const iconColorMap = {
                   amber: 'text-amber-600',
-                  orange: 'text-orange-600',
-                  lime: 'text-lime-600',
-                  emerald: 'text-emerald-600'
+                  blue: 'text-blue-600',
+                  purple: 'text-purple-600',
+                  indigo: 'text-indigo-600',
+                  cyan: 'text-cyan-600'
                 };
                 
                 return (
                   <div 
                     key={stage.stage}
-                    onClick={() => handleStageClick(stage.stage, stage.orders)}
+                    onClick={() => handleStageClick(stage.stage, stage.orders, stage.statusKey)}
                     className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 ${colorMap[stage.color]} hover:shadow-sm active:scale-[0.99]`}
                   >
                     <div className="flex items-center gap-3">
@@ -1585,10 +1611,8 @@ export default function Dashboard() {
 
               <div className="space-y-3">
                 {lowStockItems.length > 0 ? (
-                  // Urutkan: Critical (status='critical') di atas, lalu Warning (status='warning')
                   [...lowStockItems]
                     .sort((a, b) => {
-                      // Critical (3) > Warning (2) > Normal (1)
                       const statusOrder = { 'critical': 3, 'warning': 2, 'normal': 1 };
                       return (statusOrder[b.status] || 0) - (statusOrder[a.status] || 0);
                     })
@@ -1635,7 +1659,6 @@ export default function Dashboard() {
                             </div>
                           </div>
 
-                          {/* Tombol Kelola Stok */}
                           <button 
                             onClick={() => {
                               setShowLowStockModal(false);
@@ -1785,7 +1808,8 @@ export default function Dashboard() {
                   {selectedStage === 'Potong' ? '✂️' : 
                    selectedStage === 'Jahit' ? '🧵' : 
                    selectedStage === 'Finishing' ? '✨' : 
-                   selectedStage === 'Pengemasan' ? '📦' : 
+                   selectedStage === 'QC' ? '🔍' : 
+                   selectedStage === 'Mengirim' ? '🚚' : 
                    selectedStage === 'Selesai' ? '✅' : 
                    selectedStage === 'Dibatalkan' ? '❌' : '📋'}
                 </div>
@@ -1794,7 +1818,7 @@ export default function Dashboard() {
                   <p className="text-xs text-gray-500">
                     {selectedStage === 'Selesai' ? 'Pesanan yang telah selesai diproses dan dikirim' : 
                      selectedStage === 'Dibatalkan' ? 'Pesanan yang telah dibatalkan oleh customer atau admin' : 
-                     'Menampilkan pesanan yang sedang diproses di departemen ini'}
+                     `Menampilkan pesanan yang sedang diproses di departemen ${selectedStage}`}
                   </p>
                 </div>
               </div>

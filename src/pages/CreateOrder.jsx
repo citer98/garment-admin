@@ -611,14 +611,16 @@ export default function CreateOrder() {
 
   // Status options
   const statusOptions = [
-    { value: 'cutting', label: '✂️ Potong', color: 'bg-amber-100 text-amber-800' },
-    { value: 'sewing', label: '🧵 Jahit', color: 'bg-orange-100 text-orange-800' },
-    { value: 'finishing', label: '✨ Finishing', color: 'bg-lime-100 text-lime-800' },
-    { value: 'packing', label: '📦 Packing', color: 'bg-emerald-100 text-emerald-800' },
-    { value: 'qc', label: '✅ QC', color: 'bg-teal-100 text-teal-800' },
-    { value: 'completed', label: '🎉 Selesai', color: 'bg-green-100 text-green-800' },
-    { value: 'delivered', label: '🚚 Terkirim', color: 'bg-purple-100 text-purple-800' },
-    { value: 'cancelled', label: '❌ Dibatalkan', color: 'bg-red-100 text-red-800' },
+  // ========== STATUS PRODUKSI (PROSES AKTIF) ==========
+  { value: 'cutting', label: '✂️ Potong', color: 'bg-amber-100 text-amber-800' },
+  { value: 'sewing', label: '🧵 Jahit', color: 'bg-blue-100 text-blue-800' },
+  { value: 'finishing', label: '✨ Finishing', color: 'bg-purple-100 text-purple-800' },
+  { value: 'qc', label: '🔍 QC', color: 'bg-indigo-100 text-indigo-800' },
+  { value: 'delivering', label: '🚚 Mengirim', color: 'bg-cyan-100 text-cyan-800' },
+  
+  // ========== STATUS AKHIR ==========
+  { value: 'completed', label: '✅ Selesai', color: 'bg-green-100 text-green-800' },
+  { value: 'cancelled', label: '❌ Dibatalkan', color: 'bg-red-100 text-red-800' },
   ];
 
   // ================== CSV IMPORT FUNCTIONS ==================
@@ -1048,12 +1050,11 @@ export default function CreateOrder() {
                         <option value="cutting">✂️ Potong</option>
                         <option value="sewing">🧵 Jahit</option>
                         <option value="finishing">✨ Finishing</option>
-                        <option value="packing">📦 Packing</option>
-                        <option value="qc">✅ QC</option>
+                        <option value="qc">🔍 QC</option>
+                        <option value="delivering">🚚 Mengirim</option>
                       </optgroup>
                       <optgroup label="Status Akhir">
-                        <option value="completed">🎉 Selesai</option>
-                        <option value="delivered">🚚 Terkirim</option>
+                        <option value="completed">✅ Selesai</option>
                         <option value="cancelled">❌ Dibatalkan</option>
                       </optgroup>
                     </select>

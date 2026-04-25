@@ -182,19 +182,35 @@ export default function ViewOrder() {
     }
   };
 
-  // Status options
-  const statusOptions = {
-    cutting: { label: 'Potong', icon: '✂️', color: 'bg-amber-100 text-amber-800' },
-    sewing: { label: 'Jahit', icon: '🧵', color: 'bg-orange-100 text-orange-800' },
-    finishing: { label: 'Finishing', icon: '✨', color: 'bg-lime-100 text-lime-800' },
-    packing: { label: 'Packing', icon: '📦', color: 'bg-emerald-100 text-emerald-800' },
-    qc: { label: 'QC', icon: '✅', color: 'bg-teal-100 text-teal-800' },
-    completed: { label: 'Selesai', icon: '🎉', color: 'bg-green-100 text-green-800' },
-    delivered: { label: 'Terkirim', icon: '🚚', color: 'bg-purple-100 text-purple-800' },
-    cancelled: { label: 'Dibatalkan', icon: '❌', color: 'bg-red-100 text-red-800' },
-    draft: { label: 'Draft', icon: '📄', color: 'bg-gray-100 text-gray-800' },
-    processing: { label: 'Diproses', icon: '⚙️', color: 'bg-blue-100 text-blue-800' },
-    production: { label: 'Produksi', icon: '🏭', color: 'bg-yellow-100 text-yellow-800' },
+  // ================== STATUS OPTIONS - DENGAN FALLBACK ==================
+  const getStatusOption = (status) => {
+    const statusMap = {
+      // ========== STATUS PRODUKSI (PROSES AKTIF) ==========
+      cutting: { label: 'Potong', icon: '✂️', color: 'bg-amber-100 text-amber-800' },
+      sewing: { label: 'Jahit', icon: '🧵', color: 'bg-blue-100 text-blue-800' },
+      finishing: { label: 'Finishing', icon: '✨', color: 'bg-purple-100 text-purple-800' },
+      qc: { label: 'QC', icon: '🔍', color: 'bg-indigo-100 text-indigo-800' },
+      delivering: { label: 'Mengirim', icon: '🚚', color: 'bg-cyan-100 text-cyan-800' },
+      
+      // ========== STATUS AKHIR (FINAL) ==========
+      completed: { label: 'Selesai', icon: '✅', color: 'bg-green-100 text-green-800' },
+      cancelled: { label: 'Dibatalkan', icon: '❌', color: 'bg-red-100 text-red-800' },
+      
+      // ========== FALLBACK UNTUK KOMPATIBILITAS ==========
+      draft: { label: 'Draft', icon: '📄', color: 'bg-gray-100 text-gray-800' },
+      processing: { label: 'Diproses', icon: '⚙️', color: 'bg-blue-100 text-blue-800' },
+      production: { label: 'Produksi', icon: '🏭', color: 'bg-yellow-100 text-yellow-800' },
+      packing: { label: 'Packing', icon: '📦', color: 'bg-emerald-100 text-emerald-800' },
+      delivered: { label: 'Mengirim', icon: '🚚', color: 'bg-cyan-100 text-cyan-800' },
+    };
+    
+    // Fallback untuk status yang tidak dikenal
+    if (!statusMap[status]) {
+      console.warn(`Unknown status: ${status}`);
+      return { label: status || 'Unknown', icon: '📋', color: 'bg-gray-100 text-gray-800' };
+    }
+    
+    return statusMap[status];
   };
 
   // ================== CUSTOMER STATS FUNCTIONS ==================
@@ -257,7 +273,7 @@ export default function ViewOrder() {
   const handlePrintInvoice = () => {
     const printWindow = window.open('', '_blank');
     
-    const status = statusOptions[order.status] || statusOptions.draft;
+    const status = getStatusOption(order.status);
     const calculatedTotal = order.itemsDetail?.reduce((sum, item) => sum + ((item.qty || 0) * (item.price || 0)), 0) || 0;
     
     const invoiceHTML = `
@@ -432,8 +448,8 @@ export default function ViewOrder() {
           .status-badge {
             display: inline-block;
             padding: 2px 6px;
-            background: #e8f5e9;
-            color: #2e7d32;
+            background: ${status.color.replace('bg-', '').replace(' text-', '')};
+            color: white;
             font-size: 9px;
             border-radius: 3px;
             font-weight: bold;
@@ -914,7 +930,7 @@ export default function ViewOrder() {
     );
   }
 
-  const status = statusOptions[order.status] || statusOptions.draft;
+  const status = getStatusOption(order.status);
   const isOverdue = isDeadlineOverdue(order.dueDate);
   const totalQty = order.itemsDetail?.reduce((sum, item) => sum + (item.qty || 0), 0) || 0;
   const calculatedTotal = order.itemsDetail?.reduce((sum, item) => sum + ((item.qty || 0) * (item.price || 0)), 0) || 0;
@@ -933,10 +949,12 @@ export default function ViewOrder() {
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <p className="text-sm text-gray-500">ID: {order.id}</p>
                 <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
-                  <span>{status.icon}</span>
-                  {status.label}
-                </span>
+                {status && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                    <span>{status.icon}</span>
+                    {status.label}
+                  </span>
+                )}
                 {order.dueDate && (
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${isOverdue ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'}`}>
                     <Calendar size={12} />
@@ -1068,21 +1086,24 @@ export default function ViewOrder() {
                         </tr>
                       </thead>
                       <tbody>
-                        {customerStats.orders.map((historyOrder) => (
-                          <tr key={historyOrder.id} className="border-t hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm font-medium">{historyOrder.id}</td>
-                            <td className="px-4 py-3 text-sm">{formatShortDate(historyOrder.orderDate)}</td>
-                            <td className="px-4 py-3 text-sm font-semibold">Rp {formatCurrency(historyOrder.totalAmount)}</td>
-                            <td className="px-4 py-3">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusOptions[historyOrder.status]?.color || 'bg-gray-100'}`}>
-                                {statusOptions[historyOrder.status]?.label || historyOrder.status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <button onClick={() => navigate(`/orders/${historyOrder.id}`)} className="text-blue-600 hover:text-blue-800 text-sm">Lihat</button>
-                            </td>
-                          </tr>
-                        ))}
+                        {customerStats.orders.map((historyOrder) => {
+                          const historyStatus = getStatusOption(historyOrder.status);
+                          return (
+                            <tr key={historyOrder.id} className="border-t hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm font-medium">{historyOrder.id}</td>
+                              <td className="px-4 py-3 text-sm">{formatShortDate(historyOrder.orderDate)}</td>
+                              <td className="px-4 py-3 text-sm font-semibold">Rp {formatCurrency(historyOrder.totalAmount)}</td>
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${historyStatus?.color || 'bg-gray-100 text-gray-800'}`}>
+                                  {historyStatus?.label || historyOrder.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <button onClick={() => navigate(`/orders/${historyOrder.id}`)} className="text-blue-600 hover:text-blue-800 text-sm">Lihat</button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

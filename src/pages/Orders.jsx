@@ -26,14 +26,16 @@ export default function Orders() {
   
   // Status options - DISEDERHANAKAN (tanpa Draft, tanpa Diproses, tanpa Produksi)
   const statusOptions = [
-    { value: 'cutting', label: '✂️ Potong', color: 'bg-amber-100 text-amber-800' },
-    { value: 'sewing', label: '🧵 Jahit', color: 'bg-orange-100 text-orange-800' },
-    { value: 'finishing', label: '✨ Finishing', color: 'bg-lime-100 text-lime-800' },
-    { value: 'packing', label: '📦 Pengemasan', color: 'bg-emerald-100 text-emerald-800' },
-    { value: 'qc', label: '✅ QC', color: 'bg-teal-100 text-teal-800' },
-    { value: 'completed', label: '🎉 Selesai', color: 'bg-green-100 text-green-800' },
-    { value: 'delivered', label: '🚚 Terkirim', color: 'bg-purple-100 text-purple-800' },
-    { value: 'cancelled', label: '❌ Dibatalkan', color: 'bg-red-100 text-red-800' },
+  // ========== STATUS PRODUKSI (PROSES AKTIF - BERRURUTAN) ==========
+  { value: 'cutting', label: '✂️ Potong', color: 'bg-amber-100 text-amber-800', group: 'production', order: 1 },
+  { value: 'sewing', label: '🧵 Jahit', color: 'bg-blue-100 text-blue-800', group: 'production', order: 2 },
+  { value: 'finishing', label: '✨ Finishing', color: 'bg-purple-100 text-purple-800', group: 'production', order: 3 },
+  { value: 'qc', label: '🔍 QC', color: 'bg-indigo-100 text-indigo-800', group: 'production', order: 4 },
+  { value: 'delivering', label: '🚚 Mengirim', color: 'bg-cyan-100 text-cyan-800', group: 'production', order: 5 },
+  
+  // ========== STATUS AKHIR (FINAL) ==========
+  { value: 'completed', label: '✅ Selesai', color: 'bg-green-100 text-green-800', group: 'final', order: 6 },
+  { value: 'cancelled', label: '❌ Dibatalkan', color: 'bg-red-100 text-red-800', group: 'final', order: 7 },
   ];
 
   // Load orders from localStorage

@@ -32,7 +32,7 @@ export default function Login() {
 
       const { password: userPassword, ...userWithoutPassword } = user;
       localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-      
+
       if (user.role === 'Admin') {
         nav('/dashboard');
       } else {
@@ -44,9 +44,7 @@ export default function Login() {
   };
 
   const demoAccounts = [
-    { username: 'admin', password: 'admin123', name: 'Pak Hartono', role: 'Admin' },
-    { username: 'budi', password: 'budi123', name: 'Budi Santoso', role: 'Karyawan' },
-    { username: 'siti', password: 'siti123', name: 'Siti Aminah', role: 'Karyawan' }
+    { username: 'admin', password: 'admin123', name: 'Pak Hartono', role: 'Admin' }
   ];
 
   const fillDemoAccount = (demoUser) => {
@@ -63,7 +61,7 @@ export default function Login() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* ==================== MAIN CONTENT WITH SCALE TRANSFORM ==================== */}
-      <div 
+      <div
         className="transition-all duration-300"
         style={{
           transform: 'scale(0.85)',
@@ -159,9 +157,9 @@ export default function Login() {
                       Akun Demo
                     </span>
                   </div>
-                  
+
                   {activeDemoAccounts.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 max-w-xs mx-auto gap-3">
                       {activeDemoAccounts.map((account, index) => {
                         const user = userData.find(u => u.username === account.username);
                         return (
@@ -172,20 +170,18 @@ export default function Login() {
                             className="group p-3 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-xl hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
                           >
                             <div className="flex flex-col items-center">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
-                                user?.role === 'Admin' 
-                                  ? 'bg-gradient-to-r from-purple-500 to-purple-600' 
-                                  : 'bg-gradient-to-r from-slate-600 to-slate-700'
-                              }`}>
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${user?.role === 'Admin'
+                                ? 'bg-gradient-to-r from-purple-500 to-purple-600'
+                                : 'bg-gradient-to-r from-slate-600 to-slate-700'
+                                }`}>
                                 <span className="text-white font-bold text-sm">
                                   {account.name.charAt(0)}
                                 </span>
                               </div>
                               <span className="font-medium text-slate-800 text-xs">{account.name}</span>
                               <div className="flex items-center gap-1 mt-1">
-                                <span className={`text-xs font-medium ${
-                                  user?.role === 'Admin' ? 'text-purple-600' : 'text-slate-500'
-                                }`}>
+                                <span className={`text-xs font-medium ${user?.role === 'Admin' ? 'text-purple-600' : 'text-slate-500'
+                                  }`}>
                                   {user?.role || 'Karyawan'}
                                 </span>
                                 <span className="text-xs text-slate-300">•</span>

@@ -1,0 +1,72 @@
+# 📘 Dokumentasi Prototype GarmentTrackPro v2.0
+
+Selamat datang di dokumentasi resmi **GarmentTrackPro v2.0**, sebuah sistem manajemen produksi konveksi (garmen) yang dirancang untuk mempermudah pemantauan operasional, pengelolaan bahan baku, serta mengoptimalkan efisiensi kerja di lantai produksi.
+
+Dokumen ini disusun untuk menjelaskan **status aplikasi saat ini (Fase Prototype Frontend)** yang dirancang agar mudah dipahami oleh klien maupun pemangku kepentingan (stakeholder), beserta dengan rencana arsitektur untuk tahap produksi selanjutnya.
+
+---
+
+## 🛠️ 1. Status Aplikasi Saat Ini (Fase Prototype)
+
+Saat ini, GarmentTrackPro v2.0 dibangun sebagai sebuah **Prototype Frontend** yang fungsional untuk mendemonstrasikan pengalaman pengguna (User Experience) dan alur logika bisnis. 
+
+*   **Penyimpanan Data Lokal (LocalStorage):** Seluruh data pesanan, inventori, dan pengaturan saat ini disimpan langsung di dalam *browser* pengguna menggunakan `LocalStorage`. 
+*   **⚠️ Catatan Teknis Penting:** Karena berstatus prototype, **hindari membersihkan *cache/history* browser** atau menggunakan mode penyamaran (*incognito*), agar data percobaan yang telah dimasukkan tidak hilang. Sangat disarankan untuk menggunakan browser tetap, misalnya Google Chrome.
+
+---
+
+## 👤 2. Autentikasi & Akses Pengguna
+
+Untuk menyederhanakan peluncuran awal dan fokus pada alur manajemen utama, sistem saat ini diterapkan khusus untuk **1 (Satu) Peran Saja**:
+
+*   **Admin / Manajer Utama:**
+    *   Satu-satunya peran yang digunakan pada fase ini.
+    *   Setelah melakukan proses *Login*, Admin akan langsung diarahkan ke **Halaman Dashboard** untuk dapat mengelola dan memantau keseluruhan aktivitas produksi, pesanan, dan inventori tanpa batasan fitur.
+
+---
+
+## 🖥️ 3. Modul & Fitur Utama Prototype
+
+Berikut adalah halaman dan fitur yang telah dapat digunakan pada prototype saat ini:
+
+### A. Dashboard Terpadu (Pusat Kendali)
+Dashboard memberikan rangkuman visual yang informatif:
+*   **Item Stuck (Pesanan Macet):** Sistem mendeteksi dan memberi label "Stuck" pada pesanan yang tidak selesai dan tidak ada pembaruan lebih dari **3 hari**. Sangat krusial untuk evaluasi hambatan produksi.
+*   **Stok Menipis:** Indikator visual keamanan bahan baku:
+    *   🔴 *Kritis*: Stok berada di bawah 25% dari ambang batas minimal.
+    *   🟡 *Peringatan*: Stok berada di antara 25% hingga 50%.
+*   **Status Produksi:** Grafik visual distribusi tahapan operasional pesanan (**Potong ➔ Jahit ➔ Finishing ➔ Pengemasan ➔ Selesai**).
+*   **Kinerja Keuangan & Statistik Cepat:** Menampilkan Pesanan Aktif, *Revenue* (Pendapatan), *Profit Margin*, *Average Order Value*, serta Tren Pesanan (7 Hari).
+
+### B. Kelola Pesanan (Order Management)
+Modul untuk mengatur pesanan klien dari awal masuk hingga selesai.
+*   Pembuatan pesanan baru, edit pesanan yang sedang berjalan, dan kemampuan untuk memperbarui status pesanan pada alur kerja produksi.
+
+### C. Gudang & Stok Material (Inventory)
+Pusat pencatatan seluruh bahan baku (Kain, Kancing, Benang, dll).
+*   **Tambah/Edit Material** dengan parameter peringatan stok *(warning threshold)*.
+*   Pengelompokan material melalui menu **Kelola Kategori & Satuan**.
+*   **Kelola Supplier:** Daftar kontak dan info penyuplai bahan.
+
+### D. Keuangan (Finance)
+Panel pencatatan data performa keuangan konveksi.
+*   Menyajikan laporan pendapatan yang dapat disesuaikan penampilannya *(filter)* berdasarkan periode: **Harian, Mingguan, Bulanan, Kuartal,** hingga **Tahunan**.
+
+### E. Manajemen Produk & Pelanggan
+*   **Katalog & Kategori Produk:** Kemudahan menambahkan spesifikasi pakaian.
+*   **Database Pelanggan:** Daftar klien/pelanggan yang melakukan transaksi.
+
+### F. Notifikasi Pintar (Topbar Alerts)
+*   Panel lonceng notifikasi untuk memberikan peringatan cepat jika ada stok yang menipis atau hal yang membutuhkan perhatian Admin.
+
+---
+
+## 🚀 4. Rencana Arsitektur Masa Depan (Fase Go-Live / Produksi)
+
+Meski saat ini berupa prototype berbasis *browser*, desain aplikasi telah dipersiapkan untuk beralih ke arsitektur **skala penuh** di masa mendatang menggunakan teknologi Backend mutakhir:
+
+*   **Node.js & Express.js:** Akan bertindak sebagai "Otak Server" yang terpusat untuk memproses aturan bisnis yang rumit dan melayani data ke aplikasi.
+*   **Database MySQL (via Prisma ORM):** Sistem `LocalStorage` akan digantikan oleh server Database terpusat (MySQL). Semua data tidak lagi disimpan di browser, melainkan di dalam server *cloud* yang dijamin aman, anti-hilang, dan bisa diakses bersamaan.
+*   **Kolaborasi Real-Time (WebSocket):** Nantinya, sistem akan dapat melayani berbagai peran (*Karyawan, Customer*). Perubahan status yang diklik oleh Karyawan (contoh: status Jahit selesai) akan memunculkan *pop-up* notifikasi ke layar Admin di detik yang sama, tanpa perlu *refresh* halaman.
+
+*Rencana ini akan diimplementasikan setelah alur kerja dasar pada Prototype telah divalidasi dan disetujui penggunaannya oleh klien.*

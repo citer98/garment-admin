@@ -1,5 +1,6 @@
 // src/pages/Dashboard.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
@@ -43,7 +44,7 @@ export default function Dashboard() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
   const [stageOrders, setStageOrders] = useState([]);
-  
+
   // Production counts untuk 5 tahap produksi
   const [productionCounts, setProductionCounts] = useState({
     'Potong': 0,
@@ -68,7 +69,7 @@ export default function Dashboard() {
   const [stuckItems, setStuckItems] = useState([]);
   const [selectedStuckOrder, setSelectedStuckOrder] = useState(null);
   const [showStuckDetailModal, setShowStuckDetailModal] = useState(false);
-  
+
   // State untuk LAST UPDATE timestamp
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -168,7 +169,7 @@ export default function Dashboard() {
     const savedStock = localStorage.getItem('stockItems');
     if (savedStock) {
       const stock = JSON.parse(savedStock);
-      const criticalAndWarning = stock.filter(item => 
+      const criticalAndWarning = stock.filter(item =>
         item.status === 'critical' || item.status === 'warning'
       );
       setLowStockItems(criticalAndWarning);
@@ -235,8 +236,8 @@ export default function Dashboard() {
 
   // ================== FUNGSI UNTUK MENGHITUNG PESANAN PENDING ==================
   const calculatePendingOrders = useCallback((orders) => {
-    const pending = orders.filter(order => 
-      order.status === 'cutting' && 
+    const pending = orders.filter(order =>
+      order.status === 'cutting' &&
       order.status !== 'cancelled' &&
       order.status !== 'completed'
     );
@@ -247,12 +248,12 @@ export default function Dashboard() {
   const calculateEfficiency = useCallback((orders) => {
     const completedOrdersList = orders.filter(o => o.status === 'completed');
     if (completedOrdersList.length === 0) return 85;
-    
+
     const onTimeOrders = completedOrdersList.filter(order => {
       if (!order.dueDate) return true;
       return order.orderDate <= order.dueDate;
     });
-    
+
     const efficiency = (onTimeOrders.length / completedOrdersList.length) * 100;
     return Math.round(efficiency);
   }, []);
@@ -271,16 +272,16 @@ export default function Dashboard() {
         }
 
         const dueDate = order.dueDate;
-        
+
         if (dueDate && dueDate < today) {
           const dueDateObj = new Date(dueDate);
           const todayDate = new Date();
           const overdueDays = Math.ceil((todayDate - dueDateObj) / (1000 * 60 * 60 * 24));
-          
+
           let priority = 'medium';
           if (overdueDays > 7) priority = 'critical';
           else if (overdueDays > 3) priority = 'high';
-          
+
           stuck.push({
             id: order.id,
             orderId: order.id,
@@ -314,13 +315,13 @@ export default function Dashboard() {
       const activeStatuses = [
         'cutting', 'sewing', 'finishing', 'qc', 'delivering'
       ];
-      
+
       const activeOrdersOnly = orders.filter(order => activeStatuses.includes(order.status));
-      
-      const sortedOrders = [...activeOrdersOnly].sort((a, b) => 
+
+      const sortedOrders = [...activeOrdersOnly].sort((a, b) =>
         new Date(b.orderDate) - new Date(a.orderDate)
       ).slice(0, 5);
-      
+
       const formattedOrders = sortedOrders.map(order => {
         const dueDate = order.dueDate;
         const today = new Date().toISOString().split('T')[0];
@@ -335,7 +336,7 @@ export default function Dashboard() {
             deadlineText = `${diffDays} hari`;
           }
         }
-        
+
         return {
           id: order.id,
           customer: order.customerName || 'Pelanggan',
@@ -346,7 +347,7 @@ export default function Dashboard() {
           orderDate: order.orderDate
         };
       });
-      
+
       setRecentOrders(formattedOrders);
     } catch (error) {
       console.error('Error loading recent orders:', error);
@@ -358,34 +359,35 @@ export default function Dashboard() {
     setIsRefreshing(true);
     try {
       const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      
+
       // ========== UPDATE STATISTIK CEPAT (REAL-TIME) ==========
       const completedCount_ = orders.filter(o => o.status === 'completed').length;
+      const cancelledCount_ = orders.filter(o => o.status === 'cancelled').length;
       const pendingCount_ = calculatePendingOrders(orders);
       const stuckCount_ = calculateStuckItems(orders);
       const efficiency_ = calculateEfficiency(orders);
-      
+
       setQuickStats({
         efficiency: efficiency_,
         completedCount: completedCount_,
         pendingCount: pendingCount_,
         stuckCount: stuckCount_
       });
-      
+
       // ========== UPDATE PESANAN AKTIF (REAL-TIME) ==========
       const activeStatuses = ['cutting', 'sewing', 'finishing', 'qc', 'delivering'];
       const active = orders.filter(order => activeStatuses.includes(order.status));
       setActiveOrdersCount(active.length);
-      
+
       // Update stats hanya untuk Pesanan Aktif (REAL-TIME)
-      setStats(prevStats => 
-        prevStats.map(stat => 
-          stat.title === "Pesanan Aktif" 
+      setStats(prevStats =>
+        prevStats.map(stat =>
+          stat.title === "Pesanan Aktif"
             ? { ...stat, value: active.length.toString() }
             : stat
         )
       );
-      
+
       // ========== HITUNG PRODUCTION COUNTS UNTUK 5 TAHAP (REAL-TIME) ==========
       const ordersPerDept = {
         'Potong': 0,
@@ -394,7 +396,7 @@ export default function Dashboard() {
         'QC': 0,
         'Mengirim': 0
       };
-      
+
       const totalItemsPerDept = {
         'Potong': 0,
         'Jahit': 0,
@@ -402,7 +404,7 @@ export default function Dashboard() {
         'QC': 0,
         'Mengirim': 0
       };
-      
+
       const deptOrdersDetail = {
         'Potong': [],
         'Jahit': [],
@@ -410,19 +412,19 @@ export default function Dashboard() {
         'QC': [],
         'Mengirim': []
       };
-      
+
       orders.forEach(order => {
         if (order.status === 'completed' || order.status === 'cancelled') {
           return;
         }
-        
+
         const orderStatus = order.status;
         const orderId = order.id;
         const customerName = order.customerName || 'Pelanggan';
         const totalQty = order.itemsDetail?.reduce((sum, item) => sum + (item.qty || 0), 0) || order.items || 0;
         const totalAmount = order.totalAmount || 0;
         const orderDate = order.orderDate || '';
-        
+
         if (orderStatus === 'cutting') {
           ordersPerDept['Potong']++;
           totalItemsPerDept['Potong'] += totalQty;
@@ -491,50 +493,50 @@ export default function Dashboard() {
       });
 
       setProductionCounts(ordersPerDept);
-      
+
       setProductionStatus([
-        { 
-          stage: 'Potong', 
-          count: ordersPerDept['Potong'], 
+        {
+          stage: 'Potong',
+          count: ordersPerDept['Potong'],
           totalItems: totalItemsPerDept['Potong'],
-          icon: '✂️', 
-          color: 'amber', 
+          icon: '✂️',
+          color: 'amber',
           statusKey: 'cutting',
           orders: deptOrdersDetail['Potong']
         },
-        { 
-          stage: 'Jahit', 
-          count: ordersPerDept['Jahit'], 
+        {
+          stage: 'Jahit',
+          count: ordersPerDept['Jahit'],
           totalItems: totalItemsPerDept['Jahit'],
-          icon: '🧵', 
-          color: 'blue', 
+          icon: '🧵',
+          color: 'blue',
           statusKey: 'sewing',
           orders: deptOrdersDetail['Jahit']
         },
-        { 
-          stage: 'Finishing', 
-          count: ordersPerDept['Finishing'], 
+        {
+          stage: 'Finishing',
+          count: ordersPerDept['Finishing'],
           totalItems: totalItemsPerDept['Finishing'],
-          icon: '✨', 
-          color: 'purple', 
+          icon: '✨',
+          color: 'purple',
           statusKey: 'finishing',
           orders: deptOrdersDetail['Finishing']
         },
-        { 
-          stage: 'QC', 
-          count: ordersPerDept['QC'], 
+        {
+          stage: 'QC',
+          count: ordersPerDept['QC'],
           totalItems: totalItemsPerDept['QC'],
-          icon: '🔍', 
-          color: 'indigo', 
+          icon: '🔍',
+          color: 'indigo',
           statusKey: 'qc',
           orders: deptOrdersDetail['QC']
         },
-        { 
-          stage: 'Mengirim', 
-          count: ordersPerDept['Mengirim'], 
+        {
+          stage: 'Mengirim',
+          count: ordersPerDept['Mengirim'],
           totalItems: totalItemsPerDept['Mengirim'],
-          icon: '🚚', 
-          color: 'cyan', 
+          icon: '🚚',
+          color: 'cyan',
           statusKey: 'delivering',
           orders: deptOrdersDetail['Mengirim']
         }
@@ -544,10 +546,10 @@ export default function Dashboard() {
       setCancelledOrders(orders.filter(order => order.status === 'cancelled'));
       setCompletedCount(completedCount_);
       setCancelledCount(cancelledCount_);
-      
+
       loadRecentOrders(orders);
       setLastUpdate(new Date());
-      
+
     } catch (error) {
       console.error('Error loading production data:', error);
     } finally {
@@ -567,35 +569,35 @@ export default function Dashboard() {
         loadStockData();
       }
     };
-    
+
     const handleOrdersUpdated = () => {
       console.log('🔄 Orders updated event received, refreshing dashboard...');
       loadProductionData();
     };
-    
+
     const handleJobsUpdated = () => {
       console.log('🔧 Jobs updated event received, refreshing stuck items...');
       loadProductionData();
     };
-    
+
     const handleStockUpdated = () => {
       console.log('📦 Stock updated event received, refreshing stock data...');
       loadStockData();
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('ordersUpdated', handleOrdersUpdated);
     window.addEventListener('jobsUpdated', handleJobsUpdated);
     window.addEventListener('stockUpdated', handleStockUpdated);
-    
+
     loadProductionData();
     loadStockData();
-    
+
     const interval = setInterval(() => {
       loadProductionData();
       loadStockData();
     }, 30000);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('ordersUpdated', handleOrdersUpdated);
@@ -622,10 +624,10 @@ export default function Dashboard() {
       setSelectedStage(stageName);
       return;
     }
-    
+
     const orders = JSON.parse(localStorage.getItem('orders') || '[]');
     let filteredOrders = [];
-    
+
     if (statusKey) {
       filteredOrders = orders
         .filter(order => order.status === statusKey)
@@ -639,6 +641,7 @@ export default function Dashboard() {
           totalAmount: order.totalAmount,
           orderDate: order.orderDate,
           status: order.status,
+          notes: order.notes,
           qty: order.itemsDetail?.reduce((sum, item) => sum + (item.qty || 0), 0) || order.items || 0
         }));
     }
@@ -659,7 +662,8 @@ export default function Dashboard() {
         totalAmount: order.totalAmount,
         orderDate: order.orderDate,
         status: order.status,
-        qty: order.items
+        notes: order.notes,
+        qty: order.itemsDetail?.reduce((sum, item) => sum + (item.qty || 0), 0) || order.items || 0
       }));
       setStageOrders(formattedOrders);
       setSelectedStage('Selesai');
@@ -673,7 +677,8 @@ export default function Dashboard() {
         totalAmount: order.totalAmount,
         orderDate: order.orderDate,
         status: order.status,
-        qty: order.items
+        notes: order.notes,
+        qty: order.itemsDetail?.reduce((sum, item) => sum + (item.qty || 0), 0) || order.items || 0
       }));
       setStageOrders(formattedOrders);
       setSelectedStage('Dibatalkan');
@@ -753,7 +758,7 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={handleManualRefresh}
             disabled={isRefreshing}
             className={`p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors ${isRefreshing ? 'animate-spin' : ''}`}
@@ -803,8 +808,8 @@ export default function Dashboard() {
 
           <div className="space-y-1.5 md:space-y-2">
             {stuckItems.slice(0, 2).map((item, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 onClick={() => handleStuckItemClick(item)}
                 className="py-2 border-b border-slate-100 last:border-0 group cursor-pointer hover:bg-red-50/50 rounded-lg transition-colors"
               >
@@ -854,7 +859,7 @@ export default function Dashboard() {
                 <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mt-0.5">Daftar Pengadaan</p>
               </div>
             </div>
-            <Link 
+            <Link
               to="/stock?status=critical"
               className="bg-yellow-100 text-yellow-800 text-xs font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-full hover:bg-yellow-200 transition-colors"
             >
@@ -864,8 +869,8 @@ export default function Dashboard() {
 
           <div className="space-y-1.5 md:space-y-2">
             {lowStockItems.filter(item => item.status === 'critical').slice(0, 2).map((item, index) => (
-              <Link 
-                key={index} 
+              <Link
+                key={index}
                 to={`/stock?search=${encodeURIComponent(item.material)}`}
                 className="py-2 border-b border-slate-100 last:border-0 group block hover:bg-yellow-50/50 rounded-lg transition-colors"
               >
@@ -969,11 +974,11 @@ export default function Dashboard() {
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={orderHistoryData}>
-                <defs><linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs>
+                <defs><linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} /><stop offset="95%" stopColor="#3b82f6" stopOpacity={0} /></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#6b7280'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#6b7280'}} />
-                <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
                 <Area type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
               </AreaChart>
             </ResponsiveContainer>
@@ -990,15 +995,15 @@ export default function Dashboard() {
             <div className="w-full md:w-1/2 h-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie 
-                    data={productionMixData.filter(item => item.value > 0)} 
-                    cx="50%" 
-                    cy="50%" 
-                    innerRadius={50} 
-                    outerRadius={70} 
-                    paddingAngle={3} 
+                  <Pie
+                    data={productionMixData.filter(item => item.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    paddingAngle={3}
                     dataKey="value"
-                    label={({ name, percent }) => percent > 0.05 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
+                    label={({ percent }) => percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''}
                     labelLine={false}
                   >
                     {productionMixData.filter(item => item.value > 0).map((entry, index) => (
@@ -1034,9 +1039,9 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={revenueData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#6b7280'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#6b7280'}} />
-                <Tooltip cursor={{fill: '#f9fafb'}} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
                 <Bar dataKey="revenue" fill="#10b981" radius={[6, 6, 0, 0]} barSize={40} />
               </BarChart>
             </ResponsiveContainer>
@@ -1091,7 +1096,7 @@ export default function Dashboard() {
                             deadlineText = order.deadline;
                           }
                         }
-                        
+
                         return (
                           <tr key={order.id} className="hover:bg-blue-50/50 transition-colors duration-200 group cursor-pointer" onClick={() => navigate(`/orders/${order.id}`)}>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -1153,7 +1158,7 @@ export default function Dashboard() {
                         deadlineText = order.deadline;
                       }
                     }
-                    
+
                     return (
                       <div
                         key={order.id}
@@ -1245,9 +1250,9 @@ export default function Dashboard() {
                   indigo: 'text-indigo-600',
                   cyan: 'text-cyan-600'
                 };
-                
+
                 return (
-                  <div 
+                  <div
                     key={stage.stage}
                     onClick={() => handleStageClick(stage.stage, stage.orders, stage.statusKey)}
                     className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200 ${colorMap[stage.color]} hover:shadow-sm active:scale-[0.99]`}
@@ -1261,28 +1266,28 @@ export default function Dashboard() {
                         <p className="text-xs text-gray-500">Departemen</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <p className={`font-black text-xl ${iconColorMap[stage.color]}`}>{stage.count}</p>
                         <p className="text-[10px] font-bold text-gray-500 uppercase">pesanan</p>
                       </div>
-                      
+
                       <div className="w-px h-8 bg-gray-300"></div>
-                      
+
                       <div className="text-right">
                         <p className="font-black text-xl text-gray-600">{stage.totalItems}</p>
                         <p className="text-[10px] font-bold text-gray-500 uppercase">item</p>
                       </div>
-                      
+
                       <ChevronRight size={16} className="text-gray-400 group-hover:text-blue-500 transition-colors ml-1" />
                     </div>
                   </div>
                 );
               })}
-              
+
               {/* Pesanan Selesai Card */}
-              <div 
+              <div
                 onClick={() => handleStatusClick('completed')}
                 className="flex items-center justify-between p-3 rounded-xl border border-green-200 bg-green-50 cursor-pointer transition-all duration-200 hover:shadow-sm active:scale-[0.99] hover:border-green-300"
               >
@@ -1306,9 +1311,9 @@ export default function Dashboard() {
                   <ChevronRight size={16} className="text-gray-400 group-hover:text-green-500 transition-colors" />
                 </div>
               </div>
-              
+
               {/* Pesanan Dibatalkan Card */}
-              <div 
+              <div
                 onClick={() => handleStatusClick('cancelled')}
                 className="flex items-center justify-between p-3 rounded-xl border border-red-200 bg-red-50 cursor-pointer transition-all duration-200 hover:shadow-sm active:scale-[0.99] hover:border-red-300"
               >
@@ -1371,12 +1376,12 @@ export default function Dashboard() {
                     <div className="col-span-2 text-right">TOTAL</div>
                     <div className="col-span-2">STATUS</div>
                   </div>
-                  
+
                   {activeOrders.map((order) => {
                     const statusBadge = getStatusBadge(order.status);
                     return (
-                      <div 
-                        key={order.id} 
+                      <div
+                        key={order.id}
                         className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer"
                         onClick={() => {
                           setShowActiveOrdersModal(false);
@@ -1417,7 +1422,7 @@ export default function Dashboard() {
                             </span>
                           </div>
                         </div>
-                        
+
                         {order.itemsDetail && order.itemsDetail.length > 0 && (
                           <div className="mt-3 pt-3 border-t border-gray-100">
                             <p className="text-xs text-gray-500">
@@ -1439,7 +1444,7 @@ export default function Dashboard() {
                   <p className="text-sm text-gray-500 max-w-[240px] mx-auto mt-1">
                     Saat ini tidak ada pesanan yang sedang dalam proses pengerjaan.
                   </p>
-                  <Link 
+                  <Link
                     to="/orders/create"
                     className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
                   >
@@ -1471,11 +1476,11 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* ================== MODAL ITEM STUCK ================== */}
-      {showItemStuckModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      {showItemStuckModal && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm md:max-w-md max-h-[85vh] overflow-hidden flex flex-col">
             <div className="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-red-50 to-white sticky top-0 z-10">
               <div className="flex justify-between items-center">
@@ -1497,7 +1502,7 @@ export default function Dashboard() {
                     {stuckItems.length} item
                   </span>
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     loadProductionData();
                   }}
@@ -1510,8 +1515,8 @@ export default function Dashboard() {
               <div className="space-y-3">
                 {stuckItems.length > 0 ? (
                   stuckItems.map((item, index) => (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className="p-3 bg-red-50 border border-red-200 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
                       onClick={() => { setShowItemStuckModal(false); handleStuckItemClick(item); }}
                     >
@@ -1530,15 +1535,15 @@ export default function Dashboard() {
                         <span className="text-gray-500">Deadline: {formatDate(item.dueDate)}</span>
                       </div>
                       <div className="flex gap-3 mt-3 pt-2 border-t border-red-100">
-                        <Link 
-                          to={`/orders/${item.orderId}`} 
+                        <Link
+                          to={`/orders/${item.orderId}`}
                           className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                           onClick={(e) => e.stopPropagation()}
                         >
                           Lihat Detail Order
                         </Link>
-                        <Link 
-                          to={`/orders/edit/${item.orderId}`} 
+                        <Link
+                          to={`/orders/edit/${item.orderId}`}
                           className="text-xs text-gray-600 hover:text-gray-700"
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -1561,8 +1566,8 @@ export default function Dashboard() {
               <div className="text-xs text-gray-500">
                 Total {stuckItems.length} item stuck
               </div>
-              <button 
-                onClick={() => setShowItemStuckModal(false)} 
+              <button
+                onClick={() => setShowItemStuckModal(false)}
                 className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Tutup
@@ -1570,11 +1575,11 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* ================== MODAL STOK MENIPIS ================== */}
-      {showLowStockModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      {showLowStockModal && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm md:max-w-md max-h-[85vh] overflow-hidden flex flex-col">
             <div className="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-white sticky top-0 z-10">
               <div className="flex justify-between items-center">
@@ -1599,7 +1604,7 @@ export default function Dashboard() {
                     {lowStockItems.filter(item => item.status === 'warning').length} menipis
                   </span>
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     loadStockData();
                   }}
@@ -1620,7 +1625,7 @@ export default function Dashboard() {
                       const stockStatus = getStockStatus(item.currentStock, item.minStock);
                       const percentage = Math.min(100, Math.round((item.currentStock / item.minStock) * 100));
                       const isCritical = stockStatus.status === 'critical';
-                      
+
                       return (
                         <div key={index} className={`p-3 rounded-lg border ${isCritical ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'}`}>
                           <div className="flex justify-between items-start mb-2">
@@ -1632,9 +1637,9 @@ export default function Dashboard() {
                             </div>
                             <span className="text-xs text-gray-500">{item.unit}</span>
                           </div>
-                          
+
                           <p className="font-medium text-gray-800 text-sm mb-2">{item.material}</p>
-                          
+
                           <div className="grid grid-cols-2 gap-3 mt-2 text-xs">
                             <div className="bg-white/50 rounded p-1.5">
                               <span className="text-gray-500">Stok Saat Ini</span>
@@ -1645,21 +1650,21 @@ export default function Dashboard() {
                               <p className="font-bold text-gray-800">{item.minStock}</p>
                             </div>
                           </div>
-                          
+
                           <div className="mt-2">
                             <div className="flex justify-between text-xs mb-1">
                               <span className="text-gray-500">Tingkat Stok</span>
                               <span className={`font-bold ${isCritical ? 'text-red-600' : 'text-yellow-600'}`}>{percentage}%</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
+                              <div
                                 className={`h-2 rounded-full ${isCritical ? 'bg-red-500' : 'bg-yellow-500'}`}
                                 style={{ width: `${percentage}%` }}
                               />
                             </div>
                           </div>
 
-                          <button 
+                          <button
                             onClick={() => {
                               setShowLowStockModal(false);
                               navigate('/stock');
@@ -1685,8 +1690,8 @@ export default function Dashboard() {
               <div className="text-xs text-gray-500">
                 Total {lowStockItems.length} material bermasalah
               </div>
-              <button 
-                onClick={() => setShowLowStockModal(false)} 
+              <button
+                onClick={() => setShowLowStockModal(false)}
                 className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Tutup
@@ -1694,12 +1699,12 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* ================== MODAL STUCK ITEM DETAIL ================== */}
-      {showStuckDetailModal && selectedStuckOrder && (
-        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4">
-          <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-md md:max-w-lg max-h-[90vh] overflow-hidden mt-8 md:mt-12">
+      {showStuckDetailModal && selectedStuckOrder && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[10000] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md md:max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-4 md:p-6 border-b border-gray-200 bg-gradient-to-r from-red-50 to-white sticky top-0 z-10">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
@@ -1796,29 +1801,37 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* ================== MODAL STAGE DETAIL ================== */}
-      {selectedStage && (
-        <div className="fixed inset-0 z-[200] flex items-start justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col scale-in mt-8 md:mt-12 border-2 border-neutral">
-            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white sticky top-0 z-10">
+      {selectedStage && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col scale-in border-2 border-neutral">
+            <div className={`p-5 border-b border-gray-100 flex justify-between items-center sticky top-0 z-10 ${
+              selectedStage === 'Selesai' ? 'bg-gradient-to-r from-green-50 to-white' :
+              selectedStage === 'Dibatalkan' ? 'bg-gradient-to-r from-red-50 to-white' :
+              'bg-gradient-to-r from-blue-50 to-white'
+            }`}>
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-xl">
-                  {selectedStage === 'Potong' ? '✂️' : 
-                   selectedStage === 'Jahit' ? '🧵' : 
-                   selectedStage === 'Finishing' ? '✨' : 
-                   selectedStage === 'QC' ? '🔍' : 
-                   selectedStage === 'Mengirim' ? '🚚' : 
-                   selectedStage === 'Selesai' ? '✅' : 
-                   selectedStage === 'Dibatalkan' ? '❌' : '📋'}
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${
+                  selectedStage === 'Selesai' ? 'bg-green-100' :
+                  selectedStage === 'Dibatalkan' ? 'bg-red-100' :
+                  'bg-primary-50'
+                }`}>
+                  {selectedStage === 'Potong' ? '✂️' :
+                    selectedStage === 'Jahit' ? '🧵' :
+                      selectedStage === 'Finishing' ? '✨' :
+                        selectedStage === 'QC' ? '🔍' :
+                          selectedStage === 'Mengirim' ? '🚚' :
+                            selectedStage === 'Selesai' ? '✅' :
+                              selectedStage === 'Dibatalkan' ? '❌' : '📋'}
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-800">Daftar Pesanan - {selectedStage}</h3>
                   <p className="text-xs text-gray-500">
-                    {selectedStage === 'Selesai' ? 'Pesanan yang telah selesai diproses dan dikirim' : 
-                     selectedStage === 'Dibatalkan' ? 'Pesanan yang telah dibatalkan oleh customer atau admin' : 
-                     `Menampilkan pesanan yang sedang diproses di departemen ${selectedStage}`}
+                    {selectedStage === 'Selesai' ? 'Pesanan yang telah selesai diproses dan dikirim' :
+                      selectedStage === 'Dibatalkan' ? 'Pesanan yang telah dibatalkan oleh customer atau admin' :
+                        `Menampilkan pesanan yang sedang diproses di departemen ${selectedStage}`}
                   </p>
                 </div>
               </div>
@@ -1830,15 +1843,18 @@ export default function Dashboard() {
               {stageOrders.length > 0 ? (
                 <div className="space-y-3">
                   {stageOrders.map((order) => (
-                    <div key={order.id} className={`p-4 bg-white border rounded-xl hover:shadow-md transition-all group ${
-                      selectedStage === 'Selesai' ? 'border-green-200 hover:border-green-300' : 
-                      selectedStage === 'Dibatalkan' ? 'border-red-200 hover:border-red-300' : 
-                      'border-gray-100 hover:border-primary-200'
-                    }`}>
+                    <div key={order.id} className={`p-4 bg-white border rounded-xl hover:shadow-md transition-all group ${selectedStage === 'Selesai' ? 'border-green-200 hover:border-green-300' :
+                      selectedStage === 'Dibatalkan' ? 'border-red-200 hover:border-red-300' :
+                        'border-gray-100 hover:border-primary-200'
+                      }`}>
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <div className="flex items-center space-x-2 mb-1">
-                            <span className="font-black text-primary-600 text-sm">{order.id}</span>
+                            <span className={`font-black text-sm ${
+                              selectedStage === 'Selesai' ? 'text-green-600' :
+                              selectedStage === 'Dibatalkan' ? 'text-red-600' :
+                              'text-primary-600'
+                            }`}>{order.id}</span>
                             {selectedStage === 'Selesai' && (
                               <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-green-100 text-green-800">Selesai</span>
                             )}
@@ -1854,6 +1870,14 @@ export default function Dashboard() {
                             <p className="text-sm font-semibold text-gray-700 mt-1">
                               Total: Rp {formatCurrency(order.totalAmount)}
                             </p>
+                          )}
+                          {selectedStage === 'Dibatalkan' && order.notes && (
+                            <div className="mt-2 p-2.5 bg-red-50 rounded-lg border border-red-100">
+                              <p className="text-xs text-red-700 flex items-start">
+                                <AlertCircle size={14} className="mr-1.5 mt-0.5 flex-shrink-0" />
+                                <span className="font-medium leading-relaxed">{order.notes}</span>
+                              </p>
+                            </div>
                           )}
                         </div>
                         <div className="text-right">
@@ -1883,10 +1907,9 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-                    selectedStage === 'Selesai' ? 'bg-green-50' : 
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${selectedStage === 'Selesai' ? 'bg-green-50' :
                     selectedStage === 'Dibatalkan' ? 'bg-red-50' : 'bg-slate-50'
-                  }`}>
+                    }`}>
                     {selectedStage === 'Selesai' ? (
                       <CheckCircle size={32} className="text-green-500" />
                     ) : selectedStage === 'Dibatalkan' ? (
@@ -1896,14 +1919,14 @@ export default function Dashboard() {
                     )}
                   </div>
                   <h4 className="text-gray-800 font-bold">
-                    {selectedStage === 'Selesai' ? 'Belum ada pesanan selesai' : 
-                     selectedStage === 'Dibatalkan' ? 'Belum ada pesanan dibatalkan' : 
-                     'Tidak ada pesanan'}
+                    {selectedStage === 'Selesai' ? 'Belum ada pesanan selesai' :
+                      selectedStage === 'Dibatalkan' ? 'Belum ada pesanan dibatalkan' :
+                        'Tidak ada pesanan'}
                   </h4>
                   <p className="text-sm text-gray-500 max-w-[240px] mt-1">
-                    {selectedStage === 'Selesai' ? 'Pesanan yang selesai akan muncul di sini' : 
-                     selectedStage === 'Dibatalkan' ? 'Pesanan yang dibatalkan akan muncul di sini' : 
-                     `Saat ini tidak ada pesanan aktif di departemen ${selectedStage}.`}
+                    {selectedStage === 'Selesai' ? 'Pesanan yang selesai akan muncul di sini' :
+                      selectedStage === 'Dibatalkan' ? 'Pesanan yang dibatalkan akan muncul di sini' :
+                        `Saat ini tidak ada pesanan aktif di departemen ${selectedStage}.`}
                   </p>
                   {selectedStage === 'Selesai' && (
                     <Link to="/orders" className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700">
@@ -1925,7 +1948,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 }

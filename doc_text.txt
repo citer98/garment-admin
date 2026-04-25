@@ -1,0 +1,172 @@
+Dokumentasi Penggunaan Prototype Aplikasi
+
+Dokumen ini merupakan panduan operasional lengkap untuk sistem manajemen produksi konveksi GarmentTrackPro v2.0. Panduan ini mencakup penjelasan alur kerja (workflow), logika sistem (algoritma), dan instruksi penggunaan untuk setiap fitur utama.
+
+
+
+Catatan Teknis Penting: Aplikasi ini merupakan prototype yang menggunakan LocalStorage browser untuk penyimpanan data. Hindari pembersihan cache browser atau penggunaan mode penyamaran (incognito) agar data tidak hilang. Sangat disarankan menggunakan satu browser tetap (Google Chrome).
+
+Login
+
+Sistem menggunakan autentikasi berbasis peran (Role-Based Access Control) untuk membatasi akses fitur sesuai tanggung jawab pengguna.
+
+Alur Kerja: Pengguna memasukkan username dan password. Sistem memvalidasi status akun (active/nonactive).
+
+Logika Peran: Akun dengan peran Admin akan diarahkan ke Dashboard utama, sedangkan Karyawan langsung diarahkan ke halaman Job List untuk efisiensi operasional.
+
+
+
+Halaman Dashboard
+
+Pusat pemantauan real-time yang menyajikan ringkasan produksi, kondisi keuangan, dan peringatan dini sistem. Dimana pada halaman ini menampilkan Item Stuck, Stok Menipis, Statistik Cepat, Pesanan Aktif, Revenue Bulan Ini, Profit Margin, Avg Order Value, Tren Pesanan (7 Hari), Distribusi Produksi, Performa Keuangan (Rp Juta), Pesanan Terbaru, Status Produksi.
+
+
+
+Item Stuck 
+
+Sistem memindai pesanan yang statusnya belum selesai. Jika tanggal pembaruan terakhir berjarak lebih dari 3 hari dari tanggal saat ini, pesanan akan ditandai sebagai "Stuck" (tertahan). Ini membantu manajer mengidentifikasi hambatan di lantai produksi.
+
+
+
+
+
+Stok Menipis
+
+Sistem membandingkan stok saat ini dengan batas minimal stok yang diatur.
+
+Kritis: Stok di bawah 25% dari kebutuhan minimal.
+
+Peringatan: Stok antara 25% hingga 50% dari kebutuhan minimal.
+
+
+
+
+
+Status Produksi
+
+Menampilkan grafik distribusi pesanan di berbagai tahap (Potong, Jahit, Finishing, Pengemasan, Selesai). Data ini diperbarui secara otomatis setiap kali ada perubahan status pada pesanan.
+
+Halaman Pesanan
+
+
+
++ Buat Pesanan Baru
+
+Edit Pesanan
+
+
+
+
+
+View Pesanan
+
+
+
+Kelola Produk
+
+
+
++ Tambah Produk Baru
+
+
+
+Produk Baru
+
+
+
+Kelola Kategori Produk
+
+
+
+Tambah Kategori Produk
+
+
+
+Kelola Pelanggan
+
+
+
+Tambah Pelanggan Baru
+
+
+
+Halaman Stok Material
+
+
+
+
+
+Tambah Material
+
+
+
+Kelola Kategori
+
+
+
+Tambah Kategori Baru
+
+
+
+Kelola Satuan
+
+
+
+Tambah Satuan Baru
+
+
+
+Kelola Supplier
+
+
+
+Tambah Supplier Baru
+
+
+
+Edit Material
+
+
+
+Halaman Keuangan
+
+
+
+Periode Harian
+
+
+
+Periode Mingguan
+
+
+
+Periode Bulanan
+
+
+
+Periode Kuartal
+
+
+
+Periode Tahunan
+
+
+
+Halaman Pengguna
+
+
+
+Tambah User
+
+
+
+Topbar
+
+Notifikasi
+
+
+
+Lihat Semua Alert
+
+
+

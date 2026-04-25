@@ -8,7 +8,7 @@ import { syncOrderWithJobs } from '../utils/jobOrderSync';
 const syncJobsForOrder = (orderId) => {
   const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
   const order = savedOrders.find(o => o.id === orderId);
-  
+
   if (order && order.status !== 'cancelled') {
     syncOrderWithJobs(order);
   }
@@ -19,23 +19,23 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  
+
   // ==================== STATE UNTUK ZOOM/SCALE ====================
   const [zoomLevel, setZoomLevel] = useState(0.8); // Default 80%
   const [showZoomControls, setShowZoomControls] = useState(false);
-  
+
   // Status options - DISEDERHANAKAN (tanpa Draft, tanpa Diproses, tanpa Produksi)
   const statusOptions = [
-  // ========== STATUS PRODUKSI (PROSES AKTIF - BERRURUTAN) ==========
-  { value: 'cutting', label: '✂️ Potong', color: 'bg-amber-100 text-amber-800', group: 'production', order: 1 },
-  { value: 'sewing', label: '🧵 Jahit', color: 'bg-blue-100 text-blue-800', group: 'production', order: 2 },
-  { value: 'finishing', label: '✨ Finishing', color: 'bg-purple-100 text-purple-800', group: 'production', order: 3 },
-  { value: 'qc', label: '🔍 QC', color: 'bg-indigo-100 text-indigo-800', group: 'production', order: 4 },
-  { value: 'delivering', label: '🚚 Mengirim', color: 'bg-cyan-100 text-cyan-800', group: 'production', order: 5 },
-  
-  // ========== STATUS AKHIR (FINAL) ==========
-  { value: 'completed', label: '✅ Selesai', color: 'bg-green-100 text-green-800', group: 'final', order: 6 },
-  { value: 'cancelled', label: '❌ Dibatalkan', color: 'bg-red-100 text-red-800', group: 'final', order: 7 },
+    // ========== STATUS PRODUKSI (PROSES AKTIF - BERRURUTAN) ==========
+    { value: 'cutting', label: '✂️ Potong', color: 'bg-amber-100 text-amber-800', group: 'production', order: 1 },
+    { value: 'sewing', label: '🧵 Jahit', color: 'bg-blue-100 text-blue-800', group: 'production', order: 2 },
+    { value: 'finishing', label: '✨ Finishing', color: 'bg-purple-100 text-purple-800', group: 'production', order: 3 },
+    { value: 'qc', label: '🔍 QC', color: 'bg-indigo-100 text-indigo-800', group: 'production', order: 4 },
+    { value: 'delivering', label: '🚚 Mengirim', color: 'bg-cyan-100 text-cyan-800', group: 'production', order: 5 },
+
+    // ========== STATUS AKHIR (FINAL) ==========
+    { value: 'completed', label: '✅ Selesai', color: 'bg-green-100 text-green-800', group: 'final', order: 6 },
+    { value: 'cancelled', label: '❌ Dibatalkan', color: 'bg-red-100 text-red-800', group: 'final', order: 7 },
   ];
 
   // Load orders from localStorage
@@ -46,14 +46,14 @@ export default function Orders() {
   const loadOrders = () => {
     try {
       const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-      
+
       const validatedOrders = savedOrders.map(order => {
         // Mapping status lama ke status baru
         let mappedStatus = order.status;
         if (mappedStatus === 'draft' || mappedStatus === 'processing' || mappedStatus === 'production') {
           mappedStatus = 'cutting';
         }
-        
+
         return {
           id: safeString(order.id),
           customerName: safeString(order.customerName),
@@ -69,7 +69,7 @@ export default function Orders() {
           notes: safeString(order.notes)
         };
       });
-      
+
       if (validatedOrders.length === 0) {
         const mockOrders = [
           {
@@ -116,23 +116,164 @@ export default function Orders() {
             orderDate: '2024-01-18',
             items: 4,
             totalAmount: 950000,
-            status: 'delivered',
+            status: 'completed', // ubah jadi completed sesuai flow
             dueDate: '2024-01-19',
             itemsDetail: [
               { product: 'Celana Chino', qty: 2, price: 200000 },
               { product: 'Kemeja Pria Slimfit', qty: 2, price: 150000 }
             ]
           },
+          {
+            id: 'ORD-005',
+            customerName: 'PT. Klien Simulasi (Stuck)',
+            orderDate: new Date(new Date().setDate(new Date().getDate() - 10)).toISOString().split('T')[0],
+            items: 100,
+            totalAmount: 5000000,
+            status: 'sewing',
+            dueDate: new Date(new Date().setDate(new Date().getDate() - 5)).toISOString().split('T')[0],
+            itemsDetail: [
+              { product: 'Seragam Karyawan', qty: 100, price: 50000 }
+            ],
+            notes: 'Pesanan ini disimulasikan stuck (melewati deadline) untuk keperluan demonstrasi'
+          },
+          {
+            id: 'ORD-006',
+            customerName: 'Toko Seragam Mulia',
+            orderDate: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString().split('T')[0],
+            items: 50,
+            totalAmount: 2500000,
+            status: 'finishing',
+            dueDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString().split('T')[0],
+            itemsDetail: [
+              { product: 'Kemeja Sekolah', qty: 50, price: 50000 }
+            ]
+          },
+          {
+            id: 'ORD-007',
+            customerName: 'CV. Karya Mandiri',
+            orderDate: new Date(new Date().setDate(new Date().getDate() - 4)).toISOString().split('T')[0],
+            items: 30,
+            totalAmount: 3000000,
+            status: 'qc',
+            dueDate: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0],
+            itemsDetail: [
+              { product: 'Jaket Kantor', qty: 30, price: 100000 }
+            ]
+          },
+          {
+            id: 'ORD-008',
+            customerName: 'PT. Lintas Logistik',
+            orderDate: new Date(new Date().setDate(new Date().getDate() - 5)).toISOString().split('T')[0],
+            items: 120,
+            totalAmount: 6000000,
+            status: 'delivering',
+            dueDate: new Date().toISOString().split('T')[0],
+            itemsDetail: [
+              { product: 'Rompi Lapangan', qty: 120, price: 50000 }
+            ]
+          },
+          {
+            id: 'ORD-009',
+            customerName: 'Bapak Budi (Personal)',
+            orderDate: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0],
+            items: 5,
+            totalAmount: 750000,
+            status: 'cancelled',
+            dueDate: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0],
+            itemsDetail: [
+              { product: 'Kemeja Custom', qty: 5, price: 150000 }
+            ],
+            notes: 'Dibatalkan oleh pelanggan karena perubahan desain.'
+          }
         ];
         setOrders(mockOrders);
         localStorage.setItem('orders', JSON.stringify(mockOrders));
-        
+
         mockOrders.forEach(order => {
           syncJobsForOrder(order.id);
         });
       } else {
+        // Cek jika pesanan tambahan belum ada di dalam localStorage, tambahkan
+        let hasChanges = false;
+
+        const additionalOrders = [
+          {
+            id: 'ORD-005',
+            customerName: 'PT. Klien Simulasi (Stuck)',
+            orderDate: new Date(new Date().setDate(new Date().getDate() - 10)).toISOString().split('T')[0],
+            items: 100,
+            totalAmount: 5000000,
+            status: 'sewing',
+            dueDate: new Date(new Date().setDate(new Date().getDate() - 5)).toISOString().split('T')[0],
+            itemsDetail: [
+              { product: 'Seragam Karyawan', qty: 100, price: 50000 }
+            ],
+            notes: 'Pesanan ini disimulasikan stuck (melewati deadline) untuk keperluan demonstrasi'
+          },
+          {
+            id: 'ORD-006',
+            customerName: 'Toko Seragam Mulia',
+            orderDate: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString().split('T')[0],
+            items: 50,
+            totalAmount: 2500000,
+            status: 'finishing',
+            dueDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString().split('T')[0],
+            itemsDetail: [
+              { product: 'Kemeja Sekolah', qty: 50, price: 50000 }
+            ]
+          },
+          {
+            id: 'ORD-007',
+            customerName: 'CV. Karya Mandiri',
+            orderDate: new Date(new Date().setDate(new Date().getDate() - 4)).toISOString().split('T')[0],
+            items: 30,
+            totalAmount: 3000000,
+            status: 'qc',
+            dueDate: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0],
+            itemsDetail: [
+              { product: 'Jaket Kantor', qty: 30, price: 100000 }
+            ]
+          },
+          {
+            id: 'ORD-008',
+            customerName: 'PT. Lintas Logistik',
+            orderDate: new Date(new Date().setDate(new Date().getDate() - 5)).toISOString().split('T')[0],
+            items: 120,
+            totalAmount: 6000000,
+            status: 'delivering',
+            dueDate: new Date().toISOString().split('T')[0],
+            itemsDetail: [
+              { product: 'Rompi Lapangan', qty: 120, price: 50000 }
+            ]
+          },
+          {
+            id: 'ORD-009',
+            customerName: 'Bapak Budi (Personal)',
+            orderDate: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0],
+            items: 5,
+            totalAmount: 750000,
+            status: 'cancelled',
+            dueDate: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0],
+            itemsDetail: [
+              { product: 'Kemeja Custom', qty: 5, price: 150000 }
+            ],
+            notes: 'Dibatalkan oleh pelanggan karena perubahan desain.'
+          }
+        ];
+
+        additionalOrders.forEach(newOrder => {
+          if (!validatedOrders.some(o => o.id === newOrder.id)) {
+            validatedOrders.push(newOrder);
+            hasChanges = true;
+          }
+        });
+
+        if (hasChanges) {
+          localStorage.setItem('orders', JSON.stringify(validatedOrders));
+        }
+
         setOrders(validatedOrders);
-        
+
         validatedOrders.forEach(order => {
           syncJobsForOrder(order.id);
         });
@@ -148,7 +289,7 @@ export default function Orders() {
     const orderId = safeString(order.id).toLowerCase();
     const customerName = safeString(order.customerName).toLowerCase();
     const query = searchQuery.toLowerCase();
-    
+
     const matchesSearch = orderId.includes(query) || customerName.includes(query);
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -167,11 +308,11 @@ export default function Orders() {
       const updatedOrders = orders.filter(order => order.id !== orderId);
       setOrders(updatedOrders);
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
-      
+
       const availableJobs = JSON.parse(localStorage.getItem('availableJobs') || '[]');
       const filteredJobs = availableJobs.filter(job => job.order_id !== orderId);
       localStorage.setItem('availableJobs', JSON.stringify(filteredJobs));
-      
+
       alert('Pesanan berhasil dihapus!');
     }
   };
@@ -209,7 +350,7 @@ export default function Orders() {
       {/* Zoom controls are commented out as requested */}
 
       {/* ==================== MAIN CONTENT WITH SCALE TRANSFORM ==================== */}
-      <div 
+      <div
         className="transition-all duration-300"
         style={{
           transform: `scale(${zoomLevel})`,
@@ -225,9 +366,9 @@ export default function Orders() {
                 <h2 className="text-2xl font-bold text-gray-800">Daftar Pesanan</h2>
                 <p className="text-gray-600">Kelola semua pesanan pelanggan</p>
               </div>
-              <button 
+              <button
                 onClick={handleCreateNew}
-                    className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
               >
                 <Plus size={20} className="mr-2" />
                 Buat Pesanan Baru
@@ -251,7 +392,7 @@ export default function Orders() {
                   />
                 </div>
               </div>
-              
+
               {/* Status Filter */}
               <div>
                 <div className="flex items-center space-x-2">
@@ -354,7 +495,7 @@ export default function Orders() {
                           deadlineText = `${diffDays} hari`;
                         }
                       }
-                      
+
                       return (
                         <tr key={order.id} className="hover:bg-blue-50/50 transition-colors duration-200 group">
                           {/* ID PESANAN - Tengah */}
@@ -402,28 +543,28 @@ export default function Orders() {
                           {/* AKSI - Tengah */}
                           <td className="px-6 py-4 whitespace-nowrap text-center">
                             <div className="flex justify-center gap-2">
-                              <button 
+                              <button
                                 onClick={() => handleViewOrder(order.id)}
                                 className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                 title="Lihat Detail"
                               >
                                 <Eye size={16} />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleEditOrder(order.id)}
                                 className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                                 title="Edit"
                               >
                                 <Edit size={16} />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleDeleteOrder(order.id)}
                                 className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Hapus"
                               >
                                 <Trash2 size={16} />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleDownloadInvoice(order.id)}
                                 className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
                                 title="Download"
@@ -442,11 +583,11 @@ export default function Orders() {
                           <Package className="text-gray-300 mb-3" size={48} />
                           <p className="text-gray-500 font-medium">Tidak ada pesanan ditemukan</p>
                           <p className="text-sm text-gray-400 mt-1">
-                            {searchQuery || statusFilter !== 'all' 
-                              ? 'Coba ubah filter atau kata kunci pencarian' 
+                            {searchQuery || statusFilter !== 'all'
+                              ? 'Coba ubah filter atau kata kunci pencarian'
                               : 'Mulai dengan membuat pesanan baru'}
                           </p>
-                          <button 
+                          <button
                             onClick={handleCreateNew}
                             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
                           >
@@ -459,7 +600,7 @@ export default function Orders() {
                 </tbody>
               </table>
             </div>
-            
+
             {/* Footer */}
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
               <p className="text-sm text-gray-600">
